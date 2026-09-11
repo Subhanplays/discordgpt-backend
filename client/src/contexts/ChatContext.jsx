@@ -25,6 +25,19 @@ export function ChatProvider({ children }) {
   const [activeJobId, setActiveJobId] = useState(null)
   const [templates, setTemplates] = useState([])
 
+  useEffect(() => {
+    if (!token) return
+    fetch('/api/bot/status', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.connected && data.bot) {
+          setBotConnected(true)
+          setBotInfo(data.bot)
+        }
+      })
+      .catch(() => {})
+  }, [token])
+
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})

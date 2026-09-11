@@ -16,7 +16,6 @@ export default function BotSetup({ onComplete }) {
     setError('')
     try {
       await connectBot(botToken.trim())
-      onComplete?.()
     } catch (err) {
       setError(err.message || 'Failed to connect bot')
     }
@@ -39,6 +38,19 @@ export default function BotSetup({ onComplete }) {
             Online
           </div>
         </div>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '12px 0' }}>
+          Make sure your bot is in the server you want to configure.
+        </p>
+        {botInfo.id && (
+          <button className="btn btn-secondary" style={{ width: '100%', marginBottom: 8 }} onClick={() => {
+            window.open(`https://discord.com/api/oauth2/authorize?client_id=${botInfo.id}&permissions=8&scope=bot%20applications.commands`, '_blank')
+          }}>
+            Invite Bot to Server
+          </button>
+        )}
+        <button className="btn btn-primary" style={{ width: '100%' }} onClick={onComplete}>
+          Done
+        </button>
       </div>
     )
   }

@@ -145,6 +145,12 @@ async function initDatabase() {
   }
 
   console.log('Database initialized');
+
+  try {
+    await q('ALTER TABLE bot_connections ADD COLUMN IF NOT EXISTS bot_token TEXT');
+  } catch (e) {
+    // column may already exist
+  }
 }
 
 function q(text, params) {
@@ -324,17 +330,18 @@ module.exports = {
   },
 
   // Bot Connections
-  async createBotConnection(userId, tokenHash, botUsername, botId) {
+  async createBotConnection(userId, tokenHash, botUsername, botId, botToken) {
     const id = uuidv4();
     await q(
-      `INSERT INTO bot_connections (id, user_id, bot_token_hash, bot_username, bot_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, 1)
+      `INSERT INTO bot_connections (id, user_id, bot_token_hash, bot_username, bot_id, bot_token, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, 1)
        ON CONFLICT (user_id) DO UPDATE SET
          bot_token_hash = EXCLUDED.bot_token_hash,
          bot_username = EXCLUDED.bot_username,
          bot_id = EXCLUDED.bot_id,
+         bot_token = EXCLUDED.bot_token,
          is_active = 1`,
-      [id, userId, tokenHash, botUsername, botId]
+      [id, userId, tokenHash, botUsername, botId, botToken || null]
     );
     return { id, user_id: userId, bot_username: botUsername, bot_id: botId, is_active: 1 };
   },

@@ -587,7 +587,7 @@ function getDefaultModel(provider) {
   const defaults = {
     openai: 'gpt-4o-mini',
     anthropic: 'claude-3-haiku-20240307',
-    google: 'gemini-3.5-flash',
+    google: 'gemini-3.1-flash-lite',
     mistral: 'mistral-small-latest',
     groq: 'llama-3.1-8b-instant',
     openrouter: 'auto',
@@ -665,27 +665,46 @@ async function callGoogle(apiKey, model, messages) {
     parts: [{ text: m.content }]
   }));
 
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-3.5-flash'}:generateContent?key=${apiKey}`;
+  const fallbackModels = [model, 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'].filter(Boolean);
+  const uniqueModels = [...new Set(fallbackModels)];
 
-  const body = { contents };
-  if (systemMsg) {
-    body.systemInstruction = { parts: [{ text: systemMsg.content }] };
+  for (const m of uniqueModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+    const body = { contents };
+    if (systemMsg) {
+      body.systemInstruction = { parts: [{ text: systemMsg.content }] };
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(45000)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+      }
+
+      if (response.status === 503 || response.status === 429) {
+        console.log(`Google model ${m} unavailable (${response.status}), trying next...`);
+        continue;
+      }
+
+      const err = await response.text();
+      throw new Error(`Google AI error ${response.status}: ${err}`);
+    } catch (e) {
+      if (e.name === 'TimeoutError' || e.message?.includes('timeout')) {
+        console.log(`Google model ${m} timed out, trying next...`);
+        continue;
+      }
+      throw e;
+    }
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(45000)
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Google AI error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  throw new Error('All Google AI models are currently unavailable');
 }
 
 async function callMistral(apiKey, model, messages) {
@@ -752,16 +771,16 @@ function simulateAIResponse(messages, errorMsg) {
   const lastMessage = messages[messages.length - 1];
   const content = lastMessage.content.toLowerCase();
 
+  if (errorMsg) {
+    console.log('AI provider error (falling back to built-in):', errorMsg);
+  }
+
   const blueprintKeywords = ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup'];
   const isBlueprintRequest = blueprintKeywords.some(kw => content.includes(kw));
 
   if (isBlueprintRequest) {
     const blueprint = generateBlueprint(lastMessage.content);
-    let prefix = '';
-    if (errorMsg) {
-      prefix = `[AI Error: ${errorMsg}]\n\n`;
-    }
-    return `${prefix}Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
+    return `Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
   }
 
   if (content.includes('help') || content.includes('how')) {
@@ -769,19 +788,10 @@ function simulateAIResponse(messages, errorMsg) {
   }
 
   if (content.includes('hello') || content.includes('hi') || content.includes('hey')) {
-    let prefix = '';
-    if (errorMsg) {
-      prefix = `[AI Error: ${errorMsg}]\n\n`;
-    }
-    return `${prefix}Hey! I'm DiscordGPT. I build Discord servers from natural language descriptions. What kind of server do you want me to create?`;
+    return `Hey! I'm DiscordGPT. I build Discord servers from natural language descriptions. What kind of server do you want me to create?`;
   }
 
-  let prefix = '';
-  if (errorMsg) {
-    prefix = `[AI Error: ${errorMsg}]\n\n`;
-  }
-
-  return `${prefix}I'm DiscordGPT, your Discord server builder. Describe the server you want and I'll create the full structure — categories, channels, roles, and permissions.\n\nFor example:\n- "Create a Minecraft hosting server called MineVo"\n- "Build a gaming community with LFG and voice channels"\n- "Generate a professional support server with tickets"`;
+  return `I'm DiscordGPT, your Discord server builder. Describe the server you want and I'll create the full structure — categories, channels, roles, and permissions.\n\nFor example:\n- "Create a Minecraft hosting server called MineVo"\n- "Build a gaming community with LFG and voice channels"\n- "Generate a professional support server with tickets"`;
 }
 
 module.exports = {

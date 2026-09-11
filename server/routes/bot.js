@@ -36,7 +36,8 @@ router.post('/connect', async (req, res) => {
       req.user.id,
       tokenHash,
       validation.botInfo.username,
-      validation.botInfo.id
+      validation.botInfo.id,
+      botToken
     );
 
     setActiveBot(req.user.id, botToken, validation.botInfo);
@@ -59,8 +60,21 @@ router.post('/connect', async (req, res) => {
 
 router.get('/status', async (req, res) => {
   try {
-    const botSession = getActiveBot(req.user.id);
+    let botSession = getActiveBot(req.user.id);
     const dbConnection = await db.getBotConnectionByUserId(req.user.id);
+
+    if (!botSession && dbConnection && dbConnection.bot_token) {
+      try {
+        const { validateBotToken } = require('../utils/discord');
+        const validation = await validateBotToken(dbConnection.bot_token);
+        if (validation.valid) {
+          setActiveBot(req.user.id, dbConnection.bot_token, validation.botInfo);
+          botSession = getActiveBot(req.user.id);
+        }
+      } catch (e) {
+        console.log('Auto-reconnect failed for user', req.user.id);
+      }
+    }
 
     if (!botSession && !dbConnection) {
       return res.json({ connected: false });
@@ -92,7 +106,7 @@ router.get('/status', async (req, res) => {
   }
 });
 
-router.delete('/disconnect', async (req, res) => {
+async function disconnectHandler(req, res) {
   try {
     const botSession = getActiveBot(req.user.id);
     if (!botSession) {
@@ -107,7 +121,10 @@ router.delete('/disconnect', async (req, res) => {
     console.error('Bot disconnect error:', error);
     res.status(500).json({ error: 'Failed to disconnect bot' });
   }
-});
+}
+
+router.delete('/disconnect', disconnectHandler);
+router.post('/disconnect', disconnectHandler);
 
 router.get('/servers', async (req, res) => {
   try {
