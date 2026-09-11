@@ -105,26 +105,35 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
         }
 
         const permArray = Array.isArray(roleDef.permissions) ? roleDef.permissions : [];
-        const permissions = permArray.reduce((acc, p) => {
-          if (typeof p !== 'string') return acc;
+        let permissions = BigInt(0);
+        for (const p of permArray) {
+          if (typeof p !== 'string') continue;
           const permName = p.replace(/\s+/g, '');
-          const flag = PermissionFlagsBits[permName];
-          return flag ? acc | flag : acc;
-        }, BigInt(0));
+          try {
+            const flag = PermissionFlagsBits[permName];
+            if (flag !== undefined) {
+              permissions = permissions | flag;
+            }
+          } catch {}
+        }
 
         let roleColor = roleDef.color || '#99AAB5';
         if (typeof roleColor === 'string' && !roleColor.startsWith('#')) {
           roleColor = '#' + roleColor;
         }
 
-        const role = await guild.roles.create({
+        const roleData = {
           name: roleDef.name,
           color: roleColor,
-          permissions,
           mentionable: roleDef.mentionable !== false,
           hoist: roleDef.hoist || false,
           reason: `Created by DiscordGPT for ${blueprint.serverName}`
-        });
+        };
+        if (permissions !== BigInt(0)) {
+          roleData.permissions = permissions;
+        }
+
+        const role = await guild.roles.create(roleData);
         roleMap[roleDef.name] = role;
       } catch (error) {
         console.error(`Failed to create role ${roleDef.name}:`, error.message);
