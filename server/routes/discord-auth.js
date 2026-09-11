@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../database');
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547995368695009281';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
@@ -10,15 +11,14 @@ const FRONTEND_REDIRECT = 'https://client-six-zeta-13.vercel.app/auth/callback';
 
 let migrationDone = false;
 
-async function query(text, params) {
-  const { getPool } = require('../database');
-  return getPool().query(text, params);
-}
-
 async function initDiscordAuth() {
   if (migrationDone) return;
-  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`);
-  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_access_token TEXT`);
+  try {
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_access_token TEXT`);
+  } catch (e) {
+    console.log('Migration note:', e.message);
+  }
   migrationDone = true;
 }
 
@@ -31,7 +31,6 @@ function generateToken(user) {
   );
 }
 
-// GET /api/auth/discord
 router.get('/', async (req, res) => {
   try {
     const params = new URLSearchParams({
@@ -44,23 +43,21 @@ router.get('/', async (req, res) => {
     res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
   } catch (err) {
     console.error('Discord auth redirect error:', err);
-    res.status(500).json({ error: 'Failed to initiate Discord auth' });
+    res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=redirect_failed`);
   }
 });
 
-// GET /api/auth/discord/callback
 router.get('/callback', async (req, res) => {
   try {
     await initDiscordAuth();
 
     const { code } = req.query;
     if (!code) {
-      return res.redirect('https://client-six-zeta-13.vercel.app/auth?error=no_code');
+      return res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=no_code`);
     }
 
-    console.log('Discord callback: exchanging code for token...');
+    console.log('Discord callback: exchanging code...');
 
-    // Exchange code for access token
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -74,127 +71,53 @@ router.get('/callback', async (req, res) => {
     });
 
     const tokenData = await tokenRes.json();
-    console.log('Discord token response:', tokenRes.ok ? 'OK' : tokenData);
-    
+    console.log('Token response:', tokenRes.status, tokenData.error || 'OK');
+
     if (!tokenData.access_token) {
-      console.error('Discord token exchange failed:', tokenData);
-      return res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=token_failed`);
+      console.error('Token exchange failed:', JSON.stringify(tokenData));
+      return res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=token_failed`);
     }
 
-    // Fetch user info
     const userRes = await fetch('https://discord.com/api/users/@me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const discordUser = await userRes.json();
+
     if (!discordUser.id) {
-      console.error('Discord user fetch failed:', discordUser);
-      return res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=user_fetch_failed`);
+      console.error('Discord user fetch failed:', JSON.stringify(discordUser));
+      return res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=user_fetch_failed`);
     }
 
-    console.log('Discord user:', discordUser.username, discordUser.id);
+    console.log('Discord user:', discordUser.username);
 
-    // Upsert user in database
-    const existing = await query('SELECT * FROM users WHERE discord_id = $1', [discordUser.id]);
+    const existing = await db.getPool().query('SELECT * FROM users WHERE discord_id = $1', [discordUser.id]);
 
     let user;
     if (existing.rows.length > 0) {
       user = existing.rows[0];
-      await query(
-        'UPDATE users SET discord_access_token = $1, username = $2, updated_at = NOW() WHERE discord_id = $3',
+      await db.getPool().query(
+        'UPDATE users SET discord_access_token = $1, username = $2, updated_at = now()::text WHERE discord_id = $3',
         [tokenData.access_token, discordUser.username, discordUser.id]
       );
       user.username = discordUser.username;
-      user.discord_access_token = tokenData.access_token;
     } else {
       const email = discordUser.email || `${discordUser.id}@discord.local`;
-      const result = await query(
-        `INSERT INTO users (username, email, discord_id, discord_access_token, role, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, 'user', NOW(), NOW())
+      const result = await db.getPool().query(
+        `INSERT INTO users (id, username, email, discord_id, discord_access_token, role)
+         VALUES ($1, $2, $3, $4, $5, 'user')
          RETURNING *`,
-        [discordUser.username, email, discordUser.id, tokenData.access_token]
+        [require('crypto').randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token]
       );
       user = result.rows[0];
     }
 
     const jwtToken = generateToken(user);
-    console.log('Auth successful for:', user.username);
+    console.log('Auth success:', user.username);
 
-    // Redirect to frontend with token
     res.redirect(`${FRONTEND_REDIRECT}?token=${jwtToken}`);
   } catch (err) {
-    console.error('Discord callback error:', err.message, err.stack);
-    res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=callback_failed`);
-  }
-});
-
-// GET /api/auth/discord/servers
-router.get('/servers', async (req, res) => {
-  try {
-    await initDiscordAuth();
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const jwt = require('jsonwebtoken');
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    const userResult = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = userResult.rows[0];
-    if (!user.discord_access_token) {
-      return res.status(400).json({ error: 'No Discord access token. Please re-authenticate.' });
-    }
-
-    // Fetch user's guilds from Discord
-    const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', {
-      headers: { Authorization: `Bearer ${user.discord_access_token}` },
-    });
-
-    if (!guildsRes.ok) {
-      return res.status(401).json({ error: 'Failed to fetch Discord servers. Please re-authenticate.' });
-    }
-
-    const guilds = await guildsRes.json();
-
-    // Filter to servers where user has manage_guild or administrator permission
-    const manageableGuilds = guilds.filter((g) => {
-      const perms = BigInt(g.permissions);
-      return (perms & BigInt(0x20)) === BigInt(0x20) || (perms & BigInt(0x8)) === BigInt(0x8);
-    });
-
-    // Check which servers the bot is already in
-    let botGuilds = [];
-    if (DISCORD_BOT_TOKEN) {
-      const botGuildsRes = await fetch('https://discord.com/api/guilds', {
-        headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
-      });
-      if (botGuildsRes.ok) {
-        botGuilds = await botGuildsRes.json();
-      }
-    }
-
-    const botGuildIds = new Set(botGuilds.map((g) => g.id));
-
-    const servers = manageableGuilds.map((g) => ({
-      id: g.id,
-      name: g.name,
-      icon: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null,
-      botAdded: botGuildIds.has(g.id),
-    }));
-
-    res.json({ servers });
-  } catch (err) {
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
-    console.error('Discord servers fetch error:', err);
-    res.status(500).json({ error: 'Failed to fetch Discord servers' });
+    console.error('Discord callback error:', err.message);
+    res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=callback_failed`);
   }
 });
 
