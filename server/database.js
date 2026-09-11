@@ -132,6 +132,17 @@ async function initDatabase() {
       created_at TEXT DEFAULT (now()::text),
       updated_at TEXT DEFAULT (now()::text)
     );
+
+    CREATE TABLE IF NOT EXISTS pending_blueprints (
+      id TEXT PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      blueprint_json TEXT NOT NULL,
+      server_name TEXT,
+      created_at TEXT DEFAULT (now()::text),
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0
+    );
   `);
 
   // Create default admin if none exists
@@ -496,5 +507,30 @@ module.exports = {
 
   async deleteAiProvider(id) {
     await q('DELETE FROM ai_providers WHERE id = $1', [id]);
+  },
+
+  // Pending Blueprints (deploy codes)
+  async createPendingBlueprint(userId, blueprintJson, serverName) {
+    const id = uuidv4();
+    const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await q(
+      'INSERT INTO pending_blueprints (id, code, user_id, blueprint_json, server_name, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, code, userId, JSON.stringify(blueprintJson), serverName || blueprintJson.serverName || '', expiresAt]
+    );
+    return { id, code, expiresAt };
+  },
+
+  async getPendingBlueprintByCode(code) {
+    const row = await qOne(
+      `SELECT * FROM pending_blueprints WHERE code = $1 AND used = 0 AND expires_at > now()::text`,
+      [code.toUpperCase()]
+    );
+    if (row) row.blueprint_json = JSON.parse(row.blueprint_json);
+    return row;
+  },
+
+  async markBlueprintUsed(code) {
+    await q('UPDATE pending_blueprints SET used = 1 WHERE code = $1', [code.toUpperCase()]);
   }
 };

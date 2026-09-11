@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { initDatabase } = require('./database');
 const { validateBotToken, setActiveBot } = require('./utils/discord');
+const { startPersistentClient, stopPersistentClient } = require('./utils/slashCommands');
 
 const authRoutes = require('./routes/auth');
 const discordAuthRoutes = require('./routes/discord-auth');
@@ -15,6 +16,7 @@ const serverRoutes = require('./routes/server');
 const templateRoutes = require('./routes/templates');
 const adminRoutes = require('./routes/admin');
 const settingsRoutes = require('./routes/settings');
+const blueprintRoutes = require('./routes/blueprint');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,6 +49,7 @@ app.use('/api/server', serverRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/blueprint', blueprintRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -70,6 +73,10 @@ async function connectBuiltinBot() {
     if (validation.valid) {
       setActiveBot(BUILTIN_BOT_USER, token, validation.botInfo);
       console.log(`Built-in bot connected: ${validation.botInfo.username} (${validation.botInfo.id})`);
+
+      startPersistentClient(token, validation.botInfo).catch(err => {
+        console.error('Persistent client failed:', err.message);
+      });
     } else {
       console.error('Built-in bot token invalid:', validation.error);
     }
