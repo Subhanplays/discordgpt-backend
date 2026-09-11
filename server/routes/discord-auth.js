@@ -55,8 +55,10 @@ router.get('/callback', async (req, res) => {
 
     const { code } = req.query;
     if (!code) {
-      return res.status(400).json({ error: 'No code provided' });
+      return res.redirect('https://client-six-zeta-13.vercel.app/auth?error=no_code');
     }
+
+    console.log('Discord callback: exchanging code for token...');
 
     // Exchange code for access token
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
@@ -72,8 +74,11 @@ router.get('/callback', async (req, res) => {
     });
 
     const tokenData = await tokenRes.json();
+    console.log('Discord token response:', tokenRes.ok ? 'OK' : tokenData);
+    
     if (!tokenData.access_token) {
-      return res.status(401).json({ error: 'Failed to get access token', details: tokenData });
+      console.error('Discord token exchange failed:', tokenData);
+      return res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=token_failed`);
     }
 
     // Fetch user info
@@ -82,14 +87,11 @@ router.get('/callback', async (req, res) => {
     });
     const discordUser = await userRes.json();
     if (!discordUser.id) {
-      return res.status(401).json({ error: 'Failed to fetch Discord user' });
+      console.error('Discord user fetch failed:', discordUser);
+      return res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=user_fetch_failed`);
     }
 
-    // Fetch user's guilds
-    const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const guilds = await guildsRes.json();
+    console.log('Discord user:', discordUser.username, discordUser.id);
 
     // Upsert user in database
     const existing = await query('SELECT * FROM users WHERE discord_id = $1', [discordUser.id]);
@@ -115,12 +117,13 @@ router.get('/callback', async (req, res) => {
     }
 
     const jwtToken = generateToken(user);
+    console.log('Auth successful for:', user.username);
 
     // Redirect to frontend with token
     res.redirect(`${FRONTEND_REDIRECT}?token=${jwtToken}`);
   } catch (err) {
-    console.error('Discord callback error:', err);
-    res.status(500).json({ error: 'Discord auth callback failed' });
+    console.error('Discord callback error:', err.message, err.stack);
+    res.redirect(`https://client-six-zeta-13.vercel.app/auth?error=callback_failed`);
   }
 });
 
