@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <clipPath id="bubble">
+      <rect x="8" y="16" width="104" height="84" rx="22"/>
+    </clipPath>
+  </defs>
+  <!-- Speech bubble with tail -->
+  <path d="M30 16 H90 Q112 16 112 38 V82 Q112 104 90 104 H50 L30 118 V104 H30 Q8 104 8 82 V38 Q8 16 30 16Z" fill="currentColor"/>
+  <!-- Letter D -->
+  <path d="M32 42 H50 Q66 42 66 58 Q66 74 50 74 H32 Z" fill="white" fill-rule="evenodd"/>
+  <path d="M32 42 H50 Q66 42 66 58 Q66 74 50 74 H32 Z" fill="currentColor"/>
+  <path d="M38 48 H48 Q58 48 58 58 Q58 68 48 68 H38 Z" fill="currentColor"/>
+  <!-- Letter G -->
+  <path d="M68 42 H88 Q100 42 100 58 Q100 74 88 74 H78 V62 H88 Q92 62 92 58 Q92 54 88 54 H78 V48 H88 Q92 48 92 58 Q92 62 88 62 H78" stroke="white" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Crown on G -->
+  <path d="M84 34 L88 26 L92 34 L96 26 L100 34" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="84" y1="38" x2="100" y2="38" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</svg>

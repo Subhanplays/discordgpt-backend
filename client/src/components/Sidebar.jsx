@@ -42,7 +42,7 @@ export default function Sidebar({ open, onClose }) {
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo" onClick={handleNewChat}>
-          <div className="sidebar-logo-icon">D</div>
+          <img src="/logo.svg" alt="DiscordGPT" className="sidebar-logo-img" />
           <span className="sidebar-logo-text">DiscordGPT</span>
         </div>
         <button className="new-chat-btn" onClick={handleNewChat}>

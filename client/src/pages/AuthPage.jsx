@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { MessageSquare, Eye, EyeOff, Loader2, Sun, Moon, Shield } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Sun, Moon } from 'lucide-react'
 
 export default function AuthPage() {
   const [mode, setMode] = useState('login')
@@ -60,9 +60,7 @@ export default function AuthPage() {
 
       <div className="auth-container">
         <div className="auth-logo">
-          <div className="auth-logo-icon">
-            <MessageSquare size={28} />
-          </div>
+          <img src="/logo.svg" alt="DiscordGPT" className="auth-logo-img" />
         </div>
         <h1 className="auth-title">DiscordGPT</h1>
         <p className="auth-subtitle">AI-Powered Discord Server Builder</p>
