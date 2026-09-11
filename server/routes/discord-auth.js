@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547995368695009281';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
@@ -25,7 +27,6 @@ async function initDiscordAuth() {
 }
 
 function generateToken(user) {
-  const jwt = require('jsonwebtoken');
   return jwt.sign(
     { id: user.id, username: user.username, email: user.email, role: user.role },
     JWT_SECRET,
@@ -108,7 +109,7 @@ router.get('/callback', async (req, res) => {
         `INSERT INTO users (id, username, email, discord_id, discord_access_token, role)
          VALUES ($1, $2, $3, $4, $5, 'user')
          RETURNING *`,
-        [require('crypto').randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token]
+        [crypto.randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token]
       );
       user = result.rows[0];
     }
