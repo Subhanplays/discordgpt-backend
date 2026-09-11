@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import React, { useEffect } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
-import { Eye, EyeOff, Loader2, Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Loader2 } from 'lucide-react'
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('login')
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { login, register } = useAuth()
   const { theme, toggleTheme } = useTheme()
 
   useEffect(() => {
@@ -25,31 +16,6 @@ export default function AuthPage() {
 
   const handleDiscordLogin = () => {
     window.location.href = 'https://discordgpt-api.onrender.com/api/auth/discord'
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      if (mode === 'login') {
-        await login(email, password)
-      } else {
-        await register(username, email, password)
-      }
-    } catch (err) {
-      setError(err.message || 'Something went wrong')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const switchMode = () => {
-    setMode(mode === 'login' ? 'register' : 'login')
-    setError('')
-    setUsername('')
-    setEmail('')
-    setPassword('')
   }
 
   return (
@@ -67,7 +33,7 @@ export default function AuthPage() {
 
         <button
           className="btn btn-discord btn-lg"
-          style={{ width: '100%', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#000000', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '14px 24px', borderRadius: 'var(--radius-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#000000', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '14px 24px', borderRadius: 'var(--radius-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
           onClick={handleDiscordLogin}
         >
           <svg width="20" height="16" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -76,94 +42,9 @@ export default function AuthPage() {
           Login with Discord
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, color: 'var(--text-muted)', fontSize: 13 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-          <span>or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+        <div className="auth-footer-text">
+          You need a Discord account to use DiscordGPT
         </div>
-
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <div className="input-group">
-              <label className="input-label">Username</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                minLength={3}
-                maxLength={30}
-                autoFocus
-              />
-            </div>
-          )}
-
-          <div className="input-group">
-            <label className="input-label">Email</label>
-            <input
-              type="email"
-              className="input-field"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus={mode === 'login'}
-            />
-          </div>
-
-          <div className="input-group">
-            <label className="input-label">Password</label>
-            <div className="auth-password-wrapper">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="input-field"
-                placeholder={mode === 'register' ? 'At least 6 characters' : 'Enter your password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {error && <div className="auth-error">{error}</div>}
-
-          <button type="submit" className="btn btn-primary btn-lg auth-submit" disabled={loading}>
-            {loading ? (
-              <><Loader2 size={18} className="spinner" /> {mode === 'login' ? 'Signing in...' : 'Creating account...'}</>
-            ) : (
-              mode === 'login' ? 'Sign In' : 'Create Account'
-            )}
-          </button>
-        </form>
-
-        <div className="auth-switch">
-          {mode === 'login' ? (
-            <>Don't have an account? <button onClick={switchMode}>Sign up</button></>
-          ) : (
-            <>Already have an account? <button onClick={switchMode}>Sign in</button></>
-          )}
-        </div>
-
-        {mode === 'login' && (
-          <div className="auth-demo">
-            <div className="auth-demo-info">Demo credentials</div>
-            <div className="auth-demo-creds">
-              <span>Email: <strong>admin@discordgpt.com</strong></span>
-              <span>Password: <strong>admin123</strong></span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
