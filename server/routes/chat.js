@@ -4,6 +4,23 @@ const { authMiddleware } = require('../middleware/auth');
 const db = require('../database');
 const { generateChatResponse, generateBlueprint } = require('../utils/ai');
 
+router.get('/debug-ai', authMiddleware, async (req, res) => {
+  const db = require('../database');
+  try {
+    const provider = await db.getActiveAiProvider();
+    if (!provider) return res.json({ error: 'No active provider found' });
+    res.json({ 
+      name: provider.name, 
+      provider: provider.provider, 
+      model: provider.models?.[0],
+      hasKey: !!provider.api_key,
+      keyPrefix: provider.api_key?.substring(0, 6)
+    });
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+
 router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
