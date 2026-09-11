@@ -1,13 +1,9 @@
-import React, { useEffect } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import React from 'react'
+import { Check } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 
 export default function ServerSelect({ compact = false }) {
-  const { servers, selectedServer, setSelectedServer, fetchServers, botConnected, botInfo } = useChat()
-
-  useEffect(() => {
-    if (botConnected) fetchServers()
-  }, [botConnected, fetchServers])
+  const { servers, selectedServer, setSelectedServer, botConnected } = useChat()
 
   if (!botConnected) return null
 
@@ -16,7 +12,7 @@ export default function ServerSelect({ compact = false }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Target:</span>
         {servers.length === 0 ? (
-          <span style={{ fontSize: 13, color: 'var(--warning)' }}>No servers found</span>
+          <span style={{ fontSize: 13, color: 'var(--warning)' }}>No servers found. Invite the bot first.</span>
         ) : (
           <select
             className="settings-select"
@@ -45,14 +41,12 @@ export default function ServerSelect({ compact = false }) {
         </div>
         {servers.length === 0 ? (
           <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>No servers found. Invite your bot to a server first.</p>
-            {botInfo?.id && (
-              <button className="btn btn-primary" onClick={() => {
-                window.open(`https://discord.com/api/oauth2/authorize?client_id=${botInfo.id}&permissions=8&scope=bot%20applications.commands`, '_blank')
-              }}>
-                Generate Invite Link
-              </button>
-            )}
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>No servers found. Invite DiscordGPT bot to your server first.</p>
+            <button className="btn btn-primary" onClick={() => {
+              window.open(`https://discord.com/api/oauth2/authorize?client_id=1547979894548336720&permissions=8&scope=bot%20applications.commands`, '_blank')
+            }}>
+              Invite Bot to Server
+            </button>
           </div>
         ) : (
           <div className="server-list">
