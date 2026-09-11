@@ -8,6 +8,7 @@ const { initDatabase } = require('./database');
 const { validateBotToken, setActiveBot } = require('./utils/discord');
 
 const authRoutes = require('./routes/auth');
+const discordAuthRoutes = require('./routes/discord-auth');
 const chatRoutes = require('./routes/chat');
 const botRoutes = require('./routes/bot');
 const serverRoutes = require('./routes/server');
@@ -38,6 +39,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/discord', discordAuthRoutes);
 app.use('/api/conversations', chatRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/bot', botRoutes);

@@ -1,14 +1,22 @@
 import React from 'react'
-import { Hammer, Gamepad2, Headphones, Palette } from 'lucide-react'
+import { Hammer, Gamepad2, Headphones, Palette, Store, Music, GraduationCap, Building } from 'lucide-react'
+import { useChat } from '../contexts/ChatContext'
+import ServerSelect from './ServerSelect'
 
 const prompts = [
-  { text: 'Create a Minecraft hosting server', icon: Hammer },
-  { text: 'Create a gaming community', icon: Gamepad2 },
-  { text: 'Create a professional support server', icon: Headphones },
-  { text: 'Create a creator community', icon: Palette }
+  { text: 'Create a professional gaming community server', icon: Gamepad2 },
+  { text: 'Create an e-commerce store server with product channels', icon: Store },
+  { text: 'Create a tech support server with ticketing system', icon: Headphones },
+  { text: 'Create a content creator community with roles and rewards', icon: Palette },
+  { text: 'Create a Minecraft server community with LFG channels', icon: Hammer },
+  { text: 'Create a music production community', icon: Music },
+  { text: 'Create an educational server with course channels', icon: GraduationCap },
+  { text: 'Create a startup/business networking server', icon: Building }
 ]
 
 export default function WelcomeScreen({ onSelectPrompt }) {
+  const { botConnected, servers } = useChat()
+
   return (
     <div className="welcome-screen">
       <div className="welcome-logo">
@@ -19,8 +27,16 @@ export default function WelcomeScreen({ onSelectPrompt }) {
         </svg>
       </div>
       <h1 className="welcome-title">DiscordGPT</h1>
-      <p className="welcome-subtitle">Build your Discord server with AI</p>
-      <p className="welcome-desc">Describe the Discord server you want and DiscordGPT will create its structure automatically.</p>
+      <p className="welcome-subtitle">AI-Powered Discord Server Builder</p>
+      <p className="welcome-desc">Describe your dream Discord server and watch it come to life. AI creates a professional blueprint, then builds it instantly.</p>
+
+      {botConnected && servers.length > 0 && (
+        <div style={{ marginBottom: 24, width: '100%', maxWidth: 400 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'left' }}>Target Server:</div>
+          <ServerSelect compact />
+        </div>
+      )}
+
       <div className="prompt-cards">
         {prompts.map((prompt, i) => (
           <div key={i} className="prompt-card" onClick={() => onSelectPrompt(prompt.text)}>

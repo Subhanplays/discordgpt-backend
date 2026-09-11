@@ -9,6 +9,7 @@ import TemplatesPage from './pages/TemplatesPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import AuthPage from './pages/AuthPage'
+import AuthCallback from './pages/AuthCallback'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -42,6 +43,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/" element={<ChatPage />} />

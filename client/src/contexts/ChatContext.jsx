@@ -48,7 +48,12 @@ export function ChatProvider({ children }) {
       fetch('/api/bot/servers', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          const serverList = Array.isArray(data) ? data : (data?.servers || [])
+          let serverList = []
+          if (Array.isArray(data)) {
+            serverList = data
+          } else if (data?.servers) {
+            serverList = data.servers
+          }
           setServers(serverList)
           if (serverList.length > 0 && !selectedServer) {
             setSelectedServer(serverList[0])
