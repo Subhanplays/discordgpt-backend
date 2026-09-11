@@ -1,13 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547995368695009281';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const JWT_SECRET = process.env.JWT_SECRET;
 const REDIRECT_URI = 'https://discordgpt-api.onrender.com/api/auth/discord/callback';
 const FRONTEND_REDIRECT = 'https://client-six-zeta-13.vercel.app/auth/callback';
 
@@ -24,14 +21,6 @@ async function initDiscordAuth() {
     console.log('Migration note:', e.message);
   }
   migrationDone = true;
-}
-
-function generateToken(user) {
-  return jwt.sign(
-    { id: user.id, username: user.username, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
 }
 
 router.get('/', async (req, res) => {
@@ -114,10 +103,12 @@ router.get('/callback', async (req, res) => {
       user = result.rows[0];
     }
 
-    const jwtToken = generateToken(user);
+    const expiryMs = parseInt(process.env.SESSION_EXPIRY) || 86400000;
+    const session = await db.createSession(user.id, expiryMs);
+
     console.log('Auth success:', user.username);
 
-    res.redirect(`${FRONTEND_REDIRECT}?token=${jwtToken}`);
+    res.redirect(`${FRONTEND_REDIRECT}?token=${session.token}`);
   } catch (err) {
     console.error('Discord callback error:', err.message);
     res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=callback_failed`);

@@ -11,15 +11,15 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(() => {
-    try { return sessionStorage.getItem('dgpt_token') } catch { return null }
+    try { return localStorage.getItem('dgpt_token') || sessionStorage.getItem('dgpt_token') } catch { return null }
   })
   const [loading, setLoading] = useState(true)
 
   const saveToken = (t) => {
     setToken(t)
     try {
-      if (t) sessionStorage.setItem('dgpt_token', t)
-      else sessionStorage.removeItem('dgpt_token')
+      if (t) localStorage.setItem('dgpt_token', t)
+      else localStorage.removeItem('dgpt_token')
     } catch {}
   }
 
