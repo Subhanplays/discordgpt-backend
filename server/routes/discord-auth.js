@@ -16,6 +16,15 @@ async function initDiscordAuth() {
     await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`);
     await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_access_token TEXT`);
     await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TEXT DEFAULT (now()::text)`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_avatar TEXT`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_discriminator TEXT DEFAULT '0'`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_banner TEXT`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_accent_color INTEGER`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_public_flags INTEGER DEFAULT 0`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_locale TEXT`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_mfa_enabled BOOLEAN DEFAULT false`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT false`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_secret TEXT`);
     await db.getPool().query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
   } catch (e) {
     console.log('Migration note:', e.message);
@@ -82,25 +91,58 @@ router.get('/callback', async (req, res) => {
 
     console.log('Discord user:', discordUser.username);
 
+    const avatarUrl = discordUser.avatar
+      ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${discordUser.avatar.startsWith('a_') ? 'gif' : 'png'}?size=256`
+      : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordUser.discriminator || '0') % 5}.png`;
+
     const existing = await db.getPool().query('SELECT * FROM users WHERE discord_id = $1', [discordUser.id]);
 
     let user;
     if (existing.rows.length > 0) {
       user = existing.rows[0];
       await db.getPool().query(
-        'UPDATE users SET discord_access_token = $1, username = $2, updated_at = now()::text WHERE discord_id = $3',
-        [tokenData.access_token, discordUser.username, discordUser.id]
+        `UPDATE users SET discord_access_token = $1, username = $2, discord_avatar = $3,
+         discord_discriminator = $4, discord_banner = $5, discord_accent_color = $6,
+         discord_public_flags = $7, discord_locale = $8, discord_mfa_enabled = $9, updated_at = now()::text
+         WHERE discord_id = $10`,
+        [
+          tokenData.access_token, discordUser.username, avatarUrl,
+          discordUser.discriminator || '0', discordUser.banner || null,
+          discordUser.accent_color || null, discordUser.public_flags || 0,
+          discordUser.locale || 'en-US', discordUser.mfa_enabled || false,
+          discordUser.id
+        ]
       );
       user.username = discordUser.username;
+      user.discord_avatar = avatarUrl;
+      user.discord_discriminator = discordUser.discriminator || '0';
     } else {
       const email = discordUser.email || `${discordUser.id}@discord.local`;
       const result = await db.getPool().query(
-        `INSERT INTO users (id, username, email, discord_id, discord_access_token, role)
-         VALUES ($1, $2, $3, $4, $5, 'user')
+        `INSERT INTO users (id, username, email, discord_id, discord_access_token, role,
+         discord_avatar, discord_discriminator, discord_banner, discord_accent_color,
+         discord_public_flags, discord_locale, discord_mfa_enabled)
+         VALUES ($1, $2, $3, $4, $5, 'user', $6, $7, $8, $9, $10, $11, $12)
          RETURNING *`,
-        [crypto.randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token]
+        [
+          crypto.randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token,
+          avatarUrl, discordUser.discriminator || '0', discordUser.banner || null,
+          discordUser.accent_color || null, discordUser.public_flags || 0,
+          discordUser.locale || 'en-US', discordUser.mfa_enabled || false
+        ]
       );
       user = result.rows[0];
+    }
+
+    if (user.two_fa_enabled) {
+      const tempToken = crypto.randomBytes(32).toString('hex');
+      await db.getPool().query(
+        'INSERT INTO sessions (id, user_id, token, expires_at) VALUES ($1, $2, $3, $4)',
+        [crypto.randomUUID(), user.id, 'pending_2fa_' + tempToken, new Date(Date.now() + 300000).toISOString()]
+      );
+      const encodedTemp = encodeURIComponent(tempToken);
+      res.redirect(`${FRONTEND_REDIRECT}?pending_2fa=true&temp=${encodedTemp}&user_id=${user.id}`);
+      return;
     }
 
     const expiryMs = parseInt(process.env.SESSION_EXPIRY) || 86400000;

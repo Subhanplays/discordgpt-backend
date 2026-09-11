@@ -98,11 +98,15 @@ export default function Sidebar({ open, onClose }) {
 
       <div className="sidebar-footer">
         <div className="sidebar-footer-avatar">
-          {user?.username?.[0]?.toUpperCase() || 'U'}
+          {user?.discord_avatar ? (
+            <img src={user.discord_avatar} alt="" className="sidebar-footer-avatar-img" />
+          ) : (
+            user?.username?.[0]?.toUpperCase() || 'U'
+          )}
         </div>
         <div className="sidebar-footer-info">
           <div className="sidebar-footer-name">{user?.username || 'User'}</div>
-          <div className="sidebar-footer-plan">Free Plan</div>
+          <div className="sidebar-footer-plan">{user?.two_fa_enabled ? '🔒 2FA Enabled' : 'Discord Account'}</div>
         </div>
         <button onClick={() => { navigate('/settings'); onClose() }} title="Settings">
           <Settings size={18} />
