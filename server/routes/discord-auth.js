@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547979894548336720';
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547995368695009281';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const JWT_SECRET = process.env.JWT_SECRET;
