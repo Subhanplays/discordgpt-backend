@@ -614,7 +614,8 @@ async function callOpenAI(apiKey, model, baseUrl, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model, messages, max_tokens: 4096, temperature: 0.7 })
+    body: JSON.stringify({ model, messages, max_tokens: 4096, temperature: 0.7 }),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {
@@ -642,7 +643,8 @@ async function callAnthropic(apiKey, model, messages) {
       max_tokens: 4096,
       system: systemMsg?.content || '',
       messages: chatMessages.map(m => ({ role: m.role, content: m.content }))
-    })
+    }),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {
@@ -673,7 +675,8 @@ async function callGoogle(apiKey, model, messages) {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {
@@ -692,7 +695,8 @@ async function callMistral(apiKey, model, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 4096 })
+    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 4096 }),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {
@@ -711,7 +715,8 @@ async function callGroq(apiKey, model, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 4096 })
+    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 4096 }),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {
@@ -730,7 +735,8 @@ async function callCustom(apiKey, model, baseUrl, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 4096 })
+    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 4096 }),
+    signal: AbortSignal.timeout(45000)
   });
 
   if (!response.ok) {

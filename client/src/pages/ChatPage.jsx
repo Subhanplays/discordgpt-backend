@@ -47,14 +47,6 @@ export default function ChatPage() {
       {blueprint && !creationProgress && <BlueprintPreview />}
       {creationProgress && <CreationProgress />}
 
-      {isAuthenticated && !botConnected && !showBotSetup && !hasMessages && (
-        <div style={{ position: 'absolute', bottom: 100, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
-          <button className="btn btn-secondary" onClick={() => setShowBotSetup(true)}>
-            Connect Discord Bot
-          </button>
-        </div>
-      )}
-
       {showBotSetup && !botConnected && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
           <BotSetup onComplete={() => setShowBotSetup(false)} />
