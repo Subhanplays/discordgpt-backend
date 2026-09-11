@@ -70,16 +70,25 @@ function getActiveBotByTokenHash(tokenHash) {
 }
 
 async function createServerStructure(botToken, serverId, blueprint, progressCallback) {
-  const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.GuildRoles
-    ]
-  });
+  let client = null;
+  let ownClient = false;
 
   try {
-    await client.login(botToken);
+    const { getClient } = require('./slashCommands');
+    client = getClient();
+
+    if (!client || !client.isReady()) {
+      client = new Client({
+        intents: [
+          GatewayIntentBits.Guilds,
+          GatewayIntentBits.GuildMembers,
+          GatewayIntentBits.GuildRoles
+        ]
+      });
+      await client.login(botToken);
+      ownClient = true;
+    }
+
     const guild = client.guilds.cache.get(serverId);
 
     if (!guild) {
@@ -107,29 +116,38 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
         const permArray = Array.isArray(roleDef.permissions) ? roleDef.permissions : [];
         let permissions = BigInt(0);
         for (const p of permArray) {
-          if (typeof p !== 'string') continue;
+          if (typeof p !== 'string' || p.length === 0) continue;
           const permName = p.replace(/\s+/g, '');
           try {
-            const flag = PermissionFlagsBits[permName];
-            if (flag !== undefined) {
-              permissions = permissions | flag;
+            if (PermissionFlagsBits.hasOwnProperty(permName)) {
+              const flag = PermissionFlagsBits[permName];
+              if (flag !== undefined && flag !== null) {
+                permissions = permissions | flag;
+              }
             }
           } catch {}
         }
 
         let roleColor = roleDef.color || '#99AAB5';
-        if (typeof roleColor === 'string' && !roleColor.startsWith('#')) {
+        if (typeof roleColor !== 'string' || roleColor.length < 4) {
+          roleColor = '#99AAB5';
+        }
+        if (!roleColor.startsWith('#')) {
           roleColor = '#' + roleColor;
+        }
+        if (!/^#[0-9A-Fa-f]{6}$/.test(roleColor)) {
+          roleColor = '#99AAB5';
         }
 
         const roleData = {
-          name: roleDef.name,
+          name: roleDef.name || 'New Role',
           color: roleColor,
           mentionable: roleDef.mentionable !== false,
           hoist: roleDef.hoist || false,
-          reason: `Created by DiscordGPT for ${blueprint.serverName}`
+          reason: `Created by DiscordGPT`
         };
-        if (permissions !== BigInt(0)) {
+
+        if (permissions > BigInt(0)) {
           roleData.permissions = permissions;
         }
 
@@ -158,7 +176,7 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
         const category = await guild.channels.create({
           name: catDef.name,
           type: ChannelType.GuildCategory,
-          reason: `Created by DiscordGPT for ${blueprint.serverName}`
+          reason: `Created by DiscordGPT`
         });
         categoryMap[catDef.name] = category;
       } catch (error) {
@@ -202,7 +220,7 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
             parent: category.id,
             topic: chDef.topic || '',
             nsfw: chDef.nsfw || false,
-            reason: `Created by DiscordGPT for ${blueprint.serverName}`
+            reason: `Created by DiscordGPT`
           });
 
           if (channelType === ChannelType.GuildText || channelType === ChannelType.GuildForum) {
@@ -247,7 +265,7 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
     progress.message = 'Server setup complete!';
     if (progressCallback) progressCallback(progress);
 
-    client.destroy();
+    if (ownClient) client.destroy();
 
     return {
       success: true,
@@ -262,14 +280,30 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
     };
   } catch (error) {
     console.error('Server creation error:', error);
-    client.destroy();
+    if (ownClient && client) {
+      try { client.destroy(); } catch {}
+    }
     throw error;
   }
 }
 
 async function getBotServers(botToken) {
   try {
-    const client = new Client({
+    const { getClient } = require('./slashCommands');
+    let client = getClient();
+
+    if (client && client.isReady()) {
+      return client.guilds.cache.map(guild => ({
+        id: guild.id,
+        name: guild.name,
+        icon: guild.iconURL(),
+        memberCount: guild.memberCount,
+        owner: guild.ownerId === client.user.id,
+        permissions: guild.members.me ? guild.members.me.permissions.bitfield.toString() : '0'
+      }));
+    }
+
+    client = new Client({
       intents: [GatewayIntentBits.Guilds]
     });
 
