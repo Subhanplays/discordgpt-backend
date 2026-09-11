@@ -108,10 +108,19 @@ router.post('/send', async (req, res) => {
 
     let aiResponse;
     let blueprint = null;
+    let aiDebug = {};
     try {
+      const provider = await db.getActiveAiProvider();
+      aiDebug.providerFound = !!provider;
+      aiDebug.providerName = provider?.name;
+      aiDebug.providerType = provider?.provider;
+      aiDebug.hasKey = !!provider?.api_key;
+      aiDebug.models = provider?.models;
       aiResponse = await generateChatResponse(messagesForAI);
+      aiDebug.success = true;
     } catch (aiError) {
       console.error('AI response error:', aiError);
+      aiDebug.error = aiError.message;
       aiResponse = 'I apologize, but I encountered an error generating a response. Please try again.';
     }
 
@@ -145,7 +154,8 @@ router.post('/send', async (req, res) => {
         timestamp: new Date().toISOString()
       },
       conversation,
-      blueprint
+      blueprint,
+      _debug: aiDebug
     });
   } catch (error) {
     console.error('Send message error:', error);
