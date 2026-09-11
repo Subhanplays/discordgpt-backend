@@ -6,6 +6,8 @@ const { getActiveBot } = require('../utils/discord');
 const { generateBlueprint } = require('../utils/ai');
 const queue = require('../utils/queue');
 
+const BUILTIN_BOT_USER = 'discordgpt-system';
+
 router.use(authMiddleware);
 
 router.post('/preview', async (req, res) => {
@@ -26,9 +28,9 @@ router.post('/create', async (req, res) => {
     if (!blueprint) return res.status(400).json({ error: 'Blueprint is required' });
     if (!serverId) return res.status(400).json({ error: 'Server ID is required' });
 
-    const botSession = getActiveBot(req.user.id);
+    const botSession = getActiveBot(BUILTIN_BOT_USER);
     if (!botSession) {
-      return res.status(400).json({ error: 'No bot connected. Please connect your Discord bot first.' });
+      return res.status(400).json({ error: 'DiscordGPT bot is not connected. Please try again later.' });
     }
 
     const job = queue.submit(

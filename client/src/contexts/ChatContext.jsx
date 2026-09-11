@@ -25,6 +25,11 @@ export function ChatProvider({ children }) {
   const [activeJobId, setActiveJobId] = useState(null)
   const [templates, setTemplates] = useState([])
 
+  const authHeaders = useCallback(() => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }), [token])
+
   useEffect(() => {
     if (!token) return
     fetch('/api/bot/status', { headers: { Authorization: `Bearer ${token}` } })
@@ -38,10 +43,20 @@ export function ChatProvider({ children }) {
       .catch(() => {})
   }, [token])
 
-  const authHeaders = useCallback(() => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  }), [token])
+  useEffect(() => {
+    if (botConnected && token) {
+      fetch('/api/bot/servers', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          const serverList = Array.isArray(data) ? data : (data?.servers || [])
+          setServers(serverList)
+          if (serverList.length > 0 && !selectedServer) {
+            setSelectedServer(serverList[0])
+          }
+        })
+        .catch(() => {})
+    }
+  }, [botConnected, token])
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -124,47 +139,6 @@ export function ChatProvider({ children }) {
       setAiTyping(false)
     }
     return null
-  }, [authHeaders])
-
-  const connectBot = useCallback(async (botToken) => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/bot/connect', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ botToken })
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setBotConnected(true)
-        setBotInfo(data.bot || data)
-        return data
-      }
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.message || err.error || 'Connection failed')
-    } finally {
-      setLoading(false)
-    }
-  }, [authHeaders])
-
-  const disconnectBot = useCallback(async () => {
-    try {
-      await fetch('/api/bot/disconnect', { method: 'POST', headers: authHeaders() })
-    } catch {}
-    setBotConnected(false)
-    setBotInfo(null)
-    setServers([])
-    setSelectedServer(null)
-  }, [authHeaders])
-
-  const fetchServers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/bot/servers', { headers: authHeaders() })
-      if (res.ok) {
-        const data = await res.json()
-        setServers(data.servers || data || [])
-      }
-    } catch {}
   }, [authHeaders])
 
   const createServer = useCallback(async (blueprintData) => {
@@ -277,7 +251,6 @@ export function ChatProvider({ children }) {
     templates,
     fetchConversations, createConversation, deleteConversation,
     loadMessages, sendMessage,
-    connectBot, disconnectBot, fetchServers,
     createServer, pollJobStatus,
     fetchTemplates, saveTemplate, deleteTemplate
   }

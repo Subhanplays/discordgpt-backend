@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { initDatabase } = require('./database');
+const { validateBotToken, setActiveBot } = require('./utils/discord');
 
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
@@ -54,10 +55,33 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+const BUILTIN_BOT_USER = 'discordgpt-system';
+
+async function connectBuiltinBot() {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    console.log('No DISCORD_BOT_TOKEN in env — built-in bot disabled');
+    return;
+  }
+  try {
+    const validation = await validateBotToken(token);
+    if (validation.valid) {
+      setActiveBot(BUILTIN_BOT_USER, token, validation.botInfo);
+      console.log(`Built-in bot connected: ${validation.botInfo.username} (${validation.botInfo.id})`);
+    } else {
+      console.error('Built-in bot token invalid:', validation.error);
+    }
+  } catch (e) {
+    console.error('Failed to connect built-in bot:', e.message);
+  }
+}
+
 async function start() {
   try {
     await initDatabase();
     console.log('Database connected');
+
+    await connectBuiltinBot();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

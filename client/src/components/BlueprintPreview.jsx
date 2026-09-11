@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useChat } from '../contexts/ChatContext'
-import { Loader2, AlertTriangle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import ServerSelect from './ServerSelect'
-import BotSetup from './BotSetup'
 
 export default function BlueprintPreview() {
-  const { blueprint, setBlueprint, createServer, botConnected, selectedServer, creationProgress, connectBot } = useChat()
+  const { blueprint, setBlueprint, createServer, botConnected, selectedServer, creationProgress } = useChat()
   const [creating, setCreating] = useState(false)
-  const [showBotSetup, setShowBotSetup] = useState(false)
 
   if (!blueprint) return null
 
@@ -81,23 +79,13 @@ export default function BlueprintPreview() {
           )}
         </div>
 
-        {!botConnected && (
-          <div style={{ padding: '12px 24px', background: 'rgba(245,158,11,0.1)', borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--warning)', marginBottom: 10 }}>
-              <AlertTriangle size={16} />
-              Connect your Discord bot first to create this server.
-            </div>
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setShowBotSetup(true)}>
-              Connect Discord Bot
-            </button>
-          </div>
-        )}
-
-        {botConnected && (
-          <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border-color)' }}>
+          {botConnected ? (
             <ServerSelect compact />
-          </div>
-        )}
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Connecting to DiscordGPT bot...</div>
+          )}
+        </div>
 
         <div className="blueprint-actions">
           <button className="btn btn-ghost" onClick={() => setBlueprint(null)}>Cancel</button>
@@ -110,12 +98,6 @@ export default function BlueprintPreview() {
           </button>
         </div>
       </div>
-
-      {showBotSetup && !botConnected && (
-        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, background: 'rgba(0,0,0,0.5)' }}>
-          <BotSetup onComplete={() => setShowBotSetup(false)} />
-        </div>
-      )}
     </div>
   )
 }

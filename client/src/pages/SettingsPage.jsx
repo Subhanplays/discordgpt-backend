@@ -7,7 +7,7 @@ import { useChat } from '../contexts/ChatContext'
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
-  const { botConnected, botInfo, disconnectBot, servers } = useChat()
+  const { botConnected, botInfo, servers } = useChat()
 
   return (
     <div className="settings-page">
@@ -30,7 +30,7 @@ export default function SettingsPage() {
           <>
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Connected Bot</div>
+                <div className="settings-row-label">DiscordGPT Bot</div>
                 <div className="settings-row-desc">{botInfo.username} (ID: {botInfo.id})</div>
               </div>
               <span className="badge badge-success">Connected</span>
@@ -41,17 +41,14 @@ export default function SettingsPage() {
                 <div className="settings-row-desc">{servers.length} server(s) found</div>
               </div>
             </div>
-            <div className="settings-row">
-              <button className="btn btn-danger btn-sm" onClick={disconnectBot}>Disconnect Bot</button>
-            </div>
           </>
         ) : (
           <div className="settings-row">
             <div>
-              <div className="settings-row-label">No bot connected</div>
-              <div className="settings-row-desc">Go to the chat page to connect your bot</div>
+              <div className="settings-row-label">DiscordGPT Bot</div>
+              <div className="settings-row-desc">Bot is connecting...</div>
             </div>
-            <span className="badge badge-default">Offline</span>
+            <span className="badge badge-default">Connecting</span>
           </div>
         )}
       </div>
