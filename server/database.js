@@ -446,7 +446,7 @@ module.exports = {
   async createAiProvider(name, provider, apiKey, baseUrl, models) {
     const id = uuidv4();
     await q(
-      'INSERT INTO ai_providers (id, name, provider, api_key, base_url, models) VALUES ($1, $2, $3, $4, $5)',
+      'INSERT INTO ai_providers (id, name, provider, api_key, base_url, models) VALUES ($1, $2, $3, $4, $5, $6)',
       [id, name, provider, apiKey || null, baseUrl || null, JSON.stringify(models || [])]
     );
     return { id, name, provider, models: models || [] };
