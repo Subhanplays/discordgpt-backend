@@ -57,6 +57,7 @@ async function initDatabase() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
+      blueprint_json TEXT,
       created_at TEXT DEFAULT (now()::text),
       updated_at TEXT DEFAULT (now()::text)
     );
@@ -159,6 +160,12 @@ async function initDatabase() {
 
   try {
     await q('ALTER TABLE bot_connections ADD COLUMN IF NOT EXISTS bot_token TEXT');
+  } catch (e) {
+    // column may already exist
+  }
+
+  try {
+    await q('ALTER TABLE conversations ADD COLUMN IF NOT EXISTS blueprint_json TEXT');
   } catch (e) {
     // column may already exist
   }
@@ -275,6 +282,13 @@ module.exports = {
     await q(
       'UPDATE conversations SET title = $1, updated_at = now()::text WHERE id = $2',
       [title, id]
+    );
+  },
+
+  async updateConversationBlueprint(id, blueprintJson) {
+    await q(
+      'UPDATE conversations SET blueprint_json = $1, updated_at = now()::text WHERE id = $2',
+      [blueprintJson, id]
     );
   },
 

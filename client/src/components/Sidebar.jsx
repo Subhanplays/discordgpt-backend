@@ -27,7 +27,7 @@ export default function Sidebar({ open, onClose }) {
     setActiveConversation(conv)
     setBlueprint(null)
     setCreationProgress(null)
-    navigate('/')
+    navigate(`/c/${conv.id}`)
     onClose()
   }
 

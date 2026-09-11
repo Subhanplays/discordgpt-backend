@@ -47,6 +47,7 @@ function AppRoutes() {
       <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/" element={<ChatPage />} />
+        <Route path="/c/:conversationId" element={<ChatPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>

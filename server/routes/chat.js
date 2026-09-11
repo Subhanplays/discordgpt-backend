@@ -89,7 +89,11 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
     const messages = await db.getConversationMessages(req.params.id);
-    res.json({ ...conversation, messages });
+    let blueprint = null;
+    if (conversation.blueprint_json) {
+      try { blueprint = JSON.parse(conversation.blueprint_json); } catch (e) {}
+    }
+    res.json({ ...conversation, messages, blueprint });
   } catch (error) {
     console.error('Get conversation error:', error);
     res.status(500).json({ error: 'Failed to get conversation' });
@@ -160,6 +164,7 @@ router.post('/send', async (req, res) => {
       if (!blueprint) {
         blueprint = generateBlueprint(content);
       }
+      await db.updateConversationBlueprint(convId, JSON.stringify(blueprint));
       await db.createMessage(convId, 'assistant', aiResponse);
       try {
         await db.createGenerationLog(
@@ -169,6 +174,9 @@ router.post('/send', async (req, res) => {
         console.error('Generation log error:', logError);
       }
     } else {
+      if (conversation && conversation.blueprint_json) {
+        try { blueprint = JSON.parse(conversation.blueprint_json); } catch (e) {}
+      }
       await db.createMessage(convId, 'assistant', aiResponse);
       await db.createGenerationLog(
         req.user.id, convId, content, aiResponse, 'success', null, durationMs
@@ -228,6 +236,7 @@ router.post('/:id/messages', async (req, res) => {
 
     if (isBlueprintRequest) {
       const blueprint = parseBlueprintFromAI(aiResponse) || generateBlueprint(content);
+      await db.updateConversationBlueprint(req.params.id, JSON.stringify(blueprint));
       await db.createMessage(req.params.id, 'assistant', aiResponse);
       try {
         await db.createGenerationLog(
@@ -243,11 +252,18 @@ router.post('/:id/messages', async (req, res) => {
       );
     }
 
+    let returnBlueprint = null;
+    const freshConvo = await db.getConversationById(req.params.id, req.user.id);
+    if (freshConvo?.blueprint_json) {
+      try { returnBlueprint = JSON.parse(freshConvo.blueprint_json); } catch (e) {}
+    }
+
     res.json({
       message: {
         role: 'assistant',
         content: aiResponse
-      }
+      },
+      blueprint: returnBlueprint
     });
   } catch (error) {
     console.error('Send message error:', error);

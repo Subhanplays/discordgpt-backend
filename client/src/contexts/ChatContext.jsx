@@ -103,14 +103,23 @@ export function ChatProvider({ children }) {
     } catch {}
   }, [activeConversation, authHeaders])
 
-  const loadMessages = useCallback(async (conversationId) => {
+  const loadConversation = useCallback(async (conversationId) => {
     try {
-      const res = await fetch(`/api/conversations/${conversationId}/messages`, { headers: authHeaders() })
+      const res = await fetch(`/api/conversations/${conversationId}`, { headers: authHeaders() })
       if (res.ok) {
         const data = await res.json()
-        setMessages(data.messages || data || [])
+        setActiveConversation(data)
+        setMessages(data.messages || [])
+        if (data.blueprint) {
+          setBlueprint(data.blueprint)
+        } else {
+          setBlueprint(null)
+        }
+        setCreationProgress(null)
+        return data
       }
     } catch {}
+    return null
   }, [authHeaders])
 
   const sendMessage = useCallback(async (content, conversationId) => {
@@ -255,7 +264,7 @@ export function ChatProvider({ children }) {
     activeJobId, setActiveJobId,
     templates,
     fetchConversations, createConversation, deleteConversation,
-    loadMessages, sendMessage,
+    loadConversation, sendMessage,
     createServer, pollJobStatus,
     fetchTemplates, saveTemplate, deleteTemplate
   }

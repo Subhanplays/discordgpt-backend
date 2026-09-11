@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import WelcomeScreen from '../components/WelcomeScreen'
 import MessageList from '../components/MessageList'
 import MessageComposer from '../components/MessageComposer'
@@ -7,10 +8,25 @@ import CreationProgress from '../components/CreationProgress'
 import { useChat } from '../contexts/ChatContext'
 
 export default function ChatPage() {
+  const { conversationId } = useParams()
   const {
     messages, aiTyping, sendMessage, activeConversation,
-    createConversation, botConnected, blueprint, creationProgress
+    createConversation, botConnected, blueprint, creationProgress,
+    loadConversation, setActiveConversation, setMessages, setBlueprint, setCreationProgress
   } = useChat()
+
+  useEffect(() => {
+    if (conversationId) {
+      if (!activeConversation || activeConversation.id !== conversationId) {
+        loadConversation(conversationId)
+      }
+    } else if (!conversationId && activeConversation) {
+      setActiveConversation(null)
+      setMessages([])
+      setBlueprint(null)
+      setCreationProgress(null)
+    }
+  }, [conversationId])
 
   const hasMessages = messages.length > 0
 
