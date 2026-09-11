@@ -96,11 +96,38 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
     }
 
     const progress = { step: 0, total: 0, message: '' };
-
-    const totalSteps = 3 + blueprint.categories.length;
+    const totalSteps = 4 + blueprint.categories.length;
     progress.total = totalSteps;
 
     progress.step = 1;
+    progress.message = 'Cleaning server...';
+    if (progressCallback) progressCallback(progress);
+
+    try {
+      const existingChannels = guild.channels.cache;
+      for (const [, ch] of existingChannels) {
+        try {
+          if (ch.type === ChannelType.GuildCategory) {
+            const childChannels = guild.channels.cache.filter(c => c.parentId === ch.id);
+            for (const [, child] of childChannels) {
+              try { await child.delete('DiscordGPT: cleaning for new setup'); } catch {}
+            }
+          }
+          await ch.delete('DiscordGPT: cleaning for new setup');
+        } catch {}
+      }
+    } catch {}
+
+    try {
+      const everyone = guild.roles.everyone;
+      const managedRoles = guild.roles.cache.filter(r => r.managed || r.name === '@everyone');
+      const deletableRoles = guild.roles.cache.filter(r => !r.managed && r.name !== '@everyone' && r.position > 0);
+      for (const [, role] of deletableRoles) {
+        try { await role.delete('DiscordGPT: cleaning for new setup'); } catch {}
+      }
+    } catch {}
+
+    progress.step = 2;
     progress.message = 'Creating roles...';
     if (progressCallback) progressCallback(progress);
 
@@ -158,7 +185,7 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
       }
     }
 
-    progress.step = 2;
+    progress.step = 3;
     progress.message = 'Creating categories...';
     if (progressCallback) progressCallback(progress);
 
@@ -184,7 +211,7 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
       }
     }
 
-    progress.step = 3;
+    progress.step = 4;
     progress.message = 'Creating channels...';
     if (progressCallback) progressCallback(progress);
 

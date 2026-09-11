@@ -62,365 +62,373 @@ function detectServerType(prompt) {
 function generateCategories(serverType, prompt) {
   const categoryTemplates = {
     gaming: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Server rules and guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Important announcements' },
-        { name: 'welcome', type: 'text', description: 'Welcome new members' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Server rules and guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Important announcements' },
+        { name: '👋 welcome', type: 'text', description: 'Welcome new members' }
       ]},
-      { name: 'GENERAL', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'introductions', type: 'text', description: 'Introduce yourself' },
-        { name: 'media', type: 'text', description: 'Share media content' }
+      { name: '💬 GENERAL', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '💡 introductions', type: 'text', description: 'Introduce yourself' },
+        { name: '🖼️ media', type: 'text', description: 'Share media content' },
+        { name: '🎯 off-topic', type: 'text', description: 'Off-topic chat' }
       ]},
-      { name: 'GAMING', channels: [
-        { name: 'lfg', type: 'text', description: 'Looking for group' },
-        { name: 'game-chat', type: 'text', description: 'Game discussion' },
-        { name: 'clips-and-highlights', type: 'text', description: 'Share your best clips' },
-        { name: 'gaming-voice', type: 'voice', description: 'Voice chat for gaming' }
+      { name: '🎮 GAMING', channels: [
+        { name: '🎯 lfg', type: 'text', description: 'Looking for group' },
+        { name: '💬 game-chat', type: 'text', description: 'Game discussion' },
+        { name: '🎬 clips-and-highlights', type: 'text', description: 'Share your best clips' },
+        { name: '📊 stats-and-scores', type: 'text', description: 'Track your stats' }
       ]},
-      { name: 'COMPETITIVE', channels: [
-        { name: 'tournament-info', type: 'text', description: 'Tournament information' },
-        { name: 'team-recruitment', type: 'text', description: 'Find teammates' },
-        { name: 'ranked-discussion', type: 'text', description: 'Competitive discussion' }
+      { name: '🏆 COMPETITIVE', channels: [
+        { name: '🏅 tournament-info', type: 'text', description: 'Tournament information' },
+        { name: '⚔️ team-recruitment', type: 'text', description: 'Find teammates' },
+        { name: '📈 ranked-discussion', type: 'text', description: 'Competitive discussion' },
+        { name: '🎲 scrims', type: 'text', description: 'Organize scrimmages' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' },
-        { name: 'Gaming Session', type: 'voice', description: 'Gaming sessions' },
-        { name: 'AFK', type: 'voice', description: 'AFK channel' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' },
+        { name: '🎮 gaming-session', type: 'voice', description: 'Gaming sessions' },
+        { name: '🎵 music', type: 'voice', description: 'Listen to music together' },
+        { name: '💤 afk', type: 'voice', description: 'AFK channel' }
+      ]},
+      { name: '⚙️ COMMUNITY', channels: [
+        { name: '🎉 events', type: 'text', description: 'Community events' },
+        { name: '💡 suggestions', type: 'text', description: 'Server suggestions' },
+        { name: '🏆 hall-of-fame', type: 'text', description: 'Top achievements' }
       ]}
     ],
     support: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Support rules' },
-        { name: 'announcements', type: 'announcement', description: 'System announcements' },
-        { name: 'faq', type: 'text', description: 'Frequently asked questions' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Support rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'System announcements' },
+        { name: '❓ faq', type: 'text', description: 'Frequently asked questions' }
       ]},
-      { name: 'SUPPORT', channels: [
-        { name: 'general-support', type: 'text', description: 'General support questions' },
-        { name: 'bug-reports', type: 'forum', description: 'Report bugs here' },
-        { name: 'feature-requests', type: 'forum', description: 'Request new features' },
-        { name: 'suggestions', type: 'text', description: 'Share your suggestions' }
+      { name: '🛡️ SUPPORT', channels: [
+        { name: '💬 general-support', type: 'text', description: 'General support questions' },
+        { name: '🐛 bug-reports', type: 'forum', description: 'Report bugs here' },
+        { name: '💡 feature-requests', type: 'forum', description: 'Request new features' },
+        { name: '📝 suggestions', type: 'text', description: 'Share your suggestions' }
       ]},
-      { name: 'TICKETS', channels: [
-        { name: 'open-ticket', type: 'text', description: 'Open a support ticket' }
+      { name: '🎫 TICKETS', channels: [
+        { name: '✅ open-ticket', type: 'text', description: 'Open a support ticket' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'off-topic', type: 'text', description: 'Off-topic chat' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '🎯 off-topic', type: 'text', description: 'Off-topic chat' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Support Voice', type: 'voice', description: 'Voice support' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🔊 support-voice', type: 'voice', description: 'Voice support' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     community: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community rules' },
-        { name: 'announcements', type: 'announcement', description: 'Important announcements' },
-        { name: 'welcome', type: 'text', description: 'Welcome message' },
-        { name: 'roles', type: 'text', description: 'Self-assign roles' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Important announcements' },
+        { name: '👋 welcome', type: 'text', description: 'Welcome message' },
+        { name: '🎭 roles', type: 'text', description: 'Self-assign roles' }
       ]},
-      { name: 'GENERAL', channels: [
-        { name: 'general', type: 'text', description: 'General chat' },
-        { name: 'introductions', type: 'text', description: 'Introduce yourself' },
-        { name: 'off-topic', type: 'text', description: 'Off-topic discussion' },
-        { name: 'memes', type: 'text', description: 'Share memes' }
+      { name: '💬 GENERAL', channels: [
+        { name: '🔥 general', type: 'text', description: 'General chat' },
+        { name: '💡 introductions', type: 'text', description: 'Introduce yourself' },
+        { name: '🎯 off-topic', type: 'text', description: 'Off-topic discussion' },
+        { name: '😂 memes', type: 'text', description: 'Share memes' }
       ]},
-      { name: 'MEDIA', channels: [
-        { name: 'photos', type: 'text', description: 'Share photos' },
-        { name: 'videos', type: 'text', description: 'Share videos' },
-        { name: 'artwork', type: 'text', description: 'Share your art' }
+      { name: '🖼️ MEDIA', channels: [
+        { name: '📸 photos', type: 'text', description: 'Share photos' },
+        { name: '🎬 videos', type: 'text', description: 'Share videos' },
+        { name: '🎨 artwork', type: 'text', description: 'Share your art' }
       ]},
-      { name: 'EVENTS', channels: [
-        { name: 'event-planning', type: 'text', description: 'Plan events' },
-        { name: 'event-announcements', type: 'announcement', description: 'Event announcements' }
+      { name: '🎉 EVENTS', channels: [
+        { name: '📅 event-planning', type: 'text', description: 'Plan events' },
+        { name: '📢 event-announcements', type: 'announcement', description: 'Event announcements' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' },
-        { name: 'Music', type: 'voice', description: 'Listen to music together' },
-        { name: 'AFK', type: 'voice', description: 'AFK channel' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' },
+        { name: '🎵 music', type: 'voice', description: 'Listen to music together' },
+        { name: '💤 afk', type: 'voice', description: 'AFK channel' }
       ]}
     ],
     hosting: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Server rules' },
-        { name: 'announcements', type: 'announcement', description: 'System status' },
-        { name: 'pricing', type: 'text', description: 'Pricing information' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Server rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'System status' },
+        { name: '💰 pricing', type: 'text', description: 'Pricing information' }
       ]},
-      { name: 'SUPPORT', channels: [
-        { name: 'general-support', type: 'text', description: 'General support' },
-        { name: 'technical-support', type: 'text', description: 'Technical issues' },
-        { name: 'billing-support', type: 'text', description: 'Billing questions' }
+      { name: '🛡️ SUPPORT', channels: [
+        { name: '💬 general-support', type: 'text', description: 'General support' },
+        { name: '🔧 technical-support', type: 'text', description: 'Technical issues' },
+        { name: '💳 billing-support', type: 'text', description: 'Billing questions' }
       ]},
-      { name: 'SERVICES', channels: [
-        { name: 'service-status', type: 'text', description: 'Current service status' },
-        { name: 'maintenance', type: 'announcement', description: 'Maintenance schedule' },
-        { name: 'new-releases', type: 'announcement', description: 'New services' }
+      { name: '⚙️ SERVICES', channels: [
+        { name: '📊 service-status', type: 'text', description: 'Current service status' },
+        { name: '🔧 maintenance', type: 'announcement', description: 'Maintenance schedule' },
+        { name: '🆕 new-releases', type: 'announcement', description: 'New services' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'General chat' },
-        { name: 'showcase', type: 'text', description: 'Show off your projects' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General chat' },
+        { name: '⭐ showcase', type: 'text', description: 'Show off your projects' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Support Voice', type: 'voice', description: 'Voice support' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🔊 support-voice', type: 'voice', description: 'Voice support' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ],
     education: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Course announcements' },
-        { name: 'resources', type: 'text', description: 'Learning resources' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Course announcements' },
+        { name: '📚 resources', type: 'text', description: 'Learning resources' }
       ]},
-      { name: 'COURSES', channels: [
-        { name: 'course-discussion', type: 'text', description: 'Discuss courses' },
-        { name: 'study-groups', type: 'text', description: 'Find study partners' },
-        { name: 'assignments', type: 'forum', description: 'Assignment help' }
+      { name: '🎓 COURSES', channels: [
+        { name: '💬 course-discussion', type: 'text', description: 'Discuss courses' },
+        { name: '🤝 study-groups', type: 'text', description: 'Find study partners' },
+        { name: '📝 assignments', type: 'forum', description: 'Assignment help' }
       ]},
-      { name: 'HELP', channels: [
-        { name: 'ask-questions', type: 'text', description: 'Ask your questions' },
-        { name: 'code-review', type: 'text', description: 'Get code reviewed' },
-        { name: 'resources-sharing', type: 'text', description: 'Share learning materials' }
+      { name: '❓ HELP', channels: [
+        { name: '💡 ask-questions', type: 'text', description: 'Ask your questions' },
+        { name: '🔍 code-review', type: 'text', description: 'Get code reviewed' },
+        { name: '📎 resources-sharing', type: 'text', description: 'Share learning materials' }
       ]},
-      { name: 'GENERAL', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'career-advice', type: 'text', description: 'Career guidance' }
+      { name: '💬 GENERAL', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '💼 career-advice', type: 'text', description: 'Career guidance' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Study Room', type: 'voice', description: 'Study together' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '📖 study-room', type: 'voice', description: 'Study together' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     development: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community rules' },
-        { name: 'announcements', type: 'announcement', description: 'Announcements' },
-        { name: 'resources', type: 'text', description: 'Useful resources' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Announcements' },
+        { name: '📚 resources', type: 'text', description: 'Useful resources' }
       ]},
-      { name: 'DEVELOPMENT', channels: [
-        { name: 'general-dev', type: 'text', description: 'General development chat' },
-        { name: 'help', type: 'forum', description: 'Get help with code' },
-        { name: 'show-and-tell', type: 'text', description: 'Show your projects' },
-        { name: 'code-review', type: 'forum', description: 'Request code reviews' }
+      { name: '🔧 DEVELOPMENT', channels: [
+        { name: '💬 general-dev', type: 'text', description: 'General development chat' },
+        { name: '❓ help', type: 'forum', description: 'Get help with code' },
+        { name: '⭐ show-and-tell', type: 'text', description: 'Show your projects' },
+        { name: '🔍 code-review', type: 'forum', description: 'Request code reviews' }
       ]},
-      { name: 'LANGUAGES', channels: [
-        { name: 'javascript', type: 'text', description: 'JavaScript discussion' },
-        { name: 'python', type: 'text', description: 'Python discussion' },
-        { name: 'rust', type: 'text', description: 'Rust discussion' },
-        { name: 'other-languages', type: 'text', description: 'Other languages' }
+      { name: '💻 LANGUAGES', channels: [
+        { name: '🟨 javascript', type: 'text', description: 'JavaScript discussion' },
+        { name: '🐍 python', type: 'text', description: 'Python discussion' },
+        { name: '🦀 rust', type: 'text', description: 'Rust discussion' },
+        { name: '🌐 other-languages', type: 'text', description: 'Other languages' }
       ]},
-      { name: 'PROJECTS', channels: [
-        { name: 'project-ideas', type: 'text', description: 'Share project ideas' },
-        { name: 'collaboration', type: 'text', description: 'Find collaborators' },
-        { name: 'open-source', type: 'text', description: 'Open source projects' }
+      { name: '🚀 PROJECTS', channels: [
+        { name: '💡 project-ideas', type: 'text', description: 'Share project ideas' },
+        { name: '🤝 collaboration', type: 'text', description: 'Find collaborators' },
+        { name: '📦 open-source', type: 'text', description: 'Open source projects' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Pair Programming', type: 'voice', description: 'Code together' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '👨‍💻 pair-programming', type: 'voice', description: 'Code together' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     music: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Server rules' },
-        { name: 'announcements', type: 'announcement', description: 'Announcements' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Server rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Announcements' }
       ]},
-      { name: 'MUSIC', channels: [
-        { name: 'music-chat', type: 'text', description: 'Music discussion' },
-        { name: 'share-music', type: 'text', description: 'Share your music' },
-        { name: 'feedback', type: 'text', description: 'Get feedback' },
-        { name: 'collabs', type: 'text', description: 'Find collaborators' }
+      { name: '🎵 MUSIC', channels: [
+        { name: '💬 music-chat', type: 'text', description: 'Music discussion' },
+        { name: '🎶 share-music', type: 'text', description: 'Share your music' },
+        { name: '⭐ feedback', type: 'text', description: 'Get feedback' },
+        { name: '🤝 collabs', type: 'text', description: 'Find collaborators' }
       ]},
-      { name: 'PRODUCTION', channels: [
-        { name: 'production-tips', type: 'text', description: 'Production tips' },
-        { name: 'sample-pack', type: 'text', description: 'Share samples' },
-        { name: 'gear-talk', type: 'text', description: 'Discuss gear' }
+      { name: '🎛️ PRODUCTION', channels: [
+        { name: '📝 production-tips', type: 'text', description: 'Production tips' },
+        { name: '🎵 sample-pack', type: 'text', description: 'Share samples' },
+        { name: '🎛️ gear-talk', type: 'text', description: 'Discuss gear' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Listening Session', type: 'voice', description: 'Listen together' },
-        { name: 'Collab Studio', type: 'voice', description: 'Collaborate on music' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🎧 listening-session', type: 'voice', description: 'Listen together' },
+        { name: '🎹 collab-studio', type: 'voice', description: 'Collaborate on music' }
       ]}
     ],
     art: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community rules' },
-        { name: 'announcements', type: 'announcement', description: 'Announcements' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Announcements' }
       ]},
-      { name: 'ART', channels: [
-        { name: 'gallery', type: 'text', description: 'Share your art' },
-        { name: 'feedback', type: 'text', description: 'Get feedback' },
-        { name: 'wip', type: 'text', description: 'Work in progress' },
-        { name: 'art-resources', type: 'text', description: 'Art resources and tutorials' }
+      { name: '🎨 ART', channels: [
+        { name: '🖼️ gallery', type: 'text', description: 'Share your art' },
+        { name: '⭐ feedback', type: 'text', description: 'Get feedback' },
+        { name: '🖌️ wip', type: 'text', description: 'Work in progress' },
+        { name: '📚 art-resources', type: 'text', description: 'Art resources and tutorials' }
       ]},
-      { name: 'DISCUSSION', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'inspiration', type: 'text', description: 'Share inspiration' },
-        { name: 'critiques', type: 'forum', description: 'Request detailed critiques' }
+      { name: '💬 DISCUSSION', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '💡 inspiration', type: 'text', description: 'Share inspiration' },
+        { name: '🔍 critiques', type: 'forum', description: 'Request detailed critiques' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Art Stream', type: 'voice', description: 'Stream your art process' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🎨 art-stream', type: 'voice', description: 'Stream your art process' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     crypto: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community rules' },
-        { name: 'announcements', type: 'announcement', description: 'Important announcements' },
-        { name: 'disclaimer', type: 'text', description: 'Financial disclaimer' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Important announcements' },
+        { name: '⚠️ disclaimer', type: 'text', description: 'Financial disclaimer' }
       ]},
-      { name: 'TRADING', channels: [
-        { name: 'market-chat', type: 'text', description: 'Market discussion' },
-        { name: 'trading-signals', type: 'text', description: 'Trading signals' },
-        { name: 'chart-analysis', type: 'text', description: 'Share charts' }
+      { name: '📈 TRADING', channels: [
+        { name: '💬 market-chat', type: 'text', description: 'Market discussion' },
+        { name: '🎯 trading-signals', type: 'text', description: 'Trading signals' },
+        { name: '📊 chart-analysis', type: 'text', description: 'Share charts' }
       ]},
-      { name: 'CRYPTO', channels: [
-        { name: 'bitcoin', type: 'text', description: 'Bitcoin discussion' },
-        { name: 'altcoins', type: 'text', description: 'Altcoin discussion' },
-        { name: 'defi', type: 'text', description: 'DeFi discussion' },
-        { name: 'nft', type: 'text', description: 'NFT discussion' }
+      { name: '🪙 CRYPTO', channels: [
+        { name: '₿ bitcoin', type: 'text', description: 'Bitcoin discussion' },
+        { name: '💎 altcoins', type: 'text', description: 'Altcoin discussion' },
+        { name: '🏦 defi', type: 'text', description: 'DeFi discussion' },
+        { name: '🖼️ nft', type: 'text', description: 'NFT discussion' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Trading Floor', type: 'voice', description: 'Voice trading chat' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '📈 trading-floor', type: 'voice', description: 'Voice trading chat' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     business: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Announcements' },
-        { name: 'about-us', type: 'text', description: 'About the company' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Announcements' },
+        { name: '🏢 about-us', type: 'text', description: 'About the company' }
       ]},
-      { name: 'BUSINESS', channels: [
-        { name: 'general-business', type: 'text', description: 'Business discussion' },
-        { name: 'networking', type: 'text', description: 'Network with others' },
-        { name: 'job-board', type: 'forum', description: 'Post job opportunities' },
-        { name: 'partnerships', type: 'text', description: 'Find partners' }
+      { name: '💼 BUSINESS', channels: [
+        { name: '💬 general-business', type: 'text', description: 'Business discussion' },
+        { name: '🤝 networking', type: 'text', description: 'Network with others' },
+        { name: '📋 job-board', type: 'forum', description: 'Post job opportunities' },
+        { name: '🤝 partnerships', type: 'text', description: 'Find partners' }
       ]},
-      { name: 'RESOURCES', channels: [
-        { name: 'articles', type: 'text', description: 'Share articles' },
-        { name: 'tools', type: 'text', description: 'Business tools' },
-        { name: 'ask-experts', type: 'text', description: 'Ask experienced entrepreneurs' }
+      { name: '📚 RESOURCES', channels: [
+        { name: '📖 articles', type: 'text', description: 'Share articles' },
+        { name: '🛠️ tools', type: 'text', description: 'Business tools' },
+        { name: '💡 ask-experts', type: 'text', description: 'Ask experienced entrepreneurs' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Networking Voice', type: 'voice', description: 'Voice networking' },
-        { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🤝 networking-voice', type: 'voice', description: 'Voice networking' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General voice chat' }
       ]}
     ],
     store: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Store rules and policies' },
-        { name: 'announcements', type: 'announcement', description: 'Sales, new products, updates' },
-        { name: 'welcome', type: 'text', description: 'Welcome new customers' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Store rules and policies' },
+        { name: '📢 announcements', type: 'announcement', description: 'Sales, new products, updates' },
+        { name: '👋 welcome', type: 'text', description: 'Welcome new customers' }
       ]},
-      { name: 'SHOP', channels: [
-        { name: 'products', type: 'text', description: 'Browse our products' },
-        { name: 'new-releases', type: 'announcement', description: 'New product drops' },
-        { name: 'deals-and-offers', type: 'text', description: 'Current deals and discounts' },
-        { name: 'product-questions', type: 'forum', description: 'Ask about products' }
+      { name: '🛒 SHOP', channels: [
+        { name: '🛍️ products', type: 'text', description: 'Browse our products' },
+        { name: '🆕 new-releases', type: 'announcement', description: 'New product drops' },
+        { name: '🏷️ deals-and-offers', type: 'text', description: 'Current deals and discounts' },
+        { name: '❓ product-questions', type: 'forum', description: 'Ask about products' }
       ]},
-      { name: 'SUPPORT', channels: [
-        { name: 'order-support', type: 'text', description: 'Help with orders' },
-        { name: 'shipping-info', type: 'text', description: 'Shipping and delivery questions' },
-        { name: 'returns-and-refunds', type: 'text', description: 'Return and refund requests' },
-        { name: 'faq', type: 'text', description: 'Frequently asked questions' }
+      { name: '🛡️ SUPPORT', channels: [
+        { name: '📦 order-support', type: 'text', description: 'Help with orders' },
+        { name: '🚚 shipping-info', type: 'text', description: 'Shipping and delivery questions' },
+        { name: '🔄 returns-and-refunds', type: 'text', description: 'Return and refund requests' },
+        { name: '❓ faq', type: 'text', description: 'Frequently asked questions' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'Chat with other customers' },
-        { name: 'reviews', type: 'text', description: 'Share your reviews' },
-        { name: 'showcase', type: 'text', description: 'Show off your purchases' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'Chat with other customers' },
+        { name: '⭐ reviews', type: 'text', description: 'Share your reviews' },
+        { name: '📸 showcase', type: 'text', description: 'Show off your purchases' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Shopping Help', type: 'voice', description: 'Get live help' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🛒 shopping-help', type: 'voice', description: 'Get live help' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ],
     studio: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Studio updates' },
-        { name: 'portfolio', type: 'text', description: 'Our work' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Studio updates' },
+        { name: '🏆 portfolio', type: 'text', description: 'Our work' }
       ]},
-      { name: 'PROJECTS', channels: [
-        { name: 'active-projects', type: 'text', description: 'Current projects' },
-        { name: 'project-showcase', type: 'text', description: 'Show completed work' },
-        { name: 'feedback', type: 'forum', description: 'Get feedback on work' },
-        { name: 'collaboration', type: 'text', description: 'Find collaborators' }
+      { name: '🚀 PROJECTS', channels: [
+        { name: '🔥 active-projects', type: 'text', description: 'Current projects' },
+        { name: '⭐ project-showcase', type: 'text', description: 'Show completed work' },
+        { name: '💬 feedback', type: 'forum', description: 'Get feedback on work' },
+        { name: '🤝 collaboration', type: 'text', description: 'Find collaborators' }
       ]},
-      { name: 'DISCUSSION', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'tips-and-tricks', type: 'text', description: 'Share techniques' },
-        { name: 'resources', type: 'text', description: 'Useful resources' }
+      { name: '💬 DISCUSSION', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '💡 tips-and-tricks', type: 'text', description: 'Share techniques' },
+        { name: '📚 resources', type: 'text', description: 'Useful resources' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Studio Live', type: 'voice', description: 'Live sessions' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🎬 studio-live', type: 'voice', description: 'Live sessions' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ],
     restaurant: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Server rules' },
-        { name: 'announcements', type: 'announcement', description: 'Specials and events' },
-        { name: 'menu', type: 'text', description: 'Our menu' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Server rules' },
+        { name: '📢 announcements', type: 'announcement', description: 'Specials and events' },
+        { name: '🍽️ menu', type: 'text', description: 'Our menu' }
       ]},
-      { name: 'ORDERING', channels: [
-        { name: 'place-order', type: 'text', description: 'Place your order' },
-        { name: 'order-status', type: 'text', description: 'Check order status' },
-        { name: 'special-requests', type: 'text', description: 'Dietary needs and modifications' }
+      { name: '🛒 ORDERING', channels: [
+        { name: '📝 place-order', type: 'text', description: 'Place your order' },
+        { name: '📊 order-status', type: 'text', description: 'Check order status' },
+        { name: '📝 special-requests', type: 'text', description: 'Dietary needs and modifications' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'Chat with us' },
-        { name: 'reviews', type: 'text', description: 'Share your experience' },
-        { name: 'photos', type: 'text', description: 'Share food photos' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'Chat with us' },
+        { name: '⭐ reviews', type: 'text', description: 'Share your experience' },
+        { name: '📸 photos', type: 'text', description: 'Share food photos' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Order Help', type: 'voice', description: 'Need help ordering?' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🛒 order-help', type: 'voice', description: 'Need help ordering?' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ],
     fitness: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Class schedules and updates' },
-        { name: 'welcome', type: 'text', description: 'Welcome new members' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Class schedules and updates' },
+        { name: '👋 welcome', type: 'text', description: 'Welcome new members' }
       ]},
-      { name: 'WORKOUTS', channels: [
-        { name: 'daily-workout', type: 'text', description: "Today's workout" },
-        { name: 'workout-plans', type: 'text', description: 'Training programs' },
-        { name: 'form-check', type: 'forum', description: 'Get form feedback' },
-        { name: 'progress', type: 'text', description: 'Share your progress' }
+      { name: '💪 WORKOUTS', channels: [
+        { name: '🔥 daily-workout', type: 'text', description: "Today's workout" },
+        { name: '📋 workout-plans', type: 'text', description: 'Training programs' },
+        { name: '✅ form-check', type: 'forum', description: 'Get form feedback' },
+        { name: '📈 progress', type: 'text', description: 'Share your progress' }
       ]},
-      { name: 'NUTRITION', channels: [
-        { name: 'meal-plans', type: 'text', description: 'Meal planning' },
-        { name: 'recipes', type: 'text', description: 'Healthy recipes' },
-        { name: 'supplements', type: 'text', description: 'Supplement discussion' }
+      { name: '🥗 NUTRITION', channels: [
+        { name: '📋 meal-plans', type: 'text', description: 'Meal planning' },
+        { name: '🍳 recipes', type: 'text', description: 'Healthy recipes' },
+        { name: '💊 supplements', type: 'text', description: 'Supplement discussion' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'General chat' },
-        { name: 'motivation', type: 'text', description: 'Stay motivated' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General chat' },
+        { name: '💪 motivation', type: 'text', description: 'Stay motivated' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Workout Together', type: 'voice', description: 'Train together' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🏋️ workout-together', type: 'voice', description: 'Train together' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ],
     nonprofit: [
-      { name: 'INFORMATION', channels: [
-        { name: 'rules', type: 'text', description: 'Community guidelines' },
-        { name: 'announcements', type: 'announcement', description: 'Organization updates' },
-        { name: 'about-us', type: 'text', description: 'Our mission' }
+      { name: '📋 INFORMATION', channels: [
+        { name: '📌 rules', type: 'text', description: 'Community guidelines' },
+        { name: '📢 announcements', type: 'announcement', description: 'Organization updates' },
+        { name: '❤️ about-us', type: 'text', description: 'Our mission' }
       ]},
-      { name: 'VOLUNTEERS', channels: [
-        { name: 'volunteer-signup', type: 'text', description: 'Sign up to volunteer' },
-        { name: 'events', type: 'text', description: 'Upcoming events' },
-        { name: 'coordination', type: 'text', description: 'Organize activities' }
+      { name: '🤝 VOLUNTEERS', channels: [
+        { name: '✋ volunteer-signup', type: 'text', description: 'Sign up to volunteer' },
+        { name: '📅 events', type: 'text', description: 'Upcoming events' },
+        { name: '📋 coordination', type: 'text', description: 'Organize activities' }
       ]},
-      { name: 'COMMUNITY', channels: [
-        { name: 'general-chat', type: 'text', description: 'General discussion' },
-        { name: 'success-stories', type: 'text', description: 'Share impact stories' },
-        { name: 'resources', type: 'text', description: 'Helpful resources' }
+      { name: '💬 COMMUNITY', channels: [
+        { name: '🔥 general-chat', type: 'text', description: 'General discussion' },
+        { name: '⭐ success-stories', type: 'text', description: 'Share impact stories' },
+        { name: '📚 resources', type: 'text', description: 'Helpful resources' }
       ]},
-      { name: 'VOICE CHANNELS', channels: [
-        { name: 'Meeting Room', type: 'voice', description: 'Team meetings' },
-        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      { name: '🎙️ VOICE CHANNELS', channels: [
+        { name: '🏢 meeting-room', type: 'voice', description: 'Team meetings' },
+        { name: '🔊 general-voice', type: 'voice', description: 'General chat' }
       ]}
     ]
   };
@@ -537,51 +545,51 @@ async function callProviderAPI(provider, messages) {
     role: 'system',
     content: `You are DiscordGPT, an expert Discord server architect. When a user asks you to create/build/generate a Discord server, you MUST respond with ONLY a JSON blueprint in a code block.
 
-You are a world-class Discord community designer. Create PROFESSIONAL, DETAILED, and WELL-ORGANIZED server structures. Think like a top community manager who has built servers with 100k+ members.
+You are a world-class Discord community designer. Create PREMIUM, ENTERPRISE-GRADE server structures. Think like a top community manager who has built servers with 100k+ members. Every detail matters.
 
-RULES:
-- Create 5-8 categories with 3-6 channels each (minimum 20 channels total)
-- Use emoji prefixes in category and channel names (e.g. "📋 INFO", "💬 GENERAL", "🎮 GAMING")
+CRITICAL RULES:
+- Create 6-8 categories with 3-6 channels each (minimum 20 channels total)
+- EVERY category name MUST start with an emoji: 📋 INFORMATION, 💬 GENERAL, 🎮 GAMING, 🎵 MUSIC, 🎨 CREATIVE, 💼 BUSINESS, 🔧 DEVELOPMENT, 🎓 EDUCATION, 🛡️ SUPPORT, 🏆 COMPETITIVE, 🎉 EVENTS, 🎙️ VOICE, 🛒 STORE, 📢 ANNOUNCEMENTS
+- EVERY channel name MUST start with an emoji: 📌, 💡, ✅, 🎯, 🔥, ⭐, 📝, 🎬, 🖼️, 🎙️, 🔊, 💭, 📊, 🏅, 🎁, 📎, 🔗, ⚠️, 🎲, 🎪, 🌟, 💎, 🎯, 🏰, 🐉, ⚔️
+- Use professional emoji prefixes that match the channel purpose
 - Every channel MUST have a detailed description explaining its purpose
-- Include slowmode on busy channels (30s for general, 5m for media)
-- Create a rich role hierarchy with 5-8 roles
-- Use professional role colors (not random)
-- Include roles like: @Owner, @Admin, @Moderator, @Helper, @VIP, @Member, @Newcomer
-- Add channel-specific permissions where appropriate
-- Think about UX flow: new members should understand the server immediately
+- Create a rich role hierarchy with 7-8 roles
+- Use HEX colors for roles: #FF0000 (Owner), #E74C3C (Admin), #F1C40F (Moderator), #3498DB (Helper), #9B59B6 (VIP), #2ECC71 (Member), #95A5A6 (Newcomer)
+- Include channel-specific permissions where appropriate
+- Think about UX: new members should feel impressed immediately
 
 RESPOND WITH ONLY THIS JSON (no other text):
 \`\`\`json
 {
   "serverName": "Professional Server Name",
-  "description": "A compelling 1-2 sentence description of what this server is about",
+  "description": "A compelling 1-2 sentence description",
   "categories": [
     {
       "name": "📋 CATEGORY NAME",
       "channels": [
-        { "name": "channel-name", "type": "text", "description": "Detailed purpose of this channel" },
-        { "name": "voice-channel", "type": "voice", "description": "When to use this voice channel" },
-        { "name": "announcements", "type": "announcement", "description": "Important updates" },
-        { "name": "forum-channel", "type": "forum", "description": "Discussion topics" }
+        { "name": "📌 channel-name", "type": "text", "description": "Detailed purpose" },
+        { "name": "🔊 voice-name", "type": "voice", "description": "Voice channel purpose" },
+        { "name": "📢 announcements", "type": "announcement", "description": "Important updates" },
+        { "name": "💭 forum-channel", "type": "forum", "description": "Discussion topics" }
       ]
     }
   ],
   "roles": [
-    { "name": "Owner", "color": "#FF0000", "permissions": ["Administrator"], "mentionable": false, "hoist": true },
-    { "name": "Admin", "color": "#E74C3C", "permissions": ["Administrator"], "mentionable": true, "hoist": true },
-    { "name": "Moderator", "color": "#F39C12", "permissions": ["ManageMessages", "KickMembers", "BanMembers", "ManageChannels"], "mentionable": true, "hoist": true },
-    { "name": "Helper", "color": "#3498DB", "permissions": ["ManageMessages", "SendMessages", "ReadMessageHistory"], "mentionable": true, "hoist": true },
-    { "name": "VIP", "color": "#9B59B6", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": true },
-    { "name": "Member", "color": "#2ECC71", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": false },
-    { "name": "Newcomer", "color": "#95A5A6", "permissions": ["ReadMessageHistory", "ViewChannel"], "mentionable": false, "hoist": false }
+    { "name": "👑 Owner", "color": "#FF0000", "permissions": ["Administrator"], "mentionable": false, "hoist": true },
+    { "name": "⚡ Admin", "color": "#E74C3C", "permissions": ["Administrator"], "mentionable": true, "hoist": true },
+    { "name": "🛡️ Moderator", "color": "#F1C40F", "permissions": ["ManageMessages", "KickMembers", "BanMembers", "ManageChannels"], "mentionable": true, "hoist": true },
+    { "name": "🤝 Helper", "color": "#3498DB", "permissions": ["ManageMessages", "SendMessages", "ReadMessageHistory"], "mentionable": true, "hoist": true },
+    { "name": "💎 VIP", "color": "#9B59B6", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": true },
+    { "name": "⭐ Member", "color": "#2ECC71", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": false },
+    { "name": "🌱 Newcomer", "color": "#95A5A6", "permissions": ["ReadMessageHistory", "ViewChannel"], "mentionable": false, "hoist": false }
   ]
 }
 \`\`\`
 
 Valid channel types: text, voice, announcement, forum
-Valid permissions: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel, SendVoiceMessages, CreateInstantInvite, ChangeNickname, AddReactions, EmbedLinks, AttachFiles, UseExternalEmojis, MentionEveryone, UseExternalStickers, SendMessagesInThreads, CreatePublicThreads, CreatePrivateThreads, ManageThreads, UseVoiceActivity, MuteMembers, DeafenMembers
+Valid permissions: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel, CreateInstantInvite, ChangeNickname, AddReactions, EmbedLinks, AttachFiles, UseExternalEmojis, MentionEveryone, UseExternalStickers, SendMessagesInThreads, CreatePublicThreads, CreatePrivateThreads, ManageThreads, UseVoiceActivity, MuteMembers, DeafenMembers
 
-For non-server requests, just respond normally as a helpful assistant.`
+For non-server requests, respond normally as a helpful assistant.`
   };
 
   const allMessages = [systemMessage, ...formattedMessages];
