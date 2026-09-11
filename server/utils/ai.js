@@ -25,8 +25,9 @@ function extractServerName(prompt) {
     }
   }
 
-  const words = prompt.replace(/create|a|an|the|server|discord|community|for|about|called|named/gi, '').trim();
-  const nameWords = words.split(/\s+/).filter(w => w.length > 2).slice(0, 3);
+  const stopWords = /^(?:create|a|an|the|server|discord|community|for|about|called|named|template|called|make|build|generate|called)$/i;
+  const words = prompt.split(/\s+/).filter(w => !stopWords.test(w) && w.length > 2);
+  const nameWords = words.slice(0, 3);
   return nameWords.length > 0 ? nameWords.join(' ') : 'My Server';
 }
 
@@ -41,7 +42,12 @@ function detectServerType(prompt) {
     music: ['music', 'dj', 'audio', 'sound', 'beat', 'production', 'studio', 'remix'],
     art: ['art', 'design', 'graphic', 'illustration', 'creative', 'portfolio', 'gallery', 'drawing', 'painting'],
     crypto: ['crypto', 'blockchain', 'nft', 'web3', 'defi', 'trading', 'bitcoin', 'ethereum'],
-    business: ['business', 'company', 'startup', 'enterprise', 'corporate', 'professional', 'networking', 'entrepreneur']
+    business: ['business', 'company', 'startup', 'enterprise', 'corporate', 'professional', 'networking', 'entrepreneur'],
+    store: ['store', 'shop', 'ecommerce', 'e-commerce', 'sell', 'sales', 'product', 'products', 'marketplace', 'merch', 'merchandise', 'retail', 'buy', 'purchase', 'order', 'catalog'],
+    studio: ['studio', 'agency', 'creative agency', 'design agency', 'production house', 'media company'],
+    restaurant: ['restaurant', 'cafe', 'coffee', 'food', 'dining', 'menu', 'pizza', 'burger', 'bakery'],
+   fitness: ['fitness', 'gym', 'workout', 'health', 'wellness', 'exercise', 'training', 'sports'],
+    nonprofit: ['nonprofit', 'non-profit', 'charity', 'volunteer', 'foundation', 'cause']
   };
 
   for (const [type, keywords] of Object.entries(types)) {
@@ -297,6 +303,124 @@ function generateCategories(serverType, prompt) {
       { name: 'VOICE CHANNELS', channels: [
         { name: 'Networking Voice', type: 'voice', description: 'Voice networking' },
         { name: 'General Voice', type: 'voice', description: 'General voice chat' }
+      ]}
+    ],
+    store: [
+      { name: 'INFORMATION', channels: [
+        { name: 'rules', type: 'text', description: 'Store rules and policies' },
+        { name: 'announcements', type: 'announcement', description: 'Sales, new products, updates' },
+        { name: 'welcome', type: 'text', description: 'Welcome new customers' }
+      ]},
+      { name: 'SHOP', channels: [
+        { name: 'products', type: 'text', description: 'Browse our products' },
+        { name: 'new-releases', type: 'announcement', description: 'New product drops' },
+        { name: 'deals-and-offers', type: 'text', description: 'Current deals and discounts' },
+        { name: 'product-questions', type: 'forum', description: 'Ask about products' }
+      ]},
+      { name: 'SUPPORT', channels: [
+        { name: 'order-support', type: 'text', description: 'Help with orders' },
+        { name: 'shipping-info', type: 'text', description: 'Shipping and delivery questions' },
+        { name: 'returns-and-refunds', type: 'text', description: 'Return and refund requests' },
+        { name: 'faq', type: 'text', description: 'Frequently asked questions' }
+      ]},
+      { name: 'COMMUNITY', channels: [
+        { name: 'general-chat', type: 'text', description: 'Chat with other customers' },
+        { name: 'reviews', type: 'text', description: 'Share your reviews' },
+        { name: 'showcase', type: 'text', description: 'Show off your purchases' }
+      ]},
+      { name: 'VOICE CHANNELS', channels: [
+        { name: 'Shopping Help', type: 'voice', description: 'Get live help' },
+        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      ]}
+    ],
+    studio: [
+      { name: 'INFORMATION', channels: [
+        { name: 'rules', type: 'text', description: 'Community guidelines' },
+        { name: 'announcements', type: 'announcement', description: 'Studio updates' },
+        { name: 'portfolio', type: 'text', description: 'Our work' }
+      ]},
+      { name: 'PROJECTS', channels: [
+        { name: 'active-projects', type: 'text', description: 'Current projects' },
+        { name: 'project-showcase', type: 'text', description: 'Show completed work' },
+        { name: 'feedback', type: 'forum', description: 'Get feedback on work' },
+        { name: 'collaboration', type: 'text', description: 'Find collaborators' }
+      ]},
+      { name: 'DISCUSSION', channels: [
+        { name: 'general-chat', type: 'text', description: 'General discussion' },
+        { name: 'tips-and-tricks', type: 'text', description: 'Share techniques' },
+        { name: 'resources', type: 'text', description: 'Useful resources' }
+      ]},
+      { name: 'VOICE CHANNELS', channels: [
+        { name: 'Studio Live', type: 'voice', description: 'Live sessions' },
+        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      ]}
+    ],
+    restaurant: [
+      { name: 'INFORMATION', channels: [
+        { name: 'rules', type: 'text', description: 'Server rules' },
+        { name: 'announcements', type: 'announcement', description: 'Specials and events' },
+        { name: 'menu', type: 'text', description: 'Our menu' }
+      ]},
+      { name: 'ORDERING', channels: [
+        { name: 'place-order', type: 'text', description: 'Place your order' },
+        { name: 'order-status', type: 'text', description: 'Check order status' },
+        { name: 'special-requests', type: 'text', description: 'Dietary needs and modifications' }
+      ]},
+      { name: 'COMMUNITY', channels: [
+        { name: 'general-chat', type: 'text', description: 'Chat with us' },
+        { name: 'reviews', type: 'text', description: 'Share your experience' },
+        { name: 'photos', type: 'text', description: 'Share food photos' }
+      ]},
+      { name: 'VOICE CHANNELS', channels: [
+        { name: 'Order Help', type: 'voice', description: 'Need help ordering?' },
+        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      ]}
+    ],
+    fitness: [
+      { name: 'INFORMATION', channels: [
+        { name: 'rules', type: 'text', description: 'Community guidelines' },
+        { name: 'announcements', type: 'announcement', description: 'Class schedules and updates' },
+        { name: 'welcome', type: 'text', description: 'Welcome new members' }
+      ]},
+      { name: 'WORKOUTS', channels: [
+        { name: 'daily-workout', type: 'text', description: "Today's workout" },
+        { name: 'workout-plans', type: 'text', description: 'Training programs' },
+        { name: 'form-check', type: 'forum', description: 'Get form feedback' },
+        { name: 'progress', type: 'text', description: 'Share your progress' }
+      ]},
+      { name: 'NUTRITION', channels: [
+        { name: 'meal-plans', type: 'text', description: 'Meal planning' },
+        { name: 'recipes', type: 'text', description: 'Healthy recipes' },
+        { name: 'supplements', type: 'text', description: 'Supplement discussion' }
+      ]},
+      { name: 'COMMUNITY', channels: [
+        { name: 'general-chat', type: 'text', description: 'General chat' },
+        { name: 'motivation', type: 'text', description: 'Stay motivated' }
+      ]},
+      { name: 'VOICE CHANNELS', channels: [
+        { name: 'Workout Together', type: 'voice', description: 'Train together' },
+        { name: 'General Voice', type: 'voice', description: 'General chat' }
+      ]}
+    ],
+    nonprofit: [
+      { name: 'INFORMATION', channels: [
+        { name: 'rules', type: 'text', description: 'Community guidelines' },
+        { name: 'announcements', type: 'announcement', description: 'Organization updates' },
+        { name: 'about-us', type: 'text', description: 'Our mission' }
+      ]},
+      { name: 'VOLUNTEERS', channels: [
+        { name: 'volunteer-signup', type: 'text', description: 'Sign up to volunteer' },
+        { name: 'events', type: 'text', description: 'Upcoming events' },
+        { name: 'coordination', type: 'text', description: 'Organize activities' }
+      ]},
+      { name: 'COMMUNITY', channels: [
+        { name: 'general-chat', type: 'text', description: 'General discussion' },
+        { name: 'success-stories', type: 'text', description: 'Share impact stories' },
+        { name: 'resources', type: 'text', description: 'Helpful resources' }
+      ]},
+      { name: 'VOICE CHANNELS', channels: [
+        { name: 'Meeting Room', type: 'voice', description: 'Team meetings' },
+        { name: 'General Voice', type: 'voice', description: 'General chat' }
       ]}
     ]
   };
