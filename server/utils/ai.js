@@ -531,8 +531,6 @@ async function callProviderAPI(provider, messages) {
   const model = provider.models?.[0] || getDefaultModel(provider.provider);
   const baseUrl = provider.base_url || getBaseUrl(provider.provider);
 
-  console.log('callProviderAPI:', provider.provider, 'model:', model, 'apiKey:', apiKey?.substring(0, 6) + '...');
-
   const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
 
   const systemMessage = {
@@ -589,7 +587,7 @@ function getDefaultModel(provider) {
   const defaults = {
     openai: 'gpt-4o-mini',
     anthropic: 'claude-3-haiku-20240307',
-    google: 'gemini-3.6-flash',
+    google: 'gemini-3.5-flash',
     mistral: 'mistral-small-latest',
     groq: 'llama-3.1-8b-instant',
     openrouter: 'auto',
@@ -657,7 +655,6 @@ async function callAnthropic(apiKey, model, messages) {
 }
 
 async function callGoogle(apiKey, model, messages) {
-  console.log('callGoogle called with model:', model, 'fetch available:', typeof fetch);
   const systemMsg = messages.find(m => m.role === 'system');
   const chatMessages = messages.filter(m => m.role !== 'system');
 
@@ -666,7 +663,7 @@ async function callGoogle(apiKey, model, messages) {
     parts: [{ text: m.content }]
   }));
 
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-3.6-flash'}:generateContent?key=${apiKey}`;
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-3.5-flash'}:generateContent?key=${apiKey}`;
 
   const body = { contents };
   if (systemMsg) {
