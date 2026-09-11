@@ -370,15 +370,19 @@ async function generateChatResponse(messages) {
   try {
     provider = await db.getActiveAiProvider();
   } catch (e) {
-    console.error('Failed to fetch AI provider:', e.message);
+    console.error('Failed to fetch AI provider from database:', e.message);
   }
+
+  console.log('Active AI provider:', provider ? `${provider.provider} (${provider.name})` : 'none');
 
   if (provider && provider.api_key) {
     try {
-      return await callProviderAPI(provider, messages);
+      const response = await callProviderAPI(provider, messages);
+      console.log('AI response received from', provider.provider);
+      return response;
     } catch (error) {
-      console.error(`AI provider ${provider.provider} error:`, error.message);
-      return simulateAIResponse(messages);
+      console.error(`AI provider ${provider.provider} (${provider.name}) failed:`, error.message);
+      return simulateAIResponse(messages, `AI provider error: ${error.message}`);
     }
   }
 
@@ -394,7 +398,7 @@ async function generateChatResponse(messages) {
     }
   }
 
-  return simulateAIResponse(messages);
+  return simulateAIResponse(messages, null);
 }
 
 async function callProviderAPI(provider, messages) {
@@ -613,7 +617,7 @@ async function callCustom(apiKey, model, baseUrl, messages) {
   return data.choices[0].message.content;
 }
 
-function simulateAIResponse(messages) {
+function simulateAIResponse(messages, errorMsg) {
   const lastMessage = messages[messages.length - 1];
   const content = lastMessage.content.toLowerCase();
 
@@ -622,10 +626,23 @@ function simulateAIResponse(messages) {
 
   if (isBlueprintRequest) {
     const blueprint = generateBlueprint(lastMessage.content);
-    return `I've created a Discord server blueprint for you! Here's the structure:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nYou can now apply this blueprint to your Discord server using the Server Setup feature.`;
+    return `Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
   }
 
-  return `I'm DiscordGPT, your Discord server builder assistant. I can help you create server structures with categories, channels, roles, and permissions.\n\nTry something like:\n- "Create a gaming server called Apex Legends Community"\n- "Build a support server for my software"\n- "Generate a professional business networking server"\n\nNote: No AI provider is configured. Go to Admin Panel → AI Providers to add one for real AI responses.`;
+  if (content.includes('help') || content.includes('how')) {
+    return `I can help you create Discord server structures. Here's what I do:\n\n1. **Describe your server** - Tell me what kind of Discord server you want\n2. **I generate a blueprint** - Categories, channels, roles, permissions\n3. **One-click creation** - I build it on your server automatically\n\nTry: "Create a gaming server for my Valorant community"`;
+  }
+
+  if (content.includes('hello') || content.includes('hi') || content.includes('hey')) {
+    return `Hey! I'm DiscordGPT. I build Discord servers from natural language descriptions. What kind of server do you want me to create?`;
+  }
+
+  let prefix = '';
+  if (errorMsg) {
+    prefix = `*Note: AI provider error — using built-in responses.*\n\n`;
+  }
+
+  return `${prefix}I'm DiscordGPT, your Discord server builder. Describe the server you want and I'll create the full structure — categories, channels, roles, and permissions.\n\nFor example:\n- "Create a Minecraft hosting server called MineVo"\n- "Build a gaming community with LFG and voice channels"\n- "Generate a professional support server with tickets"`;
 }
 
 module.exports = {
