@@ -1,6 +1,8 @@
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const db = require('../database');
 const { createServerStructure } = require('./discord');
+
+const PANEL_URL = 'https://client-six-zeta-13.vercel.app';
 
 const COMMANDS = [
   new SlashCommandBuilder()
@@ -37,7 +39,7 @@ async function startPersistentClient(botToken, botInfo) {
   if (persistentClient) {
     try { persistentClient.destroy(); } catch {}
     persistentClient = null;
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 3000));
   }
 
   try {
@@ -49,10 +51,16 @@ async function startPersistentClient(botToken, botInfo) {
       ]
     });
 
-    await registerCommands(botToken, botInfo.id);
-
     persistentClient.on('ready', () => {
       console.log(`Persistent bot client ready: ${persistentClient.user.username}`);
+      persistentClient.user.setPresence({
+        status: 'online',
+        activities: [{
+          name: 'DiscordGPT Panel',
+          type: ActivityType.Watching,
+          url: PANEL_URL
+        }]
+      });
     });
 
     persistentClient.on('interactionCreate', async (interaction) => {
@@ -66,7 +74,7 @@ async function startPersistentClient(botToken, botInfo) {
       try {
         const pending = await db.getPendingBlueprintByCode(code);
         if (!pending) {
-          await interaction.editReply('❌ Invalid or expired deploy code. Please generate a new one from DiscordGPT.');
+          await interaction.editReply('❌ Invalid or expired deploy code. Generate a new one from DiscordGPT.');
           return;
         }
 
@@ -107,12 +115,27 @@ async function startPersistentClient(botToken, botInfo) {
       }
     });
 
+    await registerCommands(botToken, botInfo.id);
     await persistentClient.login(botToken);
     console.log('Persistent bot client logged in');
   } catch (error) {
     console.error('Failed to start persistent client:', error.message);
     persistentClient = null;
   }
+}
+
+async function getPersistentClientServers() {
+  if (!persistentClient || !persistentClient.isReady()) {
+    return null;
+  }
+  return persistentClient.guilds.cache.map(guild => ({
+    id: guild.id,
+    name: guild.name,
+    icon: guild.iconURL(),
+    memberCount: guild.memberCount,
+    owner: guild.ownerId === persistentClient.user.id,
+    permissions: guild.members.me ? guild.members.me.permissions.bitfield.toString() : '0'
+  }));
 }
 
 function stopPersistentClient() {
@@ -126,5 +149,6 @@ module.exports = {
   registerCommands,
   startPersistentClient,
   stopPersistentClient,
-  getClient
+  getClient,
+  getPersistentClientServers
 };

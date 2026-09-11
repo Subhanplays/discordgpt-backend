@@ -7,6 +7,7 @@ const {
   getBotServers,
   generateInviteURL
 } = require('../utils/discord');
+const { getPersistentClientServers, getClient } = require('../utils/slashCommands');
 
 const BUILTIN_BOT_USER = 'discordgpt-system';
 
@@ -36,6 +37,11 @@ router.get('/status', async (req, res) => {
 
 router.get('/servers', async (req, res) => {
   try {
+    const persistentServers = getPersistentClientServers();
+    if (persistentServers) {
+      return res.json(persistentServers);
+    }
+
     const botSession = getActiveBot(BUILTIN_BOT_USER);
     if (!botSession) {
       return res.status(400).json({ error: 'Bot is not connected. Please try again later.' });

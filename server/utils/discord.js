@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, PermissionFlagsBits, ChannelType } = require('discord.js');
 
 const activeBotSessions = new Map();
 
@@ -285,39 +285,7 @@ async function getBotServers(botToken) {
 }
 
 function generateInviteURL(botClientId, permissions) {
-  const defaultPermissions = [
-    PermissionFlagsBits.ManageRoles,
-    PermissionFlagsBits.ManageChannels,
-    PermissionFlagsBits.ManageGuild,
-    PermissionFlagsBits.SendMessages,
-    PermissionFlagsBits.ReadMessageHistory,
-    PermissionFlagsBits.Connect,
-    PermissionFlagsBits.Speak,
-    PermissionFlagsBits.UseVoiceActivity,
-    PermissionFlagsBits.MuteMembers,
-    PermissionFlagsBits.DeafenMembers,
-    PermissionFlagsBits.KickMembers,
-    PermissionFlagsBits.BanMembers,
-    PermissionFlagsBits.ManageMessages,
-    PermissionFlagsBits.ManageNicknames,
-    PermissionFlagsBits.ViewChannel,
-    PermissionFlagsBits.CreateInstantInvite,
-    PermissionFlagsBits.AddReactions,
-    PermissionFlagsBits.EmbedLinks,
-    PermissionFlagsBits.AttachFiles,
-    PermissionFlagsBits.MentionEveryone,
-    PermissionFlagsBits.UseExternalEmojis,
-    PermissionFlagsBits.ChangeNickname,
-    PermissionFlagsBits.ManageThreads,
-    PermissionFlagsBits.CreatePublicThreads,
-    PermissionFlagsBits.CreatePrivateThreads,
-    PermissionFlagsBits.SendMessagesInThreads,
-    PermissionFlagsBits.UseExternalStickers,
-    PermissionFlagsBits.SendVoiceMessages
-  ];
-
-  const perms = permissions || defaultPermissions.reduce((a, b) => a | b, BigInt(0));
-
+  const perms = permissions || 8;
   return `https://discord.com/api/oauth2/authorize?client_id=${botClientId}&permissions=${perms}&scope=bot%20applications.commands`;
 }
 
