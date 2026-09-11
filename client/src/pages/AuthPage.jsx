@@ -67,7 +67,7 @@ export default function AuthPage() {
 
         <button
           className="btn btn-discord btn-lg"
-          style={{ width: '100%', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#5865F2', color: 'white', border: 'none', padding: '14px 24px', borderRadius: 'var(--radius-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
+          style={{ width: '100%', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#000000', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '14px 24px', borderRadius: 'var(--radius-md)', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
           onClick={handleDiscordLogin}
         >
           <svg width="20" height="16" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
