@@ -11,7 +11,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(() => {
-    try { return localStorage.getItem('dgpt_token') || sessionStorage.getItem('dgpt_token') } catch { return null }
+    try { return localStorage.getItem('dgpt_token') } catch { return null }
   })
   const [loading, setLoading] = useState(true)
 
@@ -23,15 +23,17 @@ export function AuthProvider({ children }) {
     } catch {}
   }
 
-  const checkSession = useCallback(async () => {
-    if (!token) { setLoading(false); return }
+  const checkSession = useCallback(async (overrideToken) => {
+    const t = overrideToken || token
+    if (!t) { setLoading(false); return }
     try {
       const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {
         const data = await res.json()
         setUser(data)
+        if (!overrideToken) saveToken(t)
       } else {
         saveToken(null)
         setUser(null)
@@ -80,6 +82,12 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const restoreToken = async (newToken) => {
+    setLoading(true)
+    saveToken(newToken)
+    await checkSession(newToken)
+  }
+
   const logout = async () => {
     try {
       if (token) {
@@ -100,7 +108,8 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     login,
     register,
-    logout
+    logout,
+    restoreToken
   }
 
   return (
