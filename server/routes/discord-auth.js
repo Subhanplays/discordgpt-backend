@@ -108,7 +108,8 @@ router.get('/callback', async (req, res) => {
 
     console.log('Auth success:', user.username);
 
-    res.redirect(`${FRONTEND_REDIRECT}?token=${session.token}`);
+    const encodedToken = encodeURIComponent(session.token);
+    res.redirect(`${FRONTEND_REDIRECT}?token=${encodedToken}`);
   } catch (err) {
     console.error('Discord callback error:', err.message);
     res.redirect(`${FRONTEND_REDIRECT.replace('/auth/callback', '/auth')}?error=callback_failed`);
