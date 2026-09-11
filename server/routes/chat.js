@@ -4,6 +4,58 @@ const { authMiddleware } = require('../middleware/auth');
 const db = require('../database');
 const { generateChatResponse, generateBlueprint } = require('../utils/ai');
 
+function parseBlueprintFromAI(aiResponse) {
+  try {
+    const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)```/);
+    if (!jsonMatch) {
+      const altMatch = aiResponse.match(/\{[\s\S]*"categories"[\s\S]*"roles"[\s\S]*\}/);
+      if (!altMatch) return null;
+      var jsonStr = altMatch[0];
+    } else {
+      var jsonStr = jsonMatch[1];
+    }
+
+    const parsed = JSON.parse(jsonStr);
+
+    if (!parsed.categories || !Array.isArray(parsed.categories) || parsed.categories.length === 0) return null;
+    if (!parsed.roles || !Array.isArray(parsed.roles) || parsed.roles.length === 0) return null;
+
+    for (const cat of parsed.categories) {
+      if (!cat.name || !cat.channels || !Array.isArray(cat.channels)) return null;
+      for (const ch of cat.channels) {
+        if (!ch.name || !ch.type) return null;
+        if (!['text', 'voice', 'announcement', 'forum'].includes(ch.type)) ch.type = 'text';
+        if (!ch.description) ch.description = ch.name;
+      }
+    }
+
+    for (const role of parsed.roles) {
+      if (!role.name) return null;
+      if (!role.color || !/^#[0-9A-Fa-f]{6}$/.test(role.color)) {
+        role.color = '#99AAB5';
+      }
+      if (!Array.isArray(role.permissions)) role.permissions = ['SendMessages', 'ReadMessageHistory'];
+    }
+
+    return {
+      serverName: parsed.serverName || parsed.name || 'My Server',
+      description: parsed.description || `Welcome to ${parsed.serverName || 'our server'}!`,
+      categories: parsed.categories,
+      roles: parsed.roles,
+      settings: parsed.settings || {
+        verificationLevel: 'medium',
+        defaultMessageNotifications: 'only_mentions',
+        explicitContentFilter: 'all_members',
+        afkTimeout: 300,
+        systemChannelFlags: ['SUPPRESS_JOIN_NOTIFICATIONS']
+      }
+    };
+  } catch (e) {
+    console.error('Failed to parse AI blueprint JSON:', e.message);
+    return null;
+  }
+}
+
 router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
@@ -100,14 +152,16 @@ router.post('/send', async (req, res) => {
 
     const durationMs = Date.now() - startTime;
 
-    await db.createMessage(convId, 'assistant', aiResponse);
-
     const blueprintKeywords = ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup', 'template'];
     const isBlueprintRequest = blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
 
     if (isBlueprintRequest) {
-      try {
+      blueprint = parseBlueprintFromAI(aiResponse);
+      if (!blueprint) {
         blueprint = generateBlueprint(content);
+      }
+      await db.createMessage(convId, 'assistant', aiResponse);
+      try {
         await db.createGenerationLog(
           req.user.id, convId, content, JSON.stringify(blueprint), 'success', null, durationMs
         );
@@ -115,6 +169,7 @@ router.post('/send', async (req, res) => {
         console.error('Generation log error:', logError);
       }
     } else {
+      await db.createMessage(convId, 'assistant', aiResponse);
       await db.createGenerationLog(
         req.user.id, convId, content, aiResponse, 'success', null, durationMs
       );
@@ -168,14 +223,13 @@ router.post('/:id/messages', async (req, res) => {
 
     const durationMs = Date.now() - startTime;
 
-    await db.createMessage(req.params.id, 'assistant', aiResponse);
-
     const blueprintKeywords = ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup', 'template'];
     const isBlueprintRequest = blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
 
     if (isBlueprintRequest) {
+      const blueprint = parseBlueprintFromAI(aiResponse) || generateBlueprint(content);
+      await db.createMessage(req.params.id, 'assistant', aiResponse);
       try {
-        const blueprint = generateBlueprint(content);
         await db.createGenerationLog(
           req.user.id, req.params.id, content, JSON.stringify(blueprint), 'success', null, durationMs
         );
@@ -183,6 +237,7 @@ router.post('/:id/messages', async (req, res) => {
         console.error('Generation log error:', logError);
       }
     } else {
+      await db.createMessage(req.params.id, 'assistant', aiResponse);
       await db.createGenerationLog(
         req.user.id, req.params.id, content, aiResponse, 'success', null, durationMs
       );

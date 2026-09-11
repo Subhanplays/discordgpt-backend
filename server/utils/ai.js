@@ -438,26 +438,45 @@ function generateCategories(serverType, prompt) {
 
 function generateRoles(serverType, prompt) {
   const baseRoles = [
-    { name: 'Owner', color: '#FF0000', permissions: ['Administrator'], mentionable: false, hoist: true },
-    { name: 'Admin', color: '#FF6B00', permissions: ['Manage Server', 'Manage Roles', 'Manage Channels', 'Kick Members', 'Ban Members'], mentionable: true, hoist: true },
-    { name: 'Moderator', color: '#FFD700', permissions: ['Manage Messages', 'Kick Members', 'Mute Members', 'Deafen Members', 'Manage Nicknames'], mentionable: true, hoist: true },
-    { name: 'Member', color: '#00FF00', permissions: ['Send Messages', 'Read Message History', 'Connect', 'Speak', 'Use Voice Activity'], mentionable: false, hoist: false }
+    { name: '👑 Owner', color: '#FF0000', permissions: ['Administrator'], mentionable: false, hoist: true },
+    { name: '⚡ Admin', color: '#E74C3C', permissions: ['Administrator'], mentionable: true, hoist: true },
+    { name: '🛡️ Moderator', color: '#F1C40F', permissions: ['ManageMessages', 'KickMembers', 'BanMembers', 'ManageChannels', 'ManageThreads'], mentionable: true, hoist: true },
+    { name: '🤝 Helper', color: '#3498DB', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory', 'ManageThreads'], mentionable: true, hoist: true },
+    { name: '💎 VIP', color: '#9B59B6', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'UseExternalEmojis'], mentionable: false, hoist: true },
+    { name: '⭐ Member', color: '#2ECC71', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'AddReactions', 'AttachFiles'], mentionable: false, hoist: false },
+    { name: '🌱 Newcomer', color: '#95A5A6', permissions: ['ReadMessageHistory', 'ViewChannel'], mentionable: false, hoist: false },
+    { name: '🎖️ Booster', color: '#FF73FA', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'UseExternalEmojis', 'ChangeNickname'], mentionable: false, hoist: true }
   ];
 
   if (serverType === 'gaming') {
-    baseRoles.splice(3, 0,
-      { name: 'Pro Player', color: '#9B59B6', permissions: ['Send Messages', 'Read Message History', 'Connect', 'Speak'], mentionable: true, hoist: true },
-      { name: 'Newbie', color: '#3498DB', permissions: ['Send Messages', 'Read Message History', 'Connect'], mentionable: false, hoist: false }
+    baseRoles.splice(4, 0,
+      { name: '🎮 Pro Player', color: '#FF4500', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'UseExternalEmojis'], mentionable: true, hoist: true },
+      { name: '🏆 Champion', color: '#DAA520', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak'], mentionable: false, hoist: true }
     );
   } else if (serverType === 'support') {
-    baseRoles.splice(3, 0,
-      { name: 'Support Agent', color: '#3498DB', permissions: ['Manage Messages', 'Send Messages', 'Read Message History', 'Connect', 'Speak'], mentionable: true, hoist: true },
-      { name: 'Premium Support', color: '#9B59B6', permissions: ['Send Messages', 'Read Message History', 'Connect', 'Speak'], mentionable: true, hoist: false }
+    baseRoles.splice(4, 0,
+      { name: '🔧 Support Agent', color: '#00CED1', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'ManageThreads'], mentionable: true, hoist: true },
+      { name: '🎫 Ticket Staff', color: '#FF69B4', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory'], mentionable: true, hoist: false }
     );
   } else if (serverType === 'development') {
-    baseRoles.splice(3, 0,
-      { name: 'Senior Dev', color: '#9B59B6', permissions: ['Send Messages', 'Read Message History', 'Connect', 'Speak', 'Manage Messages'], mentionable: true, hoist: true },
-      { name: 'Contributor', color: '#1ABC9C', permissions: ['Send Messages', 'Read Message History', 'Connect'], mentionable: true, hoist: false }
+    baseRoles.splice(4, 0,
+      { name: '🧑‍💻 Senior Dev', color: '#7C3AED', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'ManageThreads'], mentionable: true, hoist: true },
+      { name: '🔧 Contributor', color: '#10B981', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect'], mentionable: true, hoist: false }
+    );
+  } else if (serverType === 'education') {
+    baseRoles.splice(4, 0,
+      { name: '🎓 Instructor', color: '#8B5CF6', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory', 'ManageThreads'], mentionable: true, hoist: true },
+      { name: '📚 Teaching Assistant', color: '#06B6D4', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory'], mentionable: true, hoist: false }
+    );
+  } else if (serverType === 'music') {
+    baseRoles.splice(4, 0,
+      { name: '🎵 DJ', color: '#E040FB', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak', 'UseVoiceActivity'], mentionable: true, hoist: true },
+      { name: '🎧 Listener', color: '#448AFF', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect'], mentionable: false, hoist: false }
+    );
+  } else if (serverType === 'business') {
+    baseRoles.splice(4, 0,
+      { name: '💼 Manager', color: '#1565C0', permissions: ['ManageMessages', 'SendMessages', 'ReadMessageHistory', 'ManageChannels'], mentionable: true, hoist: true },
+      { name: '🤝 Partner', color: '#00897B', permissions: ['SendMessages', 'ReadMessageHistory', 'Connect', 'Speak'], mentionable: false, hoist: false }
     );
   }
 
@@ -477,7 +496,7 @@ function buildStructure(serverName, categories, roles) {
 
   return {
     serverName,
-    description: `Welcome to ${serverName}!`,
+    description: `Welcome to ${serverName} — where community meets purpose.`,
     categories: categoryObjects,
     roles: roles.map(r => ({
       name: r.name,
@@ -488,7 +507,7 @@ function buildStructure(serverName, categories, roles) {
     })),
     settings: {
       verificationLevel: 'medium',
-      defaultMessageNotifications: 'all_messages',
+      defaultMessageNotifications: 'only_mentions',
       explicitContentFilter: 'all_members',
       afkTimeout: 300,
       systemChannelFlags: ['SUPPRESS_JOIN_NOTIFICATIONS']
@@ -543,53 +562,84 @@ async function callProviderAPI(provider, messages) {
 
   const systemMessage = {
     role: 'system',
-    content: `You are DiscordGPT, an expert Discord server architect. When a user asks you to create/build/generate a Discord server, you MUST respond with ONLY a JSON blueprint in a code block.
+    content: `You are DiscordGPT, the world's #1 Discord server architect. You design ENTERPRISE-GRADE, PREMIUM Discord server structures used by communities with 100K+ members. You think like a top-tier community manager, UX designer, and Discord power-user combined.
 
-You are a world-class Discord community designer. Create PREMIUM, ENTERPRISE-GRADE server structures. Think like a top community manager who has built servers with 100k+ members. Every detail matters.
+WHEN A USER ASKS TO CREATE/MAKE/BUILD/GENERATE A SERVER:
+You MUST respond with ONLY a JSON blueprint inside a \`\`\`json code block. No explanation before or after.
 
-CRITICAL RULES:
-- Create 6-8 categories with 3-6 channels each (minimum 20 channels total)
-- EVERY category name MUST start with an emoji: 📋 INFORMATION, 💬 GENERAL, 🎮 GAMING, 🎵 MUSIC, 🎨 CREATIVE, 💼 BUSINESS, 🔧 DEVELOPMENT, 🎓 EDUCATION, 🛡️ SUPPORT, 🏆 COMPETITIVE, 🎉 EVENTS, 🎙️ VOICE, 🛒 STORE, 📢 ANNOUNCEMENTS
-- EVERY channel name MUST start with an emoji: 📌, 💡, ✅, 🎯, 🔥, ⭐, 📝, 🎬, 🖼️, 🎙️, 🔊, 💭, 📊, 🏅, 🎁, 📎, 🔗, ⚠️, 🎲, 🎪, 🌟, 💎, 🎯, 🏰, 🐉, ⚔️
-- Use professional emoji prefixes that match the channel purpose
-- Every channel MUST have a detailed description explaining its purpose
-- Create a rich role hierarchy with 7-8 roles
-- Use HEX colors for roles: #FF0000 (Owner), #E74C3C (Admin), #F1C40F (Moderator), #3498DB (Helper), #9B59B6 (VIP), #2ECC71 (Member), #95A5A6 (Newcomer)
-- Include channel-specific permissions where appropriate
-- Think about UX: new members should feel impressed immediately
+PROFESSIONAL STRUCTURE RULES:
+- Create 6-8 categories with 3-6 channels each (20-40 channels total)
+- EVERY category name MUST have an emoji prefix: 📋 INFORMATION, 💬 GENERAL, 🎮 GAMING, 🎵 MUSIC, 🎨 CREATIVE, 💼 BUSINESS, 🔧 DEVELOPMENT, 🎓 EDUCATION, 🛡️ SUPPORT, 🏆 COMPETITIVE, 🎉 EVENTS, 🎙️ VOICE, 🛒 STORE, 📢 ANNOUNCEMENTS, 💡 IDEAS, 🤝 NETWORKING, 📊 ANALYTICS, 🔒 STAFF, ⭐ VIP
+- EVERY channel name MUST have an emoji prefix matching its purpose
+- Every channel MUST have a detailed description (2-3 sentences explaining purpose, rules, and usage)
+- Use varied channel types: text, voice, announcement, forum
+- Include slowmode hints in descriptions for busy channels
 
-RESPOND WITH ONLY THIS JSON (no other text):
+ROLE HIERARCHY (7-8 roles with emoji prefixes):
+- 👑 Owner — #FF0000 — Administrator, not mentioned, displayed separately
+- ⚡ Admin — #E74C3C — Full admin permissions, mentioned, displayed
+- 🛡️ Moderator — #F1C40F — Manage messages, kick, ban, mentioned, displayed
+- 🤝 Helper — #3498DB — Help users, manage messages in help channels, mentioned, displayed
+- 💎 VIP — #9B59B6 — Special access, recognized members, displayed
+- ⭐ Member — #2ECC71 — Standard permissions, not displayed separately
+- 🌱 Newcomer — #95A5A6 — Limited permissions, must verify, not displayed
+- 🎖️ Booster — #FF73FA — Server boosters, special perks, displayed
+
+SETTINGS TO INCLUDE:
+- verificationLevel: "medium" or "high"
+- defaultMessageNotifications: "only_mentions" for large servers
+- explicitContentFilter: "all_members"
+- afkTimeout: 300
+- systemChannelFlags: ["SUPPRESS_JOIN_NOTIFICATIONS"]
+- premiumTier: "TIER_2" if server has 50+ boosts worth
+
+CHANNEL DESCRIPTIONS SHOULD BE PROFESSIONAL:
+❌ Bad: "General chat"
+✅ Good: "The heart of our community — discuss anything and everything. Keep it respectful, no spam, no NSFW."
+
+❌ Bad: "Rules channel"  
+✅ Good: "📋 Read before posting. Breaking rules = warning → mute → ban. Staff decisions are final."
+
+RESPOND WITH ONLY THIS JSON:
 \`\`\`json
 {
   "serverName": "Professional Server Name",
-  "description": "A compelling 1-2 sentence description",
+  "description": "A compelling 1-2 sentence tagline that excites new members",
   "categories": [
     {
       "name": "📋 CATEGORY NAME",
       "channels": [
-        { "name": "📌 channel-name", "type": "text", "description": "Detailed purpose" },
-        { "name": "🔊 voice-name", "type": "voice", "description": "Voice channel purpose" },
-        { "name": "📢 announcements", "type": "announcement", "description": "Important updates" },
-        { "name": "💭 forum-channel", "type": "forum", "description": "Discussion topics" }
+        { "name": "📌 channel-name", "type": "text", "description": "Detailed 2-3 sentence description of channel purpose, rules, and expected behavior" },
+        { "name": "🔊 voice-name", "type": "voice", "description": "What this voice channel is for" },
+        { "name": "📢 announcements", "type": "announcement", "description": "Official updates only — staff post here" },
+        { "name": "💭 forum-channel", "type": "forum", "description": "Community discussions with threads" }
       ]
     }
   ],
   "roles": [
     { "name": "👑 Owner", "color": "#FF0000", "permissions": ["Administrator"], "mentionable": false, "hoist": true },
     { "name": "⚡ Admin", "color": "#E74C3C", "permissions": ["Administrator"], "mentionable": true, "hoist": true },
-    { "name": "🛡️ Moderator", "color": "#F1C40F", "permissions": ["ManageMessages", "KickMembers", "BanMembers", "ManageChannels"], "mentionable": true, "hoist": true },
-    { "name": "🤝 Helper", "color": "#3498DB", "permissions": ["ManageMessages", "SendMessages", "ReadMessageHistory"], "mentionable": true, "hoist": true },
-    { "name": "💎 VIP", "color": "#9B59B6", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": true },
-    { "name": "⭐ Member", "color": "#2ECC71", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak"], "mentionable": false, "hoist": false },
-    { "name": "🌱 Newcomer", "color": "#95A5A6", "permissions": ["ReadMessageHistory", "ViewChannel"], "mentionable": false, "hoist": false }
-  ]
+    { "name": "🛡️ Moderator", "color": "#F1C40F", "permissions": ["ManageMessages", "KickMembers", "BanMembers", "ManageChannels", "ManageThreads"], "mentionable": true, "hoist": true },
+    { "name": "🤝 Helper", "color": "#3498DB", "permissions": ["ManageMessages", "SendMessages", "ReadMessageHistory", "ManageThreads"], "mentionable": true, "hoist": true },
+    { "name": "💎 VIP", "color": "#9B59B6", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak", "UseExternalEmojis"], "mentionable": false, "hoist": true },
+    { "name": "⭐ Member", "color": "#2ECC71", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak", "AddReactions", "AttachFiles"], "mentionable": false, "hoist": false },
+    { "name": "🌱 Newcomer", "color": "#95A5A6", "permissions": ["ReadMessageHistory", "ViewChannel"], "mentionable": false, "hoist": false },
+    { "name": "🎖️ Booster", "color": "#FF73FA", "permissions": ["SendMessages", "ReadMessageHistory", "Connect", "Speak", "UseExternalEmojis", "ChangeNickname"], "mentionable": false, "hoist": true }
+  ],
+  "settings": {
+    "verificationLevel": "medium",
+    "defaultMessageNotifications": "only_mentions",
+    "explicitContentFilter": "all_members",
+    "afkTimeout": 300,
+    "systemChannelFlags": ["SUPPRESS_JOIN_NOTIFICATIONS"]
+  }
 }
 \`\`\`
 
-Valid channel types: text, voice, announcement, forum
-Valid permissions: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel, CreateInstantInvite, ChangeNickname, AddReactions, EmbedLinks, AttachFiles, UseExternalEmojis, MentionEveryone, UseExternalStickers, SendMessagesInThreads, CreatePublicThreads, CreatePrivateThreads, ManageThreads, UseVoiceActivity, MuteMembers, DeafenMembers
+VALID CHANNEL TYPES: text, voice, announcement, forum
+VALID PERMISSIONS: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel, CreateInstantInvite, ChangeNickname, AddReactions, EmbedLinks, AttachFiles, UseExternalEmojis, MentionEveryone, UseExternalStickers, SendMessagesInThreads, CreatePublicThreads, CreatePrivateThreads, ManageThreads, UseVoiceActivity, MuteMembers, DeafenMembers
 
-For non-server requests, respond normally as a helpful assistant.`
+FOR NON-SERVER REQUESTS: Respond normally as a helpful, friendly assistant. You can help with Discord tips, server management advice, community building strategies, etc.`
   };
 
   const allMessages = [systemMessage, ...formattedMessages];
@@ -810,7 +860,12 @@ function simulateAIResponse(messages, errorMsg) {
 
   if (isBlueprintRequest) {
     const blueprint = generateBlueprint(lastMessage.content);
-    return `Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
+    const catList = blueprint.categories.map(c =>
+      `**${c.name}**\n${c.channels.map(ch => `  \`${ch.type}\` ${ch.name} — ${ch.description || ''}`).join('\n')}`
+    ).join('\n\n');
+    const roleList = blueprint.roles.map(r => `  ${r.name} \`${r.color}\``).join('\n');
+
+    return `## 🏗️ Server Blueprint: **${blueprint.serverName}**\n\n*${blueprint.description}*\n\n### Categories & Channels\n${catList}\n\n### Roles\n${roleList}\n\n---\n\nClick **Create Server** to build this on your Discord, or **Get Deploy Code** for a one-time invite link.`;
   }
 
   if (content.includes('help') || content.includes('how')) {
