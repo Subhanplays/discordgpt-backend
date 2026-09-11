@@ -26,6 +26,7 @@ function parseBlueprintFromAI(aiResponse) {
         if (!ch.name || !ch.type) return null;
         if (!['text', 'voice', 'announcement', 'forum'].includes(ch.type)) ch.type = 'text';
         if (!ch.description) ch.description = ch.name;
+        if (!Array.isArray(ch.permissions)) ch.permissions = [];
       }
     }
 

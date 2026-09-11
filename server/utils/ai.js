@@ -117,10 +117,10 @@ function generateCustomCategories(themes, prompt) {
   categories.push({
     name: '📋 INFORMATION',
     channels: [
-      { name: '📌 rules', type: 'text', description: '📋 Server rules — read before posting. Breaking rules = warning → mute → ban. Staff decisions are final.' },
-      { name: '📢 announcements', type: 'announcement', description: '🚨 Official updates and news from the team. Staff post here — do not ping roles unnecessarily.' },
-      { name: '👋 welcome', type: 'text', description: '🎉 Welcome new members! Introduce yourself and tell us what brought you here.' },
-      { name: '🎭 roles', type: 'text', description: '🎨 Self-assign your roles to customize your experience and get access to specific channels.' }
+      { name: '📌 rules', type: 'text', description: '📋 Server rules — read before posting. Breaking rules = warning → mute → ban. Staff decisions are final.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: false }, { role: 'Staff', send: true }] },
+      { name: '📢 announcements', type: 'announcement', description: '🚨 Official updates and news from the team. Staff post here — do not ping roles unnecessarily.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: false }, { role: 'Staff', send: true }] },
+      { name: '👋 welcome', type: 'text', description: '🎉 Welcome new members! Introduce yourself and tell us what brought you here.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+      { name: '🎭 roles', type: 'text', description: '🎨 Self-assign your roles to customize your experience and get access to specific channels.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] }
     ]
   });
 
@@ -140,18 +140,24 @@ function generateCustomCategories(themes, prompt) {
       for (let j = 0; j < 3 && startIdx + j < channelBank.length; j++) {
         const rawName = channelBank[startIdx + j];
         const isVoice = rawName.includes('voice') || rawName.includes('listening') || rawName.includes('session') || rawName.includes('room') || rawName.includes('studio') || rawName.includes('partner') || rawName.includes('hangout') || rawName.includes('chill');
+        const isAnnouncement = rawName.includes('announcement') || rawName.includes('news') || rawName.includes('update');
         channels.push({
           name: rawName,
-          type: isVoice ? 'voice' : 'text',
-          description: describeChannel(rawName, theme.type)
+          type: isVoice ? 'voice' : isAnnouncement ? 'announcement' : 'text',
+          description: describeChannel(rawName, theme.type),
+          permissions: isVoice
+            ? [{ role: 'everyone', send: false }, { role: 'Member', send: true }]
+            : isAnnouncement
+              ? [{ role: 'everyone', send: false }, { role: 'Member', send: false }, { role: 'Staff', send: true }]
+              : [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }]
         });
       }
 
       if (channels.length === 0) {
         channels.push(
-          { name: 'general-chat', type: 'text', description: `General ${theme.type} discussion — keep it respectful and on-topic.` },
-          { name: 'showcase', type: 'text', description: 'Share your best work, creations, or achievements.' },
-          { name: 'feedback', type: 'forum', description: 'Get constructive feedback from the community.' }
+          { name: 'general-chat', type: 'text', description: `General ${theme.type} discussion — keep it respectful and on-topic.`, permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+          { name: 'showcase', type: 'text', description: 'Share your best work, creations, or achievements.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+          { name: 'feedback', type: 'forum', description: 'Get constructive feedback from the community.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] }
         );
       }
 
@@ -162,20 +168,20 @@ function generateCustomCategories(themes, prompt) {
   categories.push({
     name: '💬 COMMUNITY',
     channels: [
-      { name: '🔥 general-chat', type: 'text', description: 'The heart of our community — talk about anything and everything. Keep it friendly, no spam, no NSFW.' },
-      { name: '💡 suggestions', type: 'forum', description: 'Got ideas to improve the server? Share them here. The best suggestions get implemented.' },
-      { name: '🎉 events', type: 'text', description: 'Community events, game nights, giveaways, and special activities.' },
-      { name: '🏆 hall-of-fame', type: 'text', description: 'Celebrating our best members, top contributors, and outstanding achievements.' }
+      { name: '🔥 general-chat', type: 'text', description: 'The heart of our community — talk about anything and everything. Keep it friendly, no spam, no NSFW.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+      { name: '💡 suggestions', type: 'forum', description: 'Got ideas to improve the server? Share them here. The best suggestions get implemented.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+      { name: '🎉 events', type: 'text', description: 'Community events, game nights, giveaways, and special activities.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }, { role: 'Staff', send: true }] },
+      { name: '🏆 hall-of-fame', type: 'text', description: 'Celebrating our best members, top contributors, and outstanding achievements.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: false }, { role: 'Staff', send: true }] }
     ]
   });
 
   categories.push({
     name: '🎙️ VOICE CHANNELS',
     channels: [
-      { name: '🔊 general-voice', type: 'voice', description: 'General voice chat — hop in and talk with the community.' },
-      { name: '🔊 chill-zone', type: 'voice', description: 'Relaxed voice chat — no pressure, just vibes.' },
-      { name: '🎵 music', type: 'voice', description: 'Listen to music together using music bots.' },
-      { name: '💤 afk', type: 'voice', description: 'Away from keyboard — auto-moved after 5 minutes of inactivity.' }
+      { name: '🔊 general-voice', type: 'voice', description: 'General voice chat — hop in and talk with the community.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }] },
+      { name: '🔊 chill-zone', type: 'voice', description: 'Relaxed voice chat — no pressure, just vibes.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }] },
+      { name: '🎵 music', type: 'voice', description: 'Listen to music together using music bots.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }] },
+      { name: '💤 afk', type: 'voice', description: 'Away from keyboard — auto-moved after 5 minutes of inactivity.', permissions: [{ role: 'everyone', send: false }, { role: 'Member', send: true }] }
     ]
   });
 
@@ -429,7 +435,8 @@ function buildStructure(serverName, categories, roles) {
       name: ch.name,
       type: ch.type,
       topic: ch.description || '',
-      nsfw: false
+      nsfw: false,
+      permissions: ch.permissions || []
     }))
   }));
 
@@ -572,10 +579,10 @@ RESPOND WITH ONLY THIS JSON:
     {
       "name": "🎯 CREATIVE CATEGORY NAME",
       "channels": [
-        { "name": "📌 specific-channel-name", "type": "text", "description": "2-3 sentence description of purpose, content type, and rules" },
-        { "name": "🔊 voice-channel-name", "type": "voice", "description": "What happens in this voice channel" },
-        { "name": "📢 announcements-name", "type": "announcement", "description": "What kind of announcements go here" },
-        { "name": "💭 forum-channel-name", "type": "forum", "description": "What discussions happen here, how threads work" }
+        { "name": "📌 specific-channel-name", "type": "text", "description": "2-3 sentence description of purpose, content type, and rules", "permissions": [{ "role": "everyone", "send": false }, { "role": "Member", "send": true }, { "role": "Staff", "send": true }] },
+        { "name": "🔊 voice-channel-name", "type": "voice", "description": "What happens in this voice channel", "permissions": [{ "role": "everyone", "send": false }, { "role": "Member", "send": true }] },
+        { "name": "📢 announcements-name", "type": "announcement", "description": "What kind of announcements go here", "permissions": [{ "role": "everyone", "send": false }, { "role": "Member", "send": false }, { "role": "Staff", "send": true }] },
+        { "name": "💭 forum-channel-name", "type": "forum", "description": "What discussions happen here, how threads work", "permissions": [{ "role": "everyone", "send": false }, { "role": "Member", "send": true }] }
       ]
     }
   ],
@@ -599,6 +606,34 @@ RESPOND WITH ONLY THIS JSON:
 
 VALID CHANNEL TYPES: text, voice, announcement, forum
 VALID PERMISSIONS: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel, CreateInstantInvite, ChangeNickname, AddReactions, EmbedLinks, AttachFiles, UseExternalEmojis, MentionEveryone, UseExternalStickers, SendMessagesInThreads, CreatePublicThreads, CreatePrivateThreads, ManageThreads, UseVoiceActivity, MuteMembers, DeafenMembers
+
+CHANNEL PERMISSIONS (CRITICAL — YOU MUST SET THESE):
+Every channel MUST have a "permissions" array. This controls who can send messages.
+
+RULES:
+- announcement channels: ONLY staff roles can send messages. Members can only read. Set "send": false for @everyone/Member.
+- text channels: Members CAN send messages. Set "send": true for Member.
+- voice channels: Members CAN connect and speak. Set "send": true for Member.
+- forum channels: Members CAN create threads. Set "send": true for Member.
+- rules/info channels: Read-only for members. Set "send": false for Member.
+
+Permission format per channel:
+"permissions": [
+  { "role": "everyone", "send": false },
+  { "role": "Member", "send": true },
+  { "role": "Staff", "send": true }
+]
+
+For announcement channels, use:
+"permissions": [
+  { "role": "everyone", "send": false },
+  { "role": "Member", "send": false },
+  { "role": "Staff", "send": true }
+]
+
+STAFF ROLES are: Owner, Admin, Moderator, and any theme-specific staff role.
+MEMBER ROLES are: Member, Booster, and any theme-specific non-staff role.
+@everyone is the base role — always set it explicitly.
 
 IMPORTANT: The categories, channels, and roles MUST be directly inspired by the user's prompt. If they say "Minecraft survival server with economy", your categories should be about survival, economy, trading, builds — NOT generic "Information, General, Voice". Be creative, be specific, be unique.
 

@@ -63,8 +63,10 @@ export default function BlueprintPreview() {
           const isLastCh = chi === cat.channels.length - 1
           const chPrefix = isLastCat ? '    ' : '│   '
           const chChar = isLastCh ? '└── ' : '├── '
+          const isReadOnly = Array.isArray(ch.permissions) && ch.permissions.some(p => p.role === 'Member' && p.send === false && p.role !== 'everyone')
+          const permLabel = ch.type === 'announcement' ? '📢 Staff only' : isReadOnly ? '🔒 Read-only' : ch.type === 'voice' ? '🔊' : ''
           catLines.push(
-            <span key={`ch-${ci}-${chi}`}><span className="tree-char">{chPrefix}{chChar}</span><span className="channel">#{ch.name}</span>{ch.type && ch.type !== 'text' ? <span className="tree-char"> ({ch.type})</span> : null}</span>
+            <span key={`ch-${ci}-${chi}`}><span className="tree-char">{chPrefix}{chChar}</span><span className="channel">#{ch.name}</span>{ch.type && ch.type !== 'text' ? <span className="tree-char"> ({ch.type})</span> : null}{permLabel ? <span className="tree-char" style={{ opacity: 0.6 }}> {permLabel}</span> : null}</span>
           )
         })
       }

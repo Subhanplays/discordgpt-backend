@@ -250,16 +250,48 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
             reason: `Created by DiscordGPT`
           });
 
-          if (channelType === ChannelType.GuildText || channelType === ChannelType.GuildForum) {
+          if (channelType === ChannelType.GuildText || channelType === ChannelType.GuildForum || channelType === ChannelType.GuildAnnouncement) {
             try {
               await channel.lockPermissions();
-              const memberRole = roleMap['Member'];
-              if (memberRole) {
-                await channel.permissionOverwrites.edit(memberRole.id, {
-                  SendMessages: true,
-                  ReadMessageHistory: true,
-                  ViewChannel: true
-                });
+
+              if (Array.isArray(chDef.permissions) && chDef.permissions.length > 0) {
+                for (const permDef of chDef.permissions) {
+                  let targetId;
+                  if (permDef.role === 'everyone') {
+                    targetId = guild.roles.everyone.id;
+                  } else {
+                    const foundRole = guild.roles.cache.find(r => r.name === permDef.role || r.name.includes(permDef.role));
+                    targetId = foundRole ? foundRole.id : null;
+                  }
+                  if (!targetId) continue;
+
+                  const overwrite = {};
+                  if (permDef.send === true) {
+                    overwrite.SendMessages = true;
+                    overwrite.ReadMessageHistory = true;
+                    overwrite.ViewChannel = true;
+                    if (channelType === ChannelType.GuildForum) {
+                      overwrite.SendMessagesInThreads = true;
+                      overwrite.CreatePublicThreads = true;
+                    }
+                  } else {
+                    overwrite.SendMessages = false;
+                    overwrite.SendMessagesInThreads = false;
+                    overwrite.CreatePublicThreads = false;
+                    overwrite.ReadMessageHistory = true;
+                    overwrite.ViewChannel = true;
+                  }
+
+                  await channel.permissionOverwrites.edit(targetId, overwrite);
+                }
+              } else {
+                const memberRole = roleMap['Member'];
+                if (memberRole) {
+                  const defaultPerms = channelType === ChannelType.GuildAnnouncement
+                    ? { SendMessages: false, ReadMessageHistory: true, ViewChannel: true }
+                    : { SendMessages: true, ReadMessageHistory: true, ViewChannel: true };
+                  await channel.permissionOverwrites.edit(memberRole.id, defaultPerms);
+                }
               }
             } catch (error) {
               console.error(`Failed to set permissions for ${chDef.name}:`, error.message);
