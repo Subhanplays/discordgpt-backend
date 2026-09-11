@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const db = require('../database');
-const { getActiveBot, createServerStructure } = require('../utils/discord');
+const { getActiveBot } = require('../utils/discord');
 const { generateBlueprint } = require('../utils/ai');
+const queue = require('../utils/queue');
 
 router.use(authMiddleware);
 
@@ -26,39 +27,91 @@ router.post('/create', async (req, res) => {
     if (!serverId) return res.status(400).json({ error: 'Server ID is required' });
 
     const botSession = getActiveBot(req.user.id);
-    if (!botSession) return res.status(404).json({ error: 'No active bot connection. Please connect a bot first.' });
+    if (!botSession) {
+      return res.status(400).json({ error: 'No bot connected. Please connect your Discord bot first.' });
+    }
 
-    const dbConnection = await db.getBotConnectionByUserId(req.user.id);
-    const configId = await db.createServerConfig(
+    const job = queue.submit(
       req.user.id,
-      dbConnection ? dbConnection.id : null,
+      blueprint,
+      serverId,
+      botSession.token,
+      botSession.botInfo
+    );
+
+    if (job.error) {
+      return res.status(409).json({ error: job.error, jobId: job.jobId });
+    }
+
+    await db.createServerConfig(
+      req.user.id,
+      null,
       serverId,
       blueprint.serverName || blueprint.server?.name || 'Server',
       blueprint,
-      'in_progress'
+      'queued'
     );
 
-    try {
-      const result = await createServerStructure(
-        botSession.token,
-        serverId,
-        blueprint,
-        (progress) => {
-          console.log(`Progress: ${progress.step}/${progress.total} - ${progress.message}`);
-        }
-      );
-
-      await db.updateServerConfigStatus(configId.id, 'completed');
-
-      res.json({ success: true, configId: configId.id, result });
-    } catch (createError) {
-      console.error('Server creation error:', createError);
-      await db.updateServerConfigStatus(configId.id, 'failed');
-      res.status(500).json({ error: 'Server creation failed: ' + createError.message });
-    }
+    res.json({
+      success: true,
+      jobId: job.jobId,
+      position: job.position,
+      message: `Job queued. Position: ${job.position}`
+    });
   } catch (error) {
     console.error('Create server error:', error);
-    res.status(500).json({ error: 'Failed to create server' });
+    res.status(500).json({ error: 'Failed to queue server creation' });
+  }
+});
+
+router.get('/queue/:jobId', async (req, res) => {
+  try {
+    const job = queue.getJob(req.params.jobId);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    if (job.userId !== req.user.id) return res.status(403).json({ error: 'Access denied' });
+
+    res.json({
+      id: job.id,
+      status: job.status,
+      position: job.status === 'queued' ? queue.getQueueLength() : 0,
+      progress: job.progress,
+      result: job.result,
+      error: job.error,
+      createdAt: job.createdAt
+    });
+  } catch (error) {
+    console.error('Get job status error:', error);
+    res.status(500).json({ error: 'Failed to get job status' });
+  }
+});
+
+router.get('/queue', async (req, res) => {
+  try {
+    const jobs = queue.getJobsByUser(req.user.id);
+    const active = jobs.filter(j => ['queued', 'processing'].includes(j.status));
+    const recent = jobs.filter(j => ['completed', 'failed'].includes(j.status)).slice(0, 5);
+
+    res.json({
+      active: active.map(j => ({
+        id: j.id,
+        status: j.status,
+        position: j.status === 'queued' ? queue.getQueueLength() : 0,
+        progress: j.progress,
+        createdAt: j.createdAt
+      })),
+      recent: recent.map(j => ({
+        id: j.id,
+        status: j.status,
+        result: j.result,
+        error: j.error,
+        createdAt: j.createdAt
+      })),
+      queueLength: queue.getQueueLength(),
+      processing: !!queue.getActiveJob()
+    });
+  } catch (error) {
+    console.error('Get queue error:', error);
+    res.status(500).json({ error: 'Failed to get queue status' });
   }
 });
 

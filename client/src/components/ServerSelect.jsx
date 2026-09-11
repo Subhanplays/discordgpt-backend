@@ -1,15 +1,41 @@
 import React, { useEffect } from 'react'
-import { Check } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 
-export default function ServerSelect() {
-  const { servers, selectedServer, setSelectedServer, fetchServers, botConnected } = useChat()
+export default function ServerSelect({ compact = false }) {
+  const { servers, selectedServer, setSelectedServer, fetchServers, botConnected, botInfo } = useChat()
 
   useEffect(() => {
     if (botConnected) fetchServers()
   }, [botConnected, fetchServers])
 
   if (!botConnected) return null
+
+  if (compact) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Target:</span>
+        {servers.length === 0 ? (
+          <span style={{ fontSize: 13, color: 'var(--warning)' }}>No servers found</span>
+        ) : (
+          <select
+            className="settings-select"
+            style={{ flex: 1, minWidth: 0, padding: '6px 10px', fontSize: 13 }}
+            value={selectedServer?.id || ''}
+            onChange={(e) => {
+              const s = servers.find(s => s.id === e.target.value)
+              setSelectedServer(s || null)
+            }}
+          >
+            <option value="">Select a server...</option>
+            {servers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="server-select-wrapper slide-up">
@@ -19,15 +45,14 @@ export default function ServerSelect() {
         </div>
         {servers.length === 0 ? (
           <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>No servers found. Invite your bot to a server first.</p>
-            <button className="btn btn-primary" onClick={() => {
-              if (selectedServer?.id) {
-                const url = `https://discord.com/api/oauth2/authorize?client_id=${selectedServer.botClientId || ''}&permissions=8&scope=bot%20applications.commands`
-                window.open(url, '_blank')
-              }
-            }}>
-              Generate Invite Link
-            </button>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>No servers found. Invite your bot to a server first.</p>
+            {botInfo?.id && (
+              <button className="btn btn-primary" onClick={() => {
+                window.open(`https://discord.com/api/oauth2/authorize?client_id=${botInfo.id}&permissions=8&scope=bot%20applications.commands`, '_blank')
+              }}>
+                Generate Invite Link
+              </button>
+            )}
           </div>
         ) : (
           <div className="server-list">

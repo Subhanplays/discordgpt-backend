@@ -22,6 +22,7 @@ export function ChatProvider({ children }) {
   const [servers, setServers] = useState([])
   const [blueprint, setBlueprint] = useState(null)
   const [creationProgress, setCreationProgress] = useState(null)
+  const [activeJobId, setActiveJobId] = useState(null)
   const [templates, setTemplates] = useState([])
 
   const authHeaders = useCallback(() => ({
@@ -127,7 +128,7 @@ export function ChatProvider({ children }) {
         return data
       }
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.message || 'Connection failed')
+      throw new Error(err.message || err.error || 'Connection failed')
     } finally {
       setLoading(false)
     }
@@ -154,21 +155,70 @@ export function ChatProvider({ children }) {
   }, [authHeaders])
 
   const createServer = useCallback(async (blueprintData) => {
-    setCreationProgress({ step: 0, total: 5, steps: ['Validating blueprint', 'Creating roles', 'Creating categories', 'Creating channels', 'Applying permissions'], completed: [] })
+    if (!selectedServer) {
+      setCreationProgress({ status: 'error', message: 'No server selected', step: 0, total: 0, steps: [], completed: [] })
+      return null
+    }
+
+    setCreationProgress({
+      status: 'queued',
+      step: 0,
+      total: 6,
+      steps: ['Connecting to Discord', 'Validating permissions', 'Creating roles', 'Creating categories', 'Creating channels', 'Finalizing'],
+      completed: [],
+      message: 'Submitting to queue...'
+    })
+
     try {
       const res = await fetch('/api/server/create', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ blueprint: blueprintData, serverId: selectedServer?.id })
+        body: JSON.stringify({ blueprint: blueprintData, serverId: selectedServer.id })
       })
+
       if (res.ok) {
         const data = await res.json()
-        setCreationProgress(data.progress || { step: 5, total: 5, steps: [], completed: [0,1,2,3,4], done: true })
+        setActiveJobId(data.jobId)
+        setCreationProgress(prev => ({
+          ...prev,
+          status: 'queued',
+          jobId: data.jobId,
+          position: data.position,
+          message: `Position ${data.position} in queue...`
+        }))
+        return data
+      }
+
+      const err = await res.json().catch(() => ({}))
+      setCreationProgress({ status: 'error', message: err.error || 'Failed to start creation', step: 0, total: 0, steps: [], completed: [] })
+      return null
+    } catch {
+      setCreationProgress({ status: 'error', message: 'Network error', step: 0, total: 0, steps: [], completed: [] })
+      return null
+    }
+  }, [selectedServer, authHeaders])
+
+  const pollJobStatus = useCallback(async (jobId) => {
+    try {
+      const res = await fetch(`/api/server/queue/${jobId}`, { headers: authHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setCreationProgress({
+          status: data.status,
+          step: data.progress?.step || 0,
+          total: data.progress?.total || 6,
+          steps: data.progress?.steps || ['Connecting', 'Roles', 'Categories', 'Channels', 'Permissions', 'Done'],
+          completed: data.progress?.completed || [],
+          message: data.progress?.message || '',
+          position: data.position || 0,
+          result: data.result,
+          error: data.error
+        })
         return data
       }
     } catch {}
     return null
-  }, [selectedServer, authHeaders])
+  }, [authHeaders])
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -210,11 +260,13 @@ export function ChatProvider({ children }) {
     botConnected, botInfo, selectedServer, setSelectedServer,
     servers, blueprint, setBlueprint,
     creationProgress, setCreationProgress,
+    activeJobId, setActiveJobId,
     templates,
     fetchConversations, createConversation, deleteConversation,
     loadMessages, sendMessage,
     connectBot, disconnectBot, fetchServers,
-    createServer, fetchTemplates, saveTemplate, deleteTemplate
+    createServer, pollJobStatus,
+    fetchTemplates, saveTemplate, deleteTemplate
   }
 
   return (

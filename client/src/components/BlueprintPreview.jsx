@@ -1,10 +1,19 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useChat } from '../contexts/ChatContext'
+import { Loader2, AlertTriangle } from 'lucide-react'
+import ServerSelect from './ServerSelect'
 
 export default function BlueprintPreview() {
-  const { blueprint, setBlueprint } = useChat()
+  const { blueprint, setBlueprint, createServer, botConnected, selectedServer, creationProgress } = useChat()
+  const [creating, setCreating] = useState(false)
 
   if (!blueprint) return null
+
+  const handleCreate = async () => {
+    setCreating(true)
+    await createServer(blueprint)
+    setCreating(false)
+  }
 
   const renderTree = () => {
     if (!blueprint.categories) return null
@@ -36,16 +45,16 @@ export default function BlueprintPreview() {
           <span className="badge badge-success">Ready</span>
         </div>
         <div className="blueprint-body">
-          {blueprint.name && (
+          {(blueprint.serverName || blueprint.name) && (
             <div className="blueprint-section">
               <div className="blueprint-section-title">Server Name</div>
-              <div style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{blueprint.name}</div>
+              <div style={{ fontSize: 15, color: 'var(--text-primary)' }}>{blueprint.serverName || blueprint.name}</div>
             </div>
           )}
           {blueprint.description && (
             <div className="blueprint-section">
               <div className="blueprint-section-title">Description</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{blueprint.description}</div>
+              <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{blueprint.description}</div>
             </div>
           )}
           {blueprint.categories && blueprint.categories.length > 0 && (
@@ -69,10 +78,29 @@ export default function BlueprintPreview() {
             </div>
           )}
         </div>
+
+        {!botConnected && (
+          <div style={{ padding: '12px 24px', background: 'rgba(245,158,11,0.1)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--warning)' }}>
+            <AlertTriangle size={16} />
+            Connect your Discord bot first to create this server.
+          </div>
+        )}
+
+        {botConnected && (
+          <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border-color)' }}>
+            <ServerSelect compact />
+          </div>
+        )}
+
         <div className="blueprint-actions">
           <button className="btn btn-ghost" onClick={() => setBlueprint(null)}>Cancel</button>
-          <button className="btn btn-secondary">Edit Blueprint</button>
-          <button className="btn btn-primary">Create Server</button>
+          <button
+            className="btn btn-primary"
+            onClick={handleCreate}
+            disabled={creating || !botConnected || !selectedServer || (creationProgress && creationProgress.status !== 'error')}
+          >
+            {creating ? <><Loader2 size={14} className="spinner" /> Queuing...</> : 'Create Server'}
+          </button>
         </div>
       </div>
     </div>
