@@ -506,6 +506,7 @@ async function generateChatResponse(messages) {
       return response;
     } catch (error) {
       console.error(`AI provider ${provider.provider} (${provider.name}) failed:`, error.message);
+      console.error('Full error:', error.stack);
       return simulateAIResponse(messages, `AI provider error: ${error.message}`);
     }
   }
@@ -529,6 +530,8 @@ async function callProviderAPI(provider, messages) {
   const apiKey = provider.api_key;
   const model = provider.models?.[0] || getDefaultModel(provider.provider);
   const baseUrl = provider.base_url || getBaseUrl(provider.provider);
+
+  console.log('callProviderAPI:', provider.provider, 'model:', model, 'apiKey:', apiKey?.substring(0, 6) + '...');
 
   const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
 
@@ -654,6 +657,7 @@ async function callAnthropic(apiKey, model, messages) {
 }
 
 async function callGoogle(apiKey, model, messages) {
+  console.log('callGoogle called with model:', model, 'fetch available:', typeof fetch);
   const systemMsg = messages.find(m => m.role === 'system');
   const chatMessages = messages.filter(m => m.role !== 'system');
 
@@ -750,7 +754,11 @@ function simulateAIResponse(messages, errorMsg) {
 
   if (isBlueprintRequest) {
     const blueprint = generateBlueprint(lastMessage.content);
-    return `Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
+    let prefix = '';
+    if (errorMsg) {
+      prefix = `[AI Error: ${errorMsg}]\n\n`;
+    }
+    return `${prefix}Here's the Discord server blueprint I generated:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nClick **Create Server** to build this on your Discord server.`;
   }
 
   if (content.includes('help') || content.includes('how')) {
@@ -758,12 +766,16 @@ function simulateAIResponse(messages, errorMsg) {
   }
 
   if (content.includes('hello') || content.includes('hi') || content.includes('hey')) {
-    return `Hey! I'm DiscordGPT. I build Discord servers from natural language descriptions. What kind of server do you want me to create?`;
+    let prefix = '';
+    if (errorMsg) {
+      prefix = `[AI Error: ${errorMsg}]\n\n`;
+    }
+    return `${prefix}Hey! I'm DiscordGPT. I build Discord servers from natural language descriptions. What kind of server do you want me to create?`;
   }
 
   let prefix = '';
   if (errorMsg) {
-    prefix = `*Note: AI provider error — using built-in responses.*\n\n`;
+    prefix = `[AI Error: ${errorMsg}]\n\n`;
   }
 
   return `${prefix}I'm DiscordGPT, your Discord server builder. Describe the server you want and I'll create the full structure — categories, channels, roles, and permissions.\n\nFor example:\n- "Create a Minecraft hosting server called MineVo"\n- "Build a gaming community with LFG and voice channels"\n- "Generate a professional support server with tickets"`;
