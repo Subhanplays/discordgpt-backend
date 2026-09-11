@@ -586,7 +586,7 @@ function getDefaultModel(provider) {
   const defaults = {
     openai: 'gpt-4o-mini',
     anthropic: 'claude-3-haiku-20240307',
-    google: 'gemini-1.5-flash',
+    google: 'gemini-3.6-flash',
     mistral: 'mistral-small-latest',
     groq: 'llama-3.1-8b-instant',
     openrouter: 'auto',
@@ -662,7 +662,7 @@ async function callGoogle(apiKey, model, messages) {
     parts: [{ text: m.content }]
   }));
 
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-3.6-flash'}:generateContent?key=${apiKey}`;
 
   const body = { contents };
   if (systemMsg) {
