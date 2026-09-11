@@ -365,37 +365,252 @@ function buildStructure(serverName, categories, roles) {
 }
 
 async function generateChatResponse(messages) {
-  if (process.env.AI_API_KEY && process.env.AI_API_KEY !== 'your-ai-api-key') {
-    return await callAIProvider(messages);
+  const db = require('../database');
+  let provider;
+  try {
+    provider = await db.getActiveAiProvider();
+  } catch (e) {
+    console.error('Failed to fetch AI provider:', e.message);
   }
+
+  if (provider && provider.api_key) {
+    try {
+      return await callProviderAPI(provider, messages);
+    } catch (error) {
+      console.error(`AI provider ${provider.provider} error:`, error.message);
+      return simulateAIResponse(messages);
+    }
+  }
+
+  if (process.env.AI_API_KEY && process.env.AI_API_KEY !== 'your-ai-api-key') {
+    try {
+      return await callProviderAPI({
+        provider: 'openai',
+        api_key: process.env.AI_API_KEY,
+        models: ['gpt-3.5-turbo']
+      }, messages);
+    } catch (error) {
+      console.error('Fallback AI error:', error.message);
+    }
+  }
+
   return simulateAIResponse(messages);
 }
 
-async function callAIProvider(messages) {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.AI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
-        max_tokens: 2000
-      })
-    });
+async function callProviderAPI(provider, messages) {
+  const apiKey = provider.api_key;
+  const model = provider.models?.[0] || getDefaultModel(provider.provider);
+  const baseUrl = provider.base_url || getBaseUrl(provider.provider);
 
-    if (!response.ok) {
-      throw new Error('AI API request failed');
+  const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+  const systemMessage = {
+    role: 'system',
+    content: `You are DiscordGPT, an AI assistant that helps users create Discord server structures. When a user asks you to create/build/generate a Discord server, you MUST respond with a JSON blueprint wrapped in a code block like this:
+
+\`\`\`json
+{
+  "serverName": "Server Name",
+  "description": "Server description",
+  "categories": [
+    {
+      "name": "CATEGORY NAME",
+      "channels": [
+        { "name": "channel-name", "type": "text", "description": "What this channel is for" }
+      ]
     }
+  ],
+  "roles": [
+    { "name": "RoleName", "color": "#FF0000", "permissions": ["Permission1"], "mentionable": true, "hoist": true }
+  ]
+}
+\`\`\`
 
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('AI API error:', error);
-    return simulateAIResponse(messages);
+Valid channel types: text, voice, announcement, forum
+Valid roles: Owner, Admin, Moderator, Member, and custom roles
+Valid permissions: Administrator, ManageServer, ManageRoles, ManageChannels, KickMembers, BanMembers, ManageMessages, SendMessages, ReadMessageHistory, Connect, Speak, ViewChannel
+
+For non-server requests, just respond normally as a helpful assistant. Always be concise and helpful.`
+  };
+
+  const allMessages = [systemMessage, ...formattedMessages];
+
+  switch (provider.provider) {
+    case 'openai':
+    case 'openrouter':
+      return await callOpenAI(apiKey, model, baseUrl, allMessages);
+    case 'anthropic':
+      return await callAnthropic(apiKey, model, allMessages);
+    case 'google':
+      return await callGoogle(apiKey, model, allMessages);
+    case 'mistral':
+      return await callMistral(apiKey, model, allMessages);
+    case 'groq':
+      return await callGroq(apiKey, model, allMessages);
+    case 'custom':
+      return await callCustom(apiKey, model, baseUrl, allMessages);
+    default:
+      return await callOpenAI(apiKey, model, 'https://api.openai.com/v1', allMessages);
   }
+}
+
+function getDefaultModel(provider) {
+  const defaults = {
+    openai: 'gpt-4o-mini',
+    anthropic: 'claude-3-haiku-20240307',
+    google: 'gemini-1.5-flash',
+    mistral: 'mistral-small-latest',
+    groq: 'llama-3.1-8b-instant',
+    openrouter: 'auto',
+    custom: 'default'
+  };
+  return defaults[provider] || 'gpt-4o-mini';
+}
+
+function getBaseUrl(provider) {
+  const urls = {
+    openai: 'https://api.openai.com/v1',
+    openrouter: 'https://openrouter.ai/api/v1',
+    mistral: 'https://api.mistral.ai/v1',
+    groq: 'https://api.groq.com/openai/v1',
+    custom: ''
+  };
+  return urls[provider] || 'https://api.openai.com/v1';
+}
+
+async function callOpenAI(apiKey, model, baseUrl, messages) {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({ model, messages, max_tokens: 4096, temperature: 0.7 })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenAI API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function callAnthropic(apiKey, model, messages) {
+  const systemMsg = messages.find(m => m.role === 'system');
+  const chatMessages = messages.filter(m => m.role !== 'system');
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: model || 'claude-3-haiku-20240307',
+      max_tokens: 4096,
+      system: systemMsg?.content || '',
+      messages: chatMessages.map(m => ({ role: m.role, content: m.content }))
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Anthropic API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}
+
+async function callGoogle(apiKey, model, messages) {
+  const systemMsg = messages.find(m => m.role === 'system');
+  const chatMessages = messages.filter(m => m.role !== 'system');
+
+  const contents = chatMessages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
+
+  const body = { contents };
+  if (systemMsg) {
+    body.systemInstruction = { parts: [{ text: systemMsg.content }] };
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Google AI error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+async function callMistral(apiKey, model, messages) {
+  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 4096 })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Mistral API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function callGroq(apiKey, model, messages) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 4096 })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Groq API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function callCustom(apiKey, model, baseUrl, messages) {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 4096 })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Custom API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
 }
 
 function simulateAIResponse(messages) {
@@ -410,15 +625,7 @@ function simulateAIResponse(messages) {
     return `I've created a Discord server blueprint for you! Here's the structure:\n\n**Server Name:** ${blueprint.serverName}\n\n**Categories:**\n${blueprint.categories.map(c => `📁 ${c.name}\n${c.channels.map(ch => `  # ${ch.name} (${ch.type})`).join('\n')}`).join('\n\n')}\n\n**Roles:**\n${blueprint.roles.map(r => `👥 ${r.name} (${r.color})`).join('\n')}\n\nYou can now apply this blueprint to your Discord server using the Server Setup feature.`;
   }
 
-  if (content.includes('help') || content.includes('how')) {
-    return `I can help you with:\n\n1. **Creating Discord Server Blueprints** - Just describe the type of server you want, and I'll generate a complete structure with categories, channels, and roles.\n2. **Server Templates** - Save and reuse your favorite server configurations.\n3. **Bot Management** - Connect your Discord bot and manage server creation.\n\nTry saying something like: "Create a gaming server called Apex Legends Community" or "Generate a support server for my SaaS product".`;
-  }
-
-  if (content.includes('hello') || content.includes('hi') || content.includes('hey')) {
-    return `Hello! Welcome to DiscordGPT. I'm here to help you create and manage Discord servers. What kind of server would you like to set up today?`;
-  }
-
-  return `I understand you're asking about "${lastMessage.content}". I'm designed to help you create Discord server blueprints. Try describing the type of server you want to create, and I'll generate a complete structure with categories, channels, and roles.\n\nFor example:\n- "Create a gaming server for a Valorant community"\n- "Build a support server for my software"\n- "Generate a professional business networking server"`;
+  return `I'm DiscordGPT, your Discord server builder assistant. I can help you create server structures with categories, channels, roles, and permissions.\n\nTry something like:\n- "Create a gaming server called Apex Legends Community"\n- "Build a support server for my software"\n- "Generate a professional business networking server"\n\nNote: No AI provider is configured. Go to Admin Panel → AI Providers to add one for real AI responses.`;
 }
 
 module.exports = {
