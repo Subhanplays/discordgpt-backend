@@ -16,6 +16,8 @@ async function initDiscordAuth() {
   try {
     await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`);
     await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_access_token TEXT`);
+    await db.getPool().query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TEXT DEFAULT (now()::text)`);
+    await db.getPool().query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
   } catch (e) {
     console.log('Migration note:', e.message);
   }
