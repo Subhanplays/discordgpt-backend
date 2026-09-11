@@ -104,14 +104,22 @@ async function createServerStructure(botToken, serverId, blueprint, progressCall
           continue;
         }
 
-        const permissions = roleDef.permissions.map(p => {
+        const permArray = Array.isArray(roleDef.permissions) ? roleDef.permissions : [];
+        const permissions = permArray.reduce((acc, p) => {
+          if (typeof p !== 'string') return acc;
           const permName = p.replace(/\s+/g, '');
-          return PermissionFlagsBits[permName] || BigInt(0);
-        }).reduce((a, b) => a | b, BigInt(0));
+          const flag = PermissionFlagsBits[permName];
+          return flag ? acc | flag : acc;
+        }, BigInt(0));
+
+        let roleColor = roleDef.color || '#99AAB5';
+        if (typeof roleColor === 'string' && !roleColor.startsWith('#')) {
+          roleColor = '#' + roleColor;
+        }
 
         const role = await guild.roles.create({
           name: roleDef.name,
-          color: roleDef.color,
+          color: roleColor,
           permissions,
           mentionable: roleDef.mentionable !== false,
           hoist: roleDef.hoist || false,
