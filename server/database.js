@@ -169,6 +169,28 @@ async function initDatabase() {
   } catch (e) {
     // column may already exist
   }
+
+  // Discord profile columns
+  const discordMigrations = [
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_access_token TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_avatar TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_discriminator TEXT DEFAULT '0'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_banner TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_accent_color INTEGER`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_public_flags INTEGER DEFAULT 0`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_locale TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_mfa_enabled BOOLEAN DEFAULT false`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT false`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_secret TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TEXT DEFAULT (now()::text)`,
+    `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`
+  ];
+  for (const sql of discordMigrations) {
+    try { await db.query(sql); } catch (e) { /* already exists */ }
+  }
+
+  console.log('Discord profile columns ready');
 }
 
 function q(text, params) {
