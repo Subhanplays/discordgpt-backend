@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WelcomeScreen from '../components/WelcomeScreen'
 import MessageList from '../components/MessageList'
@@ -17,14 +17,17 @@ export default function ChatPage() {
     usage, fetchUsage
   } = useChat()
 
+  const activeConversationRef = useRef(activeConversation)
+  activeConversationRef.current = activeConversation
+
   useEffect(() => {
     fetchUsage()
   }, [fetchUsage])
 
   useEffect(() => {
     if (conversationId) {
-      const activeId = activeConversation?._id || activeConversation?.id
-      if (!activeConversation || activeId !== conversationId) {
+      const activeId = activeConversationRef.current?._id || activeConversationRef.current?.id
+      if (!activeConversationRef.current || activeId !== conversationId) {
         loadConversation(conversationId)
       }
     } else if (!conversationId && activeConversation) {

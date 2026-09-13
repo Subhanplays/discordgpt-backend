@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { useAuth } from './AuthContext'
 
 const ChatContext = createContext(null)
@@ -25,6 +25,9 @@ export function ChatProvider({ children }) {
   const [activeJobId, setActiveJobId] = useState(null)
   const [templates, setTemplates] = useState([])
   const [usage, setUsage] = useState({ count: 0, limit: 50, remaining: 50, resetAt: null })
+
+  const activeConversationRef = useRef(null)
+  activeConversationRef.current = activeConversation
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
