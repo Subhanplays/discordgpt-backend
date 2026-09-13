@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { ArrowUp, Paperclip, Mic, Globe, ChevronDown, Check } from 'lucide-react'
+import { ArrowUp, Paperclip, Mic, Globe, ChevronDown, Check, Sparkles } from 'lucide-react'
 
-export default function MessageComposer({ onSend, disabled, usage }) {
+export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const [text, setText] = useState('')
   const [modelOpen, setModelOpen] = useState(false)
   const textareaRef = useRef(null)
@@ -36,6 +36,16 @@ export default function MessageComposer({ onSend, disabled, usage }) {
     }
   }
 
+  const handleCreate = () => {
+    const trimmed = text.trim()
+    if (!trimmed || disabled) return
+    onCreate(trimmed)
+    setText('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -58,6 +68,15 @@ export default function MessageComposer({ onSend, disabled, usage }) {
           rows={1}
           disabled={disabled || isLimitReached}
         />
+        <button
+          className={`composer-create ${hasText && !isLimitReached ? 'active' : ''}`}
+          onClick={handleCreate}
+          disabled={!hasText || disabled || isLimitReached}
+          title="Create server blueprint"
+          aria-label="Create blueprint"
+        >
+          <Sparkles size={16} />
+        </button>
         <button
           className={`composer-send ${hasText && !isLimitReached ? 'active' : ''}`}
           onClick={handleSend}

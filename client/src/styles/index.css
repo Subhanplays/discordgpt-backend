@@ -552,6 +552,23 @@ html,body,#root{
 .composer-send:hover{opacity:0.9;transform:scale(1.05)}
 .composer-send:disabled{opacity:0.3;cursor:not-allowed;transform:none}
 
+.composer-create{
+  background:#3b82f6;
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-sm);
+  width:36px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+  transition:all var(--transition-fast);
+}
+.composer-create:hover{background:#2563eb;transform:scale(1.05);box-shadow:0 0 12px rgba(59,130,246,0.4)}
+.composer-create:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+
 .composer-actions{
   display:flex;
   align-items:center;
@@ -1678,6 +1695,28 @@ html,body,#root{
 .composer-send.active{opacity:1}
 .composer-send:hover{opacity:0.9;transform:scale(1.05)}
 .composer-send:disabled{opacity:0.2;cursor:not-allowed;transform:none}
+
+.composer-create{
+  position:absolute;
+  right:48px;
+  bottom:8px;
+  background:#3b82f6;
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-sm);
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+  transition:all var(--transition-fast);
+  opacity:0.3;
+}
+.composer-create.active{opacity:1}
+.composer-create.active:hover{background:#2563eb;transform:scale(1.05);box-shadow:0 0 12px rgba(59,130,246,0.4)}
+.composer-create:disabled{opacity:0.2;cursor:not-allowed;transform:none}
 
 .composer-actions{
   display:flex;

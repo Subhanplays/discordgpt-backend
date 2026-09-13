@@ -153,7 +153,7 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/send', async (req, res) => {
   try {
-    const { message: content, conversationId } = req.body;
+    const { message: content, conversationId, forceBlueprint } = req.body;
     if (!content) {
       return res.status(400).json({ error: 'Message is required' });
     }
@@ -199,7 +199,7 @@ router.post('/send', async (req, res) => {
     const durationMs = Date.now() - startTime;
 
     const blueprintKeywords = ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup', 'template'];
-    const isBlueprintRequest = blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
+    const isBlueprintRequest = forceBlueprint || blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
 
     if (isBlueprintRequest) {
       blueprint = parseBlueprintFromAI(aiResponse);
@@ -248,7 +248,7 @@ router.post('/:id/messages', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    const { content } = req.body;
+    const { content, forceBlueprint } = req.body;
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
     }
@@ -274,7 +274,7 @@ router.post('/:id/messages', async (req, res) => {
     const durationMs = Date.now() - startTime;
 
     const blueprintKeywords = ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup', 'template'];
-    const isBlueprintRequest = blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
+    const isBlueprintRequest = forceBlueprint || blueprintKeywords.some(kw => content.toLowerCase().includes(kw));
 
     if (isBlueprintRequest) {
       const blueprint = parseBlueprintFromAI(aiResponse) || generateBlueprint(content);

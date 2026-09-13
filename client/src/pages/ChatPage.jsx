@@ -54,6 +54,23 @@ export default function ChatPage() {
     }
   }
 
+  const handleCreate = async (content) => {
+    sendingRef.current = true
+    try {
+      if (!activeConversation) {
+        const conv = await createConversation(content.slice(0, 80))
+        if (conv) {
+          navigate(`/c/${conv.id || conv._id}`)
+          await sendMessage(content, conv.id || conv._id, true)
+        }
+      } else {
+        await sendMessage(content, activeConversation.id || activeConversation._id, true)
+      }
+    } finally {
+      sendingRef.current = false
+    }
+  }
+
   return (
     <div className="chat-area">
       {(!hasMessages && !blueprint && !creationProgress) ? (
@@ -66,7 +83,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {!creationProgress && <MessageComposer onSend={handleSend} disabled={aiTyping} usage={usage} />}
+      {!creationProgress && <MessageComposer onSend={handleSend} onCreate={handleCreate} disabled={aiTyping} usage={usage} />}
     </div>
   )
 }

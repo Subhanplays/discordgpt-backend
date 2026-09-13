@@ -156,7 +156,7 @@ export function ChatProvider({ children }) {
     return null
   }, [authHeaders])
 
-  const sendMessage = useCallback(async (content, conversationId) => {
+  const sendMessage = useCallback(async (content, conversationId, forceBlueprint = false) => {
     const userMsg = { id: Date.now().toString(), role: 'user', content, timestamp: new Date().toISOString() }
     setMessages(prev => [...prev, userMsg])
     setBlueprint(null)
@@ -167,7 +167,7 @@ export function ChatProvider({ children }) {
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ message: content, conversationId })
+        body: JSON.stringify({ message: content, conversationId, forceBlueprint })
       })
 
       if (res.status === 429) {
