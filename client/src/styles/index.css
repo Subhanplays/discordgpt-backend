@@ -761,10 +761,10 @@ html,body,#root{
 }
 
 .blueprint-preview{
-  padding:0 16px 8px;
   max-width:var(--max-w);
   width:100%;
   margin:0 auto;
+  padding:0 16px;
   animation:slideUp var(--transition-normal) ease;
 }
 
@@ -869,10 +869,10 @@ html,body,#root{
 }
 
 .progress-container{
-  padding:0 16px 8px;
   max-width:var(--max-w);
   width:100%;
   margin:0 auto;
+  padding:0 16px;
   animation:slideUp var(--transition-normal) ease;
 }
 

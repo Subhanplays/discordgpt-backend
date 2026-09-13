@@ -63,11 +63,10 @@ export default function ChatPage() {
       ) : (
         <div className="message-container">
           <MessageList messages={messages} aiTyping={aiTyping} />
+          {blueprint && !creationProgress && <BlueprintPreview />}
+          {creationProgress && <CreationProgress />}
         </div>
       )}
-
-      {blueprint && !creationProgress && <BlueprintPreview />}
-      {creationProgress && <CreationProgress />}
 
       {!creationProgress && <MessageComposer onSend={handleSend} disabled={aiTyping} usage={usage} />}
     </div>
