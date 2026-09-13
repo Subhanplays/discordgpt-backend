@@ -23,25 +23,25 @@ export default function TemplatesPage() {
   return (
     <div className="template-page">
       <div className="template-page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src="/logo.svg" alt="" className="page-header-logo" />
           <h1>Templates</h1>
         </div>
         <div style={{ position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             className="template-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search templates..."
-            style={{ paddingLeft: 36 }}
+            style={{ paddingLeft: 32 }}
           />
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="template-empty">
-          <FolderOpen size={48} />
+          <FolderOpen size={40} />
           <p>{search ? 'No templates match your search' : 'No templates yet. Create one from a conversation!'}</p>
         </div>
       ) : (

@@ -59,7 +59,7 @@ export default function MessageBubble({ message }) {
     <div className="message fade-in">
       <div className={`message-avatar ${isUser ? 'user-avatar' : 'assistant-avatar'}`}>
         {isUser ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         ) : (
           <img src="/logo.svg" alt="" className="message-avatar-logo" />
         )}
@@ -75,13 +75,13 @@ export default function MessageBubble({ message }) {
         {!isUser && (
           <div className="message-actions">
             <button onClick={handleCopy} className={copied ? 'active' : ''} title="Copy">
-              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? <Check size={13} /> : <Copy size={13} />}
             </button>
             <button onClick={handleLike} className={liked ? 'active' : ''} title="Good response">
-              <ThumbsUp size={14} />
+              <ThumbsUp size={13} />
             </button>
             <button onClick={handleDislike} className={disliked ? 'active' : ''} title="Bad response">
-              <ThumbsDown size={14} />
+              <ThumbsDown size={13} />
             </button>
           </div>
         )}

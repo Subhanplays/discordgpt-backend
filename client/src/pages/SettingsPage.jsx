@@ -122,26 +122,26 @@ export default function SettingsPage() {
   const discordBannerStyle = user?.discord_banner
     ? { background: `url(https://cdn.discordapp.com/banners/${user.discord_id}/${user.discord_banner}.${user.discord_banner.startsWith('a_') ? 'gif' : 'png'}?size=600) center/cover`, height: 100 }
     : user?.discord_accent_color
-      ? { background: `#${user.discord_accent_color.toString(16).padStart(6, '0')}`, height: 100 }
-      : { background: 'var(--accent-gradient)', height: 60 }
+      ? { background: `#${user.discord_accent_color.toString(16).padStart(6, '0')}`, height: 80 }
+      : { background: 'var(--text-primary)', height: 50 }
 
   return (
     <div className="settings-page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
         <img src="/logo.svg" alt="" className="page-header-logo" />
         <h1 style={{ margin: 0 }}>Settings</h1>
       </div>
 
       <div className="settings-section">
-        <div className="settings-section-title"><User size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />Discord Profile</div>
-        <div style={{ background: 'var(--bg-glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-glass)' }}>
+        <div className="settings-section-title"><User size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />Discord Profile</div>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
           <div style={discordBannerStyle} />
-          <div style={{ padding: '20px 24px', display: 'flex', gap: 18, alignItems: 'flex-start', marginTop: -36 }}>
-            <div style={{ width: 72, height: 72, borderRadius: 'var(--radius-xl)', border: '4px solid var(--bg-glass-solid)', overflow: 'hidden', flexShrink: 0, background: 'var(--accent-gradient)' }}>
+          <div style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: -30 }}>
+            <div style={{ width: 60, height: 60, borderRadius: 'var(--r-lg)', border: '3px solid var(--bg-card)', overflow: 'hidden', flexShrink: 0, background: 'var(--text-primary)' }}>
               {user?.discord_avatar ? (
                 <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 700, fontSize: 26 }}>
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-primary)', fontWeight: 700, fontSize: 22 }}>
                   {user?.username?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}

@@ -27,8 +27,8 @@ export default function WelcomeScreen({ onSelectPrompt }) {
       <p className="welcome-desc">Describe your dream Discord server and watch it come to life. AI creates a professional blueprint, then builds it instantly.</p>
 
       {botConnected && servers.length > 0 && (
-        <div style={{ marginBottom: 24, width: '100%', maxWidth: 400 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'left' }}>Target Server:</div>
+        <div style={{ marginBottom: 20, width: '100%', maxWidth: 380 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, textAlign: 'left' }}>Target Server:</div>
           <ServerSelect compact />
         </div>
       )}
@@ -37,7 +37,7 @@ export default function WelcomeScreen({ onSelectPrompt }) {
         {prompts.map((prompt, i) => (
           <div key={i} className="prompt-card" onClick={() => onSelectPrompt(prompt.text)}>
             <div className="prompt-card-icon">
-              <prompt.icon size={20} />
+              <prompt.icon size={18} />
             </div>
             <div className="prompt-card-text">{prompt.text}</div>
           </div>

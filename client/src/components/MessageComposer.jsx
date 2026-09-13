@@ -8,7 +8,7 @@ export default function MessageComposer({ onSend, disabled }) {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 180) + 'px'
     }
   }, [text])
 
@@ -50,22 +50,22 @@ export default function MessageComposer({ onSend, disabled }) {
           disabled={!hasText || disabled}
           aria-label="Send"
         >
-          <ArrowUp size={18} />
+          <ArrowUp size={16} />
         </button>
         <div className="composer-actions">
           <button className="composer-action-btn" title="Attach file">
-            <Paperclip size={16} />
+            <Paperclip size={14} />
           </button>
           <button className="composer-action-btn disabled" title="Web search (coming soon)">
-            <Globe size={16} />
+            <Globe size={14} />
           </button>
           <button className="composer-action-btn disabled" title="Voice input (coming soon)">
-            <Mic size={16} />
+            <Mic size={14} />
           </button>
           <button className="model-selector">
-            <img src="/logo.svg" alt="" style={{ width: 14, height: 14, borderRadius: 3, filter: 'var(--logo-filter)' }} />
+            <img src="/logo.svg" alt="" style={{ width: 12, height: 12, borderRadius: 2, filter: 'var(--logo-filter)' }} />
             DiscordGPT
-            <ChevronDown size={14} />
+            <ChevronDown size={12} />
           </button>
         </div>
       </div>

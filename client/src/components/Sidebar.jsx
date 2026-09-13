@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageSquarePlus, LayoutGrid, Server, Clock, Settings, Trash2, LogOut, PanelLeftClose, Shield } from 'lucide-react'
+import { MessageSquarePlus, LayoutGrid, Settings, Trash2, LogOut, Shield } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
 
@@ -46,28 +46,28 @@ export default function Sidebar({ open, onClose }) {
           <span className="sidebar-logo-text">DiscordGPT</span>
         </div>
         <button className="new-chat-btn" onClick={handleNewChat}>
-          <MessageSquarePlus size={16} />
+          <MessageSquarePlus size={15} />
           New chat
         </button>
       </div>
 
       <nav className="sidebar-nav">
         <button className={`sidebar-nav-item ${isActive('/') ? 'active' : ''}`} onClick={handleNewChat}>
-          <MessageSquarePlus size={18} />
+          <MessageSquarePlus size={16} />
           New chat
         </button>
         <button className={`sidebar-nav-item ${isActive('/templates') ? 'active' : ''}`} onClick={() => { navigate('/templates'); onClose() }}>
-          <LayoutGrid size={18} />
+          <LayoutGrid size={16} />
           Templates
         </button>
         <button className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`} onClick={() => { navigate('/settings'); onClose() }}>
-          <Settings size={18} />
+          <Settings size={16} />
           Settings
         </button>
         {user?.role === 'admin' && (
           <button className={`sidebar-nav-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => { navigate('/admin'); onClose() }}>
-            <Shield size={18} />
-            Admin Panel
+            <Shield size={16} />
+            Admin
           </button>
         )}
       </nav>
@@ -86,7 +86,7 @@ export default function Sidebar({ open, onClose }) {
                   <span className="conv-item-title">{conv.title || 'New conversation'}</span>
                   <div className="conv-item-actions">
                     <button onClick={(e) => handleDeleteConversation(e, conv.id)} title="Delete">
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
@@ -99,20 +99,17 @@ export default function Sidebar({ open, onClose }) {
       <div className="sidebar-footer">
         <div className="sidebar-footer-avatar">
           {user?.discord_avatar ? (
-            <img src={user.discord_avatar} alt="" className="sidebar-footer-avatar-img" />
+            <img src={user.discord_avatar} alt="" />
           ) : (
             user?.username?.[0]?.toUpperCase() || 'U'
           )}
         </div>
         <div className="sidebar-footer-info">
           <div className="sidebar-footer-name">{user?.username || 'User'}</div>
-          <div className="sidebar-footer-plan">{user?.two_fa_enabled ? '🔒 2FA Enabled' : 'Discord Account'}</div>
+          <div className="sidebar-footer-plan">{user?.two_fa_enabled ? '2FA Enabled' : 'Discord Account'}</div>
         </div>
-        <button onClick={() => { navigate('/settings'); onClose() }} title="Settings">
-          <Settings size={18} />
-        </button>
         <button onClick={logout} title="Log out">
-          <LogOut size={18} />
+          <LogOut size={16} />
         </button>
       </div>
     </aside>
