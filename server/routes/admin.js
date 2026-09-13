@@ -315,4 +315,156 @@ router.get('/users', async (req, res) => {
   }
 });
 
+router.get('/search-users', async (req, res) => {
+  try {
+    const { q: query } = req.query;
+    if (!query) return res.json(await db.getAllUsers());
+    const users = await db.searchUsers(query);
+    res.json(users);
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({ error: 'Failed to search users' });
+  }
+});
+
+router.get('/users/:id/conversations', async (req, res) => {
+  try {
+    const conversations = await db.getUserConversations(req.params.id);
+    res.json(conversations);
+  } catch (error) {
+    console.error('Get user conversations error:', error);
+    res.status(500).json({ error: 'Failed to get conversations' });
+  }
+});
+
+router.delete('/conversations/:id', async (req, res) => {
+  try {
+    const conv = await db.getPool().query('SELECT user_id FROM conversations WHERE id = $1', [req.params.id]);
+    if (conv.rows.length === 0) return res.status(404).json({ error: 'Conversation not found' });
+    await db.deleteConversation(req.params.id, conv.rows[0].user_id);
+    res.json({ message: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    res.status(500).json({ error: 'Failed to delete conversation' });
+  }
+});
+
+router.get('/all-conversations', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const conversations = await db.getAllConversations(limit);
+    res.json(conversations);
+  } catch (error) {
+    console.error('Get all conversations error:', error);
+    res.status(500).json({ error: 'Failed to get conversations' });
+  }
+});
+
+router.get('/blueprints', async (req, res) => {
+  try {
+    const blueprints = await db.getAllBlueprints(100);
+    res.json(blueprints);
+  } catch (error) {
+    console.error('Get blueprints error:', error);
+    res.status(500).json({ error: 'Failed to get blueprints' });
+  }
+});
+
+router.post('/users/:id/message-limit', async (req, res) => {
+  try {
+    const { limit } = req.body;
+    if (!limit || limit < 0) return res.status(400).json({ error: 'Invalid limit' });
+    await db.setUserMessageLimit(req.params.id, limit);
+    res.json({ message: `User message limit set to ${limit}` });
+  } catch (error) {
+    console.error('Set user message limit error:', error);
+    res.status(500).json({ error: 'Failed to set limit' });
+  }
+});
+
+router.get('/users/:id/message-limit', async (req, res) => {
+  try {
+    const limit = await db.getUserMessageLimit(req.params.id);
+    res.json({ limit });
+  } catch (error) {
+    console.error('Get user message limit error:', error);
+    res.status(500).json({ error: 'Failed to get limit' });
+  }
+});
+
+router.post('/impersonate', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const user = await db.impersonateUser(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const expiryMs = parseInt(process.env.SESSION_EXPIRY) || 86400000;
+    const session = await db.createSession(user.id, expiryMs);
+    res.json({ token: session.token, user });
+  } catch (error) {
+    console.error('Impersonate error:', error);
+    res.status(500).json({ error: 'Failed to impersonate' });
+  }
+});
+
+router.post('/broadcast', async (req, res) => {
+  try {
+    const { announcement } = req.body;
+    if (!announcement) return res.status(400).json({ error: 'Announcement text required' });
+    const result = await db.createBroadcast(announcement, req.user.id);
+    res.json({ message: 'Broadcast sent', broadcast: result });
+  } catch (error) {
+    console.error('Broadcast error:', error);
+    res.status(500).json({ error: 'Failed to send broadcast' });
+  }
+});
+
+router.get('/broadcasts', async (req, res) => {
+  try {
+    const broadcasts = await db.getBroadcasts();
+    res.json(broadcasts);
+  } catch (error) {
+    console.error('Get broadcasts error:', error);
+    res.status(500).json({ error: 'Failed to get broadcasts' });
+  }
+});
+
+router.get('/export/users', async (req, res) => {
+  try {
+    const users = await db.exportUsers();
+    const csv = ['id,username,email,discord_id,role,is_banned,created_at,last_login'];
+    users.forEach(u => csv.push(`${u.id},${u.username || ''},${u.email || ''},${u.discord_id || ''},${u.role},${u.is_banned},${u.created_at || ''},${u.last_login || ''}`));
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
+    res.send(csv.join('\n'));
+  } catch (error) {
+    console.error('Export users error:', error);
+    res.status(500).json({ error: 'Failed to export' });
+  }
+});
+
+router.get('/export/logs', async (req, res) => {
+  try {
+    const logs = await db.exportLogs(1000);
+    const csv = ['id,username,prompt,status,duration_ms,created_at'];
+    logs.forEach(l => csv.push(`${l.id},"${(l.username || '').replace(/"/g, '""')}","${(l.prompt || '').replace(/"/g, '""').replace(/\n/g, ' ')}",${l.status},${l.duration_ms || ''},${l.created_at || ''}`));
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=logs.csv');
+    res.send(csv.join('\n'));
+  } catch (error) {
+    console.error('Export logs error:', error);
+    res.status(500).json({ error: 'Failed to export' });
+  }
+});
+
+router.get('/deployments', async (req, res) => {
+  try {
+    const deployments = await db.getServerDeployments();
+    res.json(deployments);
+  } catch (error) {
+    console.error('Get deployments error:', error);
+    res.status(500).json({ error: 'Failed to get deployments' });
+  }
+});
+
 module.exports = router;

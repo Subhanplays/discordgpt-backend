@@ -632,6 +632,106 @@ module.exports = {
     return !!row;
   },
 
+  async searchUsers(query) {
+    const pattern = `%${query}%`;
+    return (await q(
+      `SELECT id, username, email, discord_id, role, is_banned, ban_reason, created_at, last_login, last_ip
+       FROM users WHERE username ILIKE $1 OR email ILIKE $1 OR discord_id ILIKE $1
+       ORDER BY created_at DESC`, [pattern]
+    )).rows;
+  },
+
+  async getUserConversations(userId) {
+    return (await q(
+      `SELECT id, title, created_at FROM conversations WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
+    )).rows;
+  },
+
+  async deleteConversation(conversationId, userId) {
+    await q('DELETE FROM messages WHERE conversation_id = $1', [conversationId]);
+    await q('DELETE FROM conversations WHERE id = $1 AND user_id = $2', [conversationId, userId]);
+  },
+
+  async getAllConversations(limit = 100) {
+    return (await q(
+      `SELECT c.id, c.title, c.created_at, c.user_id, u.username,
+              (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) as message_count
+       FROM conversations c LEFT JOIN users u ON c.user_id = u.id
+       ORDER BY c.created_at DESC LIMIT $1`, [limit]
+    )).rows;
+  },
+
+  async getAllBlueprints(limit = 100) {
+    return (await q(
+      `SELECT c.id, c.title, c.blueprint_json, c.created_at, u.username
+       FROM conversations c LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.blueprint_json IS NOT NULL
+       ORDER BY c.created_at DESC LIMIT $1`, [limit]
+    )).rows;
+  },
+
+  async setUserMessageLimit(userId, limit) {
+    await q(
+      `INSERT INTO settings (id, user_id, key, value, updated_at)
+       VALUES ($1, $2, 'personal_message_limit', $3, now()::text)
+       ON CONFLICT (user_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()::text`,
+      [require('uuid').v4(), userId, String(limit)]
+    );
+  },
+
+  async getUserMessageLimit(userId) {
+    const row = await qOne(
+      `SELECT value FROM settings WHERE user_id = $1 AND key = 'personal_message_limit'`,
+      [userId]
+    );
+    return row ? parseInt(row.value) : null;
+  },
+
+  async impersonateUser(userId) {
+    const user = await qOne('SELECT id, username, role FROM users WHERE id = $1', [userId]);
+    return user;
+  },
+
+  async createBroadcast(announcement, createdBy) {
+    const id = require('uuid').v4();
+    await q(
+      `INSERT INTO settings (id, user_id, key, value, updated_at)
+       VALUES ($1, 'system', 'broadcast', $2, now()::text)`,
+      [id, JSON.stringify({ announcement, createdBy, createdAt: new Date().toISOString() })]
+    );
+    return { id, announcement, createdBy };
+  },
+
+  async getBroadcasts() {
+    const rows = await qAll(
+      `SELECT value FROM settings WHERE user_id = 'system' AND key = 'broadcast' ORDER BY updated_at DESC`
+    );
+    return rows.map(r => { try { return JSON.parse(r.value); } catch { return null; } }).filter(Boolean);
+  },
+
+  async exportUsers() {
+    return (await q(
+      `SELECT id, username, email, discord_id, role, is_banned, created_at, last_login FROM users ORDER BY created_at DESC`
+    )).rows;
+  },
+
+  async exportLogs(limit = 1000) {
+    return (await q(
+      `SELECT g.id, g.user_id, u.username, g.prompt, g.status, g.duration_ms, g.created_at
+       FROM generation_logs g LEFT JOIN users u ON g.user_id = u.id
+       ORDER BY g.created_at DESC LIMIT $1`, [limit]
+    )).rows;
+  },
+
+  async getServerDeployments() {
+    return (await q(
+      `SELECT p.id, p.code, p.server_name, p.expires_at, p.created_at, u.username
+       FROM pending_blueprints p LEFT JOIN users u ON p.user_id = u.id
+       ORDER BY p.created_at DESC`
+    )).rows;
+  },
+
   // Pending Blueprints (deploy codes)
   async createPendingBlueprint(userId, blueprintJson, serverName) {
     const id = uuidv4();
