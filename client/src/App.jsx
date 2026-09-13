@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ChatProvider } from './contexts/ChatContext'
@@ -10,6 +10,7 @@ import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import AuthPage from './pages/AuthPage'
 import AuthCallback from './pages/AuthCallback'
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -40,6 +41,21 @@ function PublicRoute({ children }) {
 }
 
 function AppRoutes() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+
+  useKeyboardShortcuts({
+    onNewChat: () => { if (isAuthenticated) navigate('/') },
+    onFocusSearch: () => {
+      const el = document.querySelector('.sidebar-search-input')
+      if (el) el.focus()
+    },
+    onOpenSettings: () => { if (isAuthenticated) navigate('/settings') },
+    onClose: () => {
+      document.dispatchEvent(new CustomEvent('app:close'))
+    }
+  })
+
   return (
     <Routes>
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />

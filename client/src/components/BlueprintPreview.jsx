@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Loader2, Copy, Check, ExternalLink, Save } from 'lucide-react'
+import BlueprintVersionSelector from './BlueprintVersionSelector'
 
 export default function BlueprintPreview() {
   const { blueprint, setBlueprint, saveTemplate } = useChat()
@@ -12,6 +13,26 @@ export default function BlueprintPreview() {
   const [error, setError] = useState(null)
   const [saveLoading, setSaveLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [versions, setVersions] = useState([])
+  const [activeVersion, setActiveVersion] = useState(null)
+
+  useEffect(() => {
+    if (blueprint) {
+      setVersions(prev => {
+        const last = prev[prev.length - 1]
+        if (last && JSON.stringify(last.data) === JSON.stringify(blueprint)) return prev
+        return [...prev, { data: blueprint, timestamp: new Date().toISOString() }]
+      })
+      setActiveVersion(versions.length + 1)
+    }
+  }, [blueprint])
+
+  const handleRestoreVersion = (index) => {
+    if (versions[index]) {
+      setBlueprint(versions[index].data)
+      setActiveVersion(index + 1)
+    }
+  }
 
   if (!blueprint) return null
 
@@ -97,6 +118,7 @@ export default function BlueprintPreview() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, color: 'var(--text)' }} />
             <h3>Server Blueprint</h3>
+            <BlueprintVersionSelector versions={versions} activeVersion={activeVersion} onRestore={handleRestoreVersion} />
           </div>
           {!deployInfo && <span className="badge badge-success">Ready</span>}
           {deployInfo && <span className="badge" style={{ background: '#3b82f6', color: 'white' }}>Deploy Code Generated</span>}

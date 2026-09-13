@@ -60,6 +60,9 @@ class JobQueue {
     this.processing = true;
     nextJob.status = 'processing';
     nextJob.progress.message = 'Starting bot connection...';
+    if (typeof global.broadcastJobUpdate === 'function') {
+      global.broadcastJobUpdate(nextJob.userId, nextJob.id, nextJob.progress);
+    }
 
     const { createServerStructure } = require('./discord');
 
@@ -84,6 +87,9 @@ class JobQueue {
             completed: progress.completed || Array.from({ length: progress.step }, (_, i) => i),
             message: progress.message
           };
+          if (typeof global.broadcastJobUpdate === 'function') {
+            global.broadcastJobUpdate(nextJob.userId, nextJob.id, nextJob.progress);
+          }
         }
       );
 
@@ -92,11 +98,17 @@ class JobQueue {
       nextJob.progress.message = 'Server created successfully!';
       nextJob.progress.step = nextJob.progress.total;
       nextJob.progress.completed = Array.from({ length: nextJob.progress.total }, (_, i) => i);
+      if (typeof global.broadcastJobUpdate === 'function') {
+        global.broadcastJobUpdate(nextJob.userId, nextJob.id, nextJob.progress);
+      }
     } catch (error) {
       console.error('Job failed:', error);
       nextJob.status = 'failed';
       nextJob.error = error.message || 'Server creation failed';
       nextJob.progress.message = `Failed: ${error.message}`;
+      if (typeof global.broadcastJobUpdate === 'function') {
+        global.broadcastJobUpdate(nextJob.userId, nextJob.id, nextJob.progress);
+      }
     }
 
     this.processing = false;

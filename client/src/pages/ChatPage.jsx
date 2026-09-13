@@ -5,6 +5,7 @@ import MessageList from '../components/MessageList'
 import MessageComposer from '../components/MessageComposer'
 import BlueprintPreview from '../components/BlueprintPreview'
 import CreationProgress from '../components/CreationProgress'
+import ChatExport from '../components/ChatExport'
 import { useChat } from '../contexts/ChatContext'
 
 export default function ChatPage() {
@@ -78,6 +79,12 @@ export default function ChatPage() {
         <WelcomeScreen />
       ) : (
         <div className="message-container">
+          {hasMessages && (
+            <div className="chat-header">
+              <div />
+              <ChatExport />
+            </div>
+          )}
           <MessageList messages={messages} aiTyping={aiTyping} />
           {blueprint && !creationProgress && <BlueprintPreview />}
           {creationProgress && <CreationProgress />}

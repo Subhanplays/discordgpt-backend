@@ -1,15 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2 } from 'lucide-react'
+import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
+import { useTheme } from '../contexts/ThemeContext'
+import FolderList from './FolderList'
 
-export default function Sidebar({ open, onClose }) {
+export default function Sidebar({ open, onClose, searchInputRef }) {
   const { user, logout } = useAuth()
   const { conversations, activeConversation, loadConversation, deleteConversation, createConversation } = useChat()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [search, setSearch] = useState('')
+  const [activeFolder, setActiveFolder] = useState(null)
+  const localSearchRef = useRef(null)
 
   const isAdmin = user?.role === 'admin'
 
@@ -80,6 +85,7 @@ export default function Sidebar({ open, onClose }) {
 
       <div className="sidebar-search">
         <input
+          ref={searchInputRef || localSearchRef}
           className="sidebar-search-input"
           type="text"
           placeholder="Search conversations..."
@@ -87,6 +93,8 @@ export default function Sidebar({ open, onClose }) {
           onChange={e => setSearch(e.target.value)}
         />
       </div>
+
+      <FolderList activeFolder={activeFolder} onFolderSelect={setActiveFolder} />
 
       <div className="sidebar-history">
         {conversations.length > 0 && <div className="sidebar-history-label">Recent</div>}
@@ -118,6 +126,9 @@ export default function Sidebar({ open, onClose }) {
           </div>
           <button className="sidebar-logout" onClick={logout} aria-label="Log out">
             <LogOut size={16} />
+          </button>
+          <button className="sidebar-theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
       </div>

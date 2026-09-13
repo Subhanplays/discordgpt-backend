@@ -4,7 +4,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const { initDatabase } = require('./database');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const url = require('url');
+const { initDatabase, getSessionByToken } = require('./database');
 const { validateBotToken, setActiveBot } = require('./utils/discord');
 const { startPersistentClient, stopPersistentClient } = require('./utils/slashCommands');
 
@@ -115,7 +118,69 @@ async function start() {
 
     await connectBuiltinBot();
 
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+
+    const wss = new WebSocketServer({ server });
+    const wsClients = new Map();
+
+    wss.on('connection', (ws, req) => {
+      const params = new url.URL(req.url, `http://${req.headers.host}`).searchParams;
+      const token = params.get('token');
+
+      if (!token) {
+        ws.close(4001, 'Token required');
+        return;
+      }
+
+      const { getSessionByToken } = require('./database');
+      getSessionByToken(token).then(session => {
+        if (!session) {
+          ws.close(4002, 'Invalid token');
+          return;
+        }
+
+        ws.userId = session.user_id;
+        ws.subscriptions = new Set();
+
+        if (!wsClients.has(session.user_id)) {
+          wsClients.set(session.user_id, new Set());
+        }
+        wsClients.get(session.user_id).add(ws);
+
+        ws.on('message', (data) => {
+          try {
+            const msg = JSON.parse(data);
+            if (msg.type === 'subscribe' && msg.jobId) {
+              ws.subscriptions.add(msg.jobId);
+            }
+          } catch (e) {}
+        });
+
+        ws.on('close', () => {
+          const userClients = wsClients.get(ws.userId);
+          if (userClients) {
+            userClients.delete(ws);
+            if (userClients.size === 0) wsClients.delete(ws.userId);
+          }
+        });
+      }).catch(() => {
+        ws.close(4002, 'Auth error');
+      });
+    });
+
+    global.broadcastJobUpdate = (userId, jobId, progress) => {
+      const userClients = wsClients.get(userId);
+      if (userClients) {
+        const payload = JSON.stringify({ type: 'job_update', jobId, progress });
+        for (const ws of userClients) {
+          if (ws.readyState === 1 && (ws.subscriptions.size === 0 || ws.subscriptions.has(jobId))) {
+            ws.send(payload);
+          }
+        }
+      }
+    };
+
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {

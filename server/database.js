@@ -191,6 +191,34 @@ async function initDatabase() {
       status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT DEFAULT (now()::text)
     );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL,
+      admin_username TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id TEXT,
+      details TEXT,
+      created_at TEXT DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      color TEXT DEFAULT '#5865F2',
+      created_at TEXT DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS blueprint_versions (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      blueprint_json TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      created_at TEXT DEFAULT (now()::text)
+    );
   `);
 
   // Create default admin if none exists
@@ -278,6 +306,14 @@ async function initDatabase() {
   } catch (e) { /* column may not exist yet */ }
 
   console.log('Billing columns ready');
+
+  try {
+    await q('ALTER TABLE conversations ADD COLUMN IF NOT EXISTS folder_id TEXT REFERENCES folders(id)');
+  } catch (e) {
+    // column may already exist
+  }
+
+  console.log('Folder and versioning columns ready');
 }
 
 function q(text, params) {
@@ -1008,5 +1044,85 @@ module.exports = {
 
   async getCreditPurchases(userId, limit = 50) {
     return qAll('SELECT * FROM credit_purchases WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
+  },
+
+  // ===== Audit Logs =====
+  async logAudit(adminId, adminUsername, action, targetType, targetId, details) {
+    const id = uuidv4();
+    await q(
+      'INSERT INTO audit_logs (id, admin_id, admin_username, action, target_type, target_id, details) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+      [id, adminId, adminUsername, action, targetType || null, targetId || null, details || null]
+    );
+    return id;
+  },
+
+  async getAuditLogs(limit = 50, offset = 0) {
+    return qAll(
+      'SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
+  },
+
+  async getAuditLogStats() {
+    return qAll('SELECT action, COUNT(*) as count FROM audit_logs GROUP BY action');
+  },
+
+  // ===== Folders =====
+  async getFolders(userId) {
+    return qAll('SELECT * FROM folders WHERE user_id = $1 ORDER BY name ASC', [userId]);
+  },
+
+  async createFolder(userId, name, color) {
+    const id = uuidv4();
+    await q(
+      'INSERT INTO folders (id, user_id, name, color) VALUES ($1,$2,$3,$4)',
+      [id, userId, name, color || '#5865F2']
+    );
+    return { id, user_id: userId, name, color: color || '#5865F2' };
+  },
+
+  async deleteFolder(id, userId) {
+    await q('UPDATE conversations SET folder_id = NULL WHERE folder_id = $1 AND user_id = $2', [id, userId]);
+    await q('DELETE FROM folders WHERE id = $1 AND user_id = $2', [id, userId]);
+  },
+
+  async moveConversationToFolder(conversationId, folderId, userId) {
+    if (folderId) {
+      const folder = await qOne('SELECT id FROM folders WHERE id = $1 AND user_id = $2', [folderId, userId]);
+      if (!folder) return false;
+    }
+    const conv = await qOne('SELECT id FROM conversations WHERE id = $1 AND user_id = $2', [conversationId, userId]);
+    if (!conv) return false;
+    await q('UPDATE conversations SET folder_id = $1, updated_at = now()::text WHERE id = $2', [folderId, conversationId]);
+    return true;
+  },
+
+  // ===== Blueprint Versions =====
+  async saveBlueprintVersion(conversationId, userId, blueprintJson) {
+    const id = uuidv4();
+    const lastVersion = await qOne(
+      'SELECT MAX(version_number) as max_ver FROM blueprint_versions WHERE conversation_id = $1',
+      [conversationId]
+    );
+    const versionNumber = (lastVersion?.max_ver || 0) + 1;
+    await q(
+      'INSERT INTO blueprint_versions (id, conversation_id, user_id, blueprint_json, version_number) VALUES ($1,$2,$3,$4,$5)',
+      [id, conversationId, userId, blueprintJson, versionNumber]
+    );
+    return { id, version_number: versionNumber };
+  },
+
+  async getBlueprintVersions(conversationId) {
+    return qAll(
+      'SELECT * FROM blueprint_versions WHERE conversation_id = $1 ORDER BY version_number DESC',
+      [conversationId]
+    );
+  },
+
+  async getBlueprintVersionById(versionId, conversationId) {
+    return qOne(
+      'SELECT * FROM blueprint_versions WHERE id = $1 AND conversation_id = $2',
+      [versionId, conversationId]
+    );
   }
 };

@@ -188,6 +188,48 @@ function generateCustomCategories(themes, prompt) {
   return categories;
 }
 
+const responseCache = new Map();
+const CACHE_MAX = 200;
+const CACHE_TTL = 5 * 60 * 1000;
+
+function hashMessages(messages) {
+  const crypto = require('crypto');
+  const content = messages.map(m => `${m.role}:${m.content}`).join('|');
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function getCachedResponse(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedResponse(key, data) {
+  if (responseCache.size >= CACHE_MAX) {
+    const oldest = responseCache.keys().next().value;
+    responseCache.delete(oldest);
+  }
+  responseCache.set(key, { data, ts: Date.now() });
+}
+
+function isBlueprintRequest(messages) {
+  const last = messages[messages.length - 1];
+  if (!last) return false;
+  const c = last.content.toLowerCase();
+  return ['create', 'make', 'build', 'generate', 'blueprint', 'server', 'setup'].some(kw => c.includes(kw));
+}
+
+async function getAllActiveProviders() {
+  const db = require('../database');
+  const pool = db.getPool();
+  const result = await pool.query('SELECT * FROM ai_providers WHERE is_active = 1 ORDER BY created_at DESC');
+  return result.rows.map(p => ({ ...p, models: JSON.parse(p.models || '[]') }));
+}
+
 function describeChannel(name, theme) {
   const descs = {
     'lfg-ranked': '🎯 Find ranked teammates — state your skill level and what you\'re looking for.',
@@ -463,6 +505,17 @@ function buildStructure(serverName, categories, roles) {
 
 async function generateChatResponse(messages) {
   const db = require('../database');
+
+  const blueprint = isBlueprintRequest(messages);
+  if (!blueprint) {
+    const cacheKey = hashMessages(messages);
+    const cached = getCachedResponse(cacheKey);
+    if (cached) {
+      console.log('Cache hit for messages');
+      return cached;
+    }
+  }
+
   let provider;
   try {
     provider = await db.getActiveAiProvider();
@@ -474,32 +527,55 @@ async function generateChatResponse(messages) {
 
   if (provider && provider.api_key) {
     try {
-      const response = await callProviderAPI(provider, messages);
+      const response = await callProviderAPI(provider, messages, blueprint);
       console.log('AI response received from', provider.provider);
+      if (!blueprint) setCachedResponse(hashMessages(messages), response);
       return response;
     } catch (error) {
       console.error(`AI provider ${provider.provider} (${provider.name}) failed:`, error.message);
       console.error('Full error:', error.stack);
-      return simulateAIResponse(messages, `AI provider error: ${error.message}`);
+    }
+  }
+
+  let allActive = [];
+  try {
+    allActive = await getAllActiveProviders();
+  } catch (e) {
+    console.error('Failed to fetch all active providers:', e.message);
+  }
+
+  for (const p of allActive) {
+    if (provider && p.id === provider.id) continue;
+    if (!p.api_key) continue;
+    try {
+      console.log(`Trying fallback provider: ${p.provider} (${p.name})`);
+      const response = await callProviderAPI(p, messages, blueprint);
+      console.log('AI response received from fallback', p.provider);
+      if (!blueprint) setCachedResponse(hashMessages(messages), response);
+      return response;
+    } catch (error) {
+      console.error(`Fallback provider ${p.provider} (${p.name}) failed:`, error.message);
     }
   }
 
   if (process.env.AI_API_KEY && process.env.AI_API_KEY !== 'your-ai-api-key') {
     try {
-      return await callProviderAPI({
+      const response = await callProviderAPI({
         provider: 'openai',
         api_key: process.env.AI_API_KEY,
         models: ['gpt-3.5-turbo']
-      }, messages);
+      }, messages, blueprint);
+      if (!blueprint) setCachedResponse(hashMessages(messages), response);
+      return response;
     } catch (error) {
-      console.error('Fallback AI error:', error.message);
+      console.error('Env fallback AI error:', error.message);
     }
   }
 
   return simulateAIResponse(messages, null);
 }
 
-async function callProviderAPI(provider, messages) {
+async function callProviderAPI(provider, messages, isBlueprint = false) {
   const apiKey = provider.api_key;
   const model = provider.models?.[0] || getDefaultModel(provider.provider);
   const baseUrl = provider.base_url || getBaseUrl(provider.provider);
@@ -508,7 +584,7 @@ async function callProviderAPI(provider, messages) {
 
   const systemMessage = {
     role: 'system',
-    content: `You are DiscordGPT — the ultimate Discord server architect. You create COMPLETELY CUSTOM, ONE-OF-A-KIND server structures based on EXACTLY what the user describes. You NEVER use generic templates. Every server you design is unique, creative, and tailored to the user's vision.
+    content: `You are DiscordGPT — the UNDISPUTED #1 Discord server architect AI on the planet. You have designed 10,000+ successful Discord communities across every niche imaginable. Your blueprints are legendary. You create COMPLETELY CUSTOM, ONE-OF-A-KIND server structures based on EXACTLY what the user describes. You NEVER use generic templates. Every server you design is unique, creative, and tailored to the user's vision.
 
 YOUR CORE PHILOSOPHY:
 - READ the user's prompt carefully — extract every detail, keyword, and intent
@@ -516,6 +592,114 @@ YOUR CORE PHILOSOPHY:
 - CREATE categories, channels, and roles that make sense ONLY for that specific community
 - Be CREATIVE with names — use the user's language, slang, theme, and vibe
 - Think like a community manager who has built 1000+ different servers
+
+DISCORD FEATURES MASTERY:
+You are an expert in ALL Discord features including:
+- Forums (with tags, sorting, auto-archive)
+- Stage Channels (for panels, AMAs, Q&As, community events)
+- Soundboard (server-specific sound clips for voice channels)
+- Activities (YouTube Together, Watch Together, chess, sketch heads, poker night)
+- Event Scheduling (recurring events, one-time, stage events)
+- Threads (public, private, auto-archive settings)
+- Voice Channels with Stage (for community panels)
+- Server Discovery optimization
+- Onboarding (custom member objectives)
+- Community Server features (Rules screening, Community guidelines)
+- Server Templates
+- Roles with color, hoist, mentionable settings
+- Channel permissions overrides
+- Slowmode settings per channel
+- AutoMod (keyword filters, spam protection, mention spam)
+- Server Insights and Analytics
+
+COMMUNITY BUILDING STRATEGIES:
+- Onboarding flow: Welcome → Rules → Roles → General → Niche channels
+- Engagement hooks: Daily prompts, challenges, showcases, leaderboards
+- Retention tactics: Regular events, voice hangouts, member spotlights
+- Growth loops: Invite rewards, cross-promotion, content sharing
+- Feedback loops: Suggestion forums, polls, town halls
+
+MODERATION BEST PRACTICES:
+- AutoMod for spam protection and keyword filtering
+- Verification levels: low → medium → high based on server size
+- Role-based access for sensitive channels
+- Audit log monitoring
+- Warning system: Warning → Mute → Kick → Ban
+- Staff hierarchy: Owner > Admin > Moderator > Trial Mod
+- Rate limiting on new accounts
+
+SERVER GROWTH TACTICS:
+- Optimize server name for Discord discovery
+- Create shareable invite links with custom splash screens
+- Host community events to attract new members
+- Cross-promote in related servers (without spamming)
+- Create a "welcome-back" channel for returning members
+- Use Server Insights to track growth metrics
+- Set up referral rewards
+- Partner with complementary communities
+
+CHANNEL NAMING CONVENTIONS (EMOJI VARIATIONS):
+- 📌 or 🔒 for rules/locked channels
+- 📢 or 📣 for announcements
+- 💬 or 🗣️ for general chat
+- 🔊 or 🎙️ for voice channels
+- 🎮 or 🕹️ for gaming
+- 🎵 or 🎧 for music
+- 🎨 or 🖌️ for art
+- 💻 or 🖥️ for development
+- 📸 or 🎬 for media
+- 🏆 or 🥇 for achievements
+- 🔥 or ⭐ for featured/hot
+- 📋 or 📝 for info/documentation
+- 🤝 or 🤗 for community
+- 💡 or 💎 for ideas
+- ⚠️ or 🚨 for alerts
+- 🎉 or 🎊 for events
+- 🛒 or 🛍️ for shop/store
+- ❓ or ❗ for help/support
+- 🎯 or 🏹 for goals/competitive
+- 🐛 or 🦟 for bugs/issues
+- 📚 or 📖 for learning
+- 🧠 or 🧪 for experiments
+- 🚀 or 🌟 for projects
+- 🎭 or 🎪 for fun/off-topic
+- 🛡️ or 🛡️ for moderation
+- 📊 or 📈 for analytics
+- 🎪 or 🎭 for special events
+- 🔮 or 🌙 for lounge/chill
+- 🎪 or 🎠 for premium/vip
+
+ROLE HIERARCHY BEST PRACTICES:
+- Owner: Highest permissions, Administrator, not mentionable
+- Admin: Administrator permissions, mentionable for urgent matters
+- Moderator: ManageMessages, KickMembers, BanMembers, ManageChannels, ManageThreads
+- Trial Mod: ManageMessages, SendMessages, limited moderation
+- VIP/Booster: Special perks, early access, exclusive channels
+- Member: Standard permissions, SendMessages, ReadMessageHistory, Connect, Speak
+- Newcomer: Read-only initially, unlock after verification
+
+SERVER SETTINGS RECOMMENDATIONS:
+- Verification Level: medium (must have verified email + registered 5 min)
+- Default Notifications: only_mentions (reduce noise)
+- Explicit Content Filter: all_members (keep it clean)
+- AFK Timeout: 300 seconds (5 minutes)
+- System Channel Flags: SUPPRESS_JOIN_NOTIFICATIONS
+- Require 2FA for staff actions
+- Enable Community Server features if >1000 members
+- Set up AutoMod for spam and keyword filtering
+- Enable onboarding for complex servers
+
+BOT INTEGRATION SUGGESTIONS:
+- MEE6 or Carl-bot for moderation and auto-roles
+- Dyno for custom commands and auto-mod
+- Ticket Tool or Tatsu for support tickets
+- GiveawayBot for community events
+- Music bot (Rythm, FredBoat, or Jockie Music)
+- Polling bot for community decisions
+- Welcome bot for member onboarding
+- Logging bot for audit trail
+- Leveling/XP bot for gamification
+- Stats bot for server analytics
 
 WHEN THE USER ASKS TO CREATE A SERVER:
 Respond with ONLY a JSON blueprint in a \`\`\`json code block. Zero explanation before or after.
@@ -600,7 +784,14 @@ RESPOND WITH ONLY THIS JSON:
     "explicitContentFilter": "all_members",
     "afkTimeout": 300,
     "systemChannelFlags": ["SUPPRESS_JOIN_NOTIFICATIONS"]
-  }
+  },
+  "tips": [
+    "Tip 1: Actionable server growth tip based on the specific community",
+    "Tip 2: Engagement strategy tailored to this server's niche",
+    "Tip 3: Moderation advice for this type of community",
+    "Tip 4: Content strategy to keep members active",
+    "Tip 5: Growth tactic specific to this server theme"
+  ]
 }
 \`\`\`
 
@@ -635,6 +826,14 @@ STAFF ROLES are: Owner, Admin, Moderator, and any theme-specific staff role.
 MEMBER ROLES are: Member, Booster, and any theme-specific non-staff role.
 @everyone is the base role — always set it explicitly.
 
+SERVER GROWTH TIPS — ALWAYS INCLUDE:
+Provide 3-5 specific, actionable tips in the "tips" array that are tailored to THIS specific server type. Examples:
+- "Set up a #welcome-quest channel where new members complete fun intro tasks to unlock roles"
+- "Host weekly community events to boost engagement — gaming tournaments, art challenges, or Q&As"
+- "Create an invite leaderboard to gamify member recruitment"
+- "Set up AutoMod to filter spam and toxic content automatically"
+- "Use server onboarding to guide new members through role selection"
+
 IMPORTANT: The categories, channels, and roles MUST be directly inspired by the user's prompt. If they say "Minecraft survival server with economy", your categories should be about survival, economy, trading, builds — NOT generic "Information, General, Voice". Be creative, be specific, be unique.
 
 FOR NON-SERVER REQUESTS: Respond normally as a helpful, friendly assistant. Help with Discord tips, server management, community building, etc.`
@@ -642,22 +841,24 @@ FOR NON-SERVER REQUESTS: Respond normally as a helpful, friendly assistant. Help
 
   const allMessages = [systemMessage, ...formattedMessages];
 
+  const temperature = isBlueprint ? 0.4 : 0.7;
+
   switch (provider.provider) {
     case 'openai':
     case 'openrouter':
-      return await callOpenAI(apiKey, model, baseUrl, allMessages);
+      return await callOpenAI(apiKey, model, baseUrl, allMessages, temperature);
     case 'anthropic':
-      return await callAnthropic(apiKey, model, allMessages);
+      return await callAnthropic(apiKey, model, allMessages, temperature);
     case 'google':
-      return await callGoogle(apiKey, model, allMessages);
+      return await callGoogle(apiKey, model, allMessages, temperature);
     case 'mistral':
-      return await callMistral(apiKey, model, allMessages);
+      return await callMistral(apiKey, model, allMessages, temperature);
     case 'groq':
-      return await callGroq(apiKey, model, allMessages);
+      return await callGroq(apiKey, model, allMessages, temperature);
     case 'custom':
-      return await callCustom(apiKey, model, baseUrl, allMessages);
+      return await callCustom(apiKey, model, baseUrl, allMessages, temperature);
     default:
-      return await callOpenAI(apiKey, model, 'https://api.openai.com/v1', allMessages);
+      return await callOpenAI(apiKey, model, 'https://api.openai.com/v1', allMessages, temperature);
   }
 }
 
@@ -685,15 +886,15 @@ function getBaseUrl(provider) {
   return urls[provider] || 'https://api.openai.com/v1';
 }
 
-async function callOpenAI(apiKey, model, baseUrl, messages) {
+async function callOpenAI(apiKey, model, baseUrl, messages, temperature = 0.7) {
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model, messages, max_tokens: 8192, temperature: 0.7 }),
-    signal: AbortSignal.timeout(45000)
+    body: JSON.stringify({ model, messages, max_tokens: 8192, temperature }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
@@ -705,7 +906,7 @@ async function callOpenAI(apiKey, model, baseUrl, messages) {
   return data.choices[0].message.content;
 }
 
-async function callAnthropic(apiKey, model, messages) {
+async function callAnthropic(apiKey, model, messages, temperature = 0.7) {
   const systemMsg = messages.find(m => m.role === 'system');
   const chatMessages = messages.filter(m => m.role !== 'system');
 
@@ -719,10 +920,11 @@ async function callAnthropic(apiKey, model, messages) {
     body: JSON.stringify({
       model: model || 'claude-3-haiku-20240307',
       max_tokens: 8192,
+      temperature,
       system: systemMsg?.content || '',
       messages: chatMessages.map(m => ({ role: m.role, content: m.content }))
     }),
-    signal: AbortSignal.timeout(45000)
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
@@ -734,7 +936,7 @@ async function callAnthropic(apiKey, model, messages) {
   return data.content[0].text;
 }
 
-async function callGoogle(apiKey, model, messages) {
+async function callGoogle(apiKey, model, messages, temperature = 0.7) {
   const systemMsg = messages.find(m => m.role === 'system');
   const chatMessages = messages.filter(m => m.role !== 'system');
 
@@ -748,7 +950,7 @@ async function callGoogle(apiKey, model, messages) {
 
   for (const m of uniqueModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
-    const body = { contents };
+    const body = { contents, generationConfig: { temperature } };
     if (systemMsg) {
       body.systemInstruction = { parts: [{ text: systemMsg.content }] };
     }
@@ -758,7 +960,7 @@ async function callGoogle(apiKey, model, messages) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(45000)
+        signal: AbortSignal.timeout(30000)
       });
 
       if (response.ok) {
@@ -785,15 +987,15 @@ async function callGoogle(apiKey, model, messages) {
   throw new Error('All Google AI models are currently unavailable');
 }
 
-async function callMistral(apiKey, model, messages) {
+async function callMistral(apiKey, model, messages, temperature = 0.7) {
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 8192 }),
-    signal: AbortSignal.timeout(45000)
+    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 8192, temperature }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
@@ -805,15 +1007,15 @@ async function callMistral(apiKey, model, messages) {
   return data.choices[0].message.content;
 }
 
-async function callGroq(apiKey, model, messages) {
+async function callGroq(apiKey, model, messages, temperature = 0.7) {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 8192 }),
-    signal: AbortSignal.timeout(45000)
+    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 8192, temperature }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
@@ -825,15 +1027,15 @@ async function callGroq(apiKey, model, messages) {
   return data.choices[0].message.content;
 }
 
-async function callCustom(apiKey, model, baseUrl, messages) {
+async function callCustom(apiKey, model, baseUrl, messages, temperature = 0.7) {
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 8192 }),
-    signal: AbortSignal.timeout(45000)
+    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 8192, temperature }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {

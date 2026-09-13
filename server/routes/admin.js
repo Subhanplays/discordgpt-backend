@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const db = require('../database');
+const { auditLog } = require('../middleware/audit');
 
 router.use(authMiddleware);
 router.use(adminMiddleware);
@@ -33,6 +34,7 @@ router.put('/users/:id/disable', async (req, res) => {
       return res.status(400).json({ error: 'Cannot disable your own account' });
     }
     await db.disableUser(id);
+    await db.logAudit(req.user.id, req.user.username, 'user_deletion', 'user', id, null);
     res.json({ message: 'User disabled' });
   } catch (error) {
     console.error('Disable user error:', error);
@@ -171,6 +173,7 @@ router.put('/usage-limits', async (req, res) => {
       return res.status(400).json({ error: 'Limit must be between 1 and 10000' });
     }
     await db.setDailyUsageLimit(limit);
+    await db.logAudit(req.user.id, req.user.username, 'settings_change', 'system', null, `Daily usage limit set to ${limit}`);
     res.json({ limit, message: 'Usage limit updated' });
   } catch (error) {
     console.error('Update usage limits error:', error);
@@ -205,6 +208,7 @@ router.post('/users/:id/ban', async (req, res) => {
       return res.status(400).json({ error: 'Cannot ban yourself' });
     }
     await db.banUser(req.params.id, reason);
+    await db.logAudit(req.user.id, req.user.username, 'ban', 'user', req.params.id, reason || 'No reason');
     res.json({ message: 'User banned and sessions revoked' });
   } catch (error) {
     console.error('Ban user error:', error);
@@ -215,6 +219,7 @@ router.post('/users/:id/ban', async (req, res) => {
 router.post('/users/:id/unban', async (req, res) => {
   try {
     await db.unbanUser(req.params.id);
+    await db.logAudit(req.user.id, req.user.username, 'unban', 'user', req.params.id, null);
     res.json({ message: 'User unbanned' });
   } catch (error) {
     console.error('Unban user error:', error);
@@ -232,6 +237,7 @@ router.post('/users/:id/role', async (req, res) => {
       return res.status(400).json({ error: 'Cannot change your own role' });
     }
     await db.getPool().query('UPDATE users SET role = $1 WHERE id = $2', [role, req.params.id]);
+    await db.logAudit(req.user.id, req.user.username, 'role_change', 'user', req.params.id, `Role changed to ${role}`);
     res.json({ message: `User role updated to ${role}` });
   } catch (error) {
     console.error('Update role error:', error);
@@ -429,6 +435,28 @@ router.get('/broadcasts', async (req, res) => {
   }
 });
 
+router.get('/audit-logs', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    const logs = await db.getAuditLogs(limit, offset);
+    res.json(logs);
+  } catch (error) {
+    console.error('Get audit logs error:', error);
+    res.status(500).json({ error: 'Failed to get audit logs' });
+  }
+});
+
+router.get('/audit-logs/stats', async (req, res) => {
+  try {
+    const stats = await db.getAuditLogStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Get audit log stats error:', error);
+    res.status(500).json({ error: 'Failed to get audit log stats' });
+  }
+});
+
 router.get('/export/users', async (req, res) => {
   try {
     const users = await db.exportUsers();
@@ -496,6 +524,7 @@ router.post('/users/:id/grant-credits', async (req, res) => {
     if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
     const balance = await db.addCredits(req.params.id, amount);
     await db.logCreditTransaction(req.params.id, amount, balance, 'admin_adjust', `Admin granted ${amount} credits`);
+    await db.logAudit(req.user.id, req.user.username, 'credit_grant', 'user', req.params.id, `Granted ${amount} credits`);
     res.json({ balance });
   } catch (error) {
     console.error('Grant credits error:', error);
@@ -511,6 +540,7 @@ router.post('/users/:id/assign-plan', async (req, res) => {
     await db.getPool().query('UPDATE users SET plan_id = $1 WHERE id = $2', [planId, req.params.id]);
     const balance = await db.addCredits(req.params.id, plan.credits_per_month);
     await db.logCreditTransaction(req.params.id, plan.credits_per_month, balance, 'grant', `${plan.display_name} plan assigned by admin`);
+    await db.logAudit(req.user.id, req.user.username, 'plan_assignment', 'user', req.params.id, `Assigned plan: ${plan.display_name}`);
     res.json({ plan: planId, balance });
   } catch (error) {
     console.error('Assign plan error:', error);

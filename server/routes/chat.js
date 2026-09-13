@@ -209,6 +209,7 @@ router.post('/send', async (req, res) => {
         console.log('generateBlueprint fallback:', blueprint ? `generated (${blueprint.categories?.length} categories)` : 'null');
       }
       await db.updateConversationBlueprint(convId, JSON.stringify(blueprint));
+      await db.saveBlueprintVersion(convId, req.user.id, JSON.stringify(blueprint));
       await db.createMessage(convId, 'assistant', aiResponse);
       try {
         await db.createGenerationLog(
@@ -279,6 +280,7 @@ router.post('/:id/messages', async (req, res) => {
     if (isBlueprintRequest) {
       const blueprint = parseBlueprintFromAI(aiResponse) || generateBlueprint(content);
       await db.updateConversationBlueprint(req.params.id, JSON.stringify(blueprint));
+      await db.saveBlueprintVersion(req.params.id, req.user.id, JSON.stringify(blueprint));
       await db.createMessage(req.params.id, 'assistant', aiResponse);
       try {
         await db.createGenerationLog(
@@ -312,6 +314,81 @@ router.post('/:id/messages', async (req, res) => {
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// ===== Folder Endpoints =====
+
+router.get('/folders/list', async (req, res) => {
+  try {
+    const folders = await db.getFolders(req.user.id);
+    res.json(folders);
+  } catch (error) {
+    console.error('Get folders error:', error);
+    res.status(500).json({ error: 'Failed to get folders' });
+  }
+});
+
+router.post('/folders/create', async (req, res) => {
+  try {
+    const { name, color } = req.body;
+    if (!name) return res.status(400).json({ error: 'Folder name is required' });
+    const folder = await db.createFolder(req.user.id, name, color);
+    res.status(201).json(folder);
+  } catch (error) {
+    console.error('Create folder error:', error);
+    res.status(500).json({ error: 'Failed to create folder' });
+  }
+});
+
+router.delete('/folders/:id', async (req, res) => {
+  try {
+    await db.deleteFolder(req.params.id, req.user.id);
+    res.json({ message: 'Folder deleted' });
+  } catch (error) {
+    console.error('Delete folder error:', error);
+    res.status(500).json({ error: 'Failed to delete folder' });
+  }
+});
+
+router.put('/conversations/:id/folder', async (req, res) => {
+  try {
+    const { folderId } = req.body;
+    const moved = await db.moveConversationToFolder(req.params.id, folderId || null, req.user.id);
+    if (!moved) return res.status(404).json({ error: 'Conversation or folder not found' });
+    res.json({ message: 'Conversation moved' });
+  } catch (error) {
+    console.error('Move conversation error:', error);
+    res.status(500).json({ error: 'Failed to move conversation' });
+  }
+});
+
+// ===== Blueprint Versioning Endpoints =====
+
+router.get('/conversations/:id/versions', async (req, res) => {
+  try {
+    const conversation = await db.getConversationById(req.params.id, req.user.id);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
+    const versions = await db.getBlueprintVersions(req.params.id);
+    res.json(versions);
+  } catch (error) {
+    console.error('Get versions error:', error);
+    res.status(500).json({ error: 'Failed to get versions' });
+  }
+});
+
+router.post('/conversations/:id/versions/:versionId/restore', async (req, res) => {
+  try {
+    const conversation = await db.getConversationById(req.params.id, req.user.id);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
+    const version = await db.getBlueprintVersionById(req.params.versionId, req.params.id);
+    if (!version) return res.status(404).json({ error: 'Version not found' });
+    await db.updateConversationBlueprint(req.params.id, version.blueprint_json);
+    await db.saveBlueprintVersion(req.params.id, req.user.id, version.blueprint_json);
+    res.json({ message: 'Version restored', blueprint: JSON.parse(version.blueprint_json) });
+  } catch (error) {
+    console.error('Restore version error:', error);
+    res.status(500).json({ error: 'Failed to restore version' });
   }
 });
 
