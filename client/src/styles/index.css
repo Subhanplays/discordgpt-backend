@@ -761,64 +761,193 @@ html,body,#root{
 }
 
 .blueprint-preview{
+  padding:0 16px 8px;
+  max-width:var(--max-w);
+  width:100%;
+  margin:0 auto;
+  animation:slideUp var(--transition-normal) ease;
+}
+
+.blueprint-card{
   background:var(--bg-surface);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:16px;
-  margin:16px 0;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
 }
 
-.blueprint-preview-header{
+.blueprint-header{
   display:flex;
   align-items:center;
-  gap:8px;
-  margin-bottom:12px;
+  justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
 }
 
-.blueprint-preview-title{
+.blueprint-header h3{
   font-size:14px;
   font-weight:600;
   color:var(--text);
 }
 
-.blueprint-preview-badge{
+.badge{
   font-size:11px;
   font-weight:500;
-  padding:2px 8px;
+  padding:3px 10px;
   border-radius:20px;
   background:var(--accent-subtle);
   color:var(--accent);
 }
 
-.blueprint-preview-body{
-  font-size:13px;
-  color:var(--text-secondary);
-  line-height:1.6;
+.badge-success{
+  background:rgba(34,197,94,0.1);
+  color:var(--success);
 }
 
-.creation-progress{
+.blueprint-body{
+  padding:16px 18px;
+  max-height:360px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+
+.blueprint-section{
+  padding:10px 0;
+}
+
+.blueprint-section:not(:last-child){
+  border-bottom:1px solid var(--border);
+}
+
+.blueprint-section-title{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  margin-bottom:8px;
+}
+
+.blueprint-tree{
+  font-family:var(--mono);
+  font-size:13px;
+  line-height:1.7;
+  color:var(--text-secondary);
+}
+
+.blueprint-tree span{
+  display:block;
+  white-space:nowrap;
+}
+
+.tree-char{
+  color:var(--text-muted);
+  user-select:none;
+}
+
+.blueprint-tree .category{
+  color:var(--accent);
+  font-weight:500;
+}
+
+.blueprint-tree .channel{
+  color:var(--text);
+}
+
+.blueprint-tree .role{
+  color:var(--success);
+}
+
+.blueprint-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 18px;
+  border-top:1px solid var(--border);
+  background:var(--bg-elevated);
+}
+
+.progress-container{
+  padding:0 16px 8px;
+  max-width:var(--max-w);
+  width:100%;
+  margin:0 auto;
+  animation:slideUp var(--transition-normal) ease;
+}
+
+.progress-card{
   background:var(--bg-surface);
   border:1px solid var(--border);
-  border-radius:var(--radius-md);
-  padding:20px;
-  margin:16px 0;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
 }
 
-.creation-progress-title{
+.progress-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+.progress-header h3{
   font-size:14px;
   font-weight:600;
   color:var(--text);
-  margin-bottom:16px;
 }
 
-.creation-step{
+.progress-bar-container{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+
+.progress-bar-track{
+  width:120px;
+  height:6px;
+  background:var(--bg-active);
+  border-radius:3px;
+  overflow:hidden;
+}
+
+.progress-bar-fill{
+  height:100%;
+  border-radius:3px;
+  transition:width 0.4s ease;
+}
+
+.progress-bar-text{
+  font-size:12px;
+  font-weight:500;
+  color:var(--text-secondary);
+  min-width:36px;
+}
+
+.progress-steps{
+  padding:16px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.progress-step{
   display:flex;
   align-items:center;
   gap:12px;
-  padding:8px 0;
+  padding:8px 12px;
+  border-radius:var(--radius-sm);
+  transition:background var(--transition-fast);
 }
 
-.creation-step-dot{
+.progress-step.active{
+  background:var(--accent-subtle);
+}
+
+.progress-step-icon{
   width:24px;
   height:24px;
   border-radius:50%;
@@ -826,32 +955,48 @@ html,body,#root{
   align-items:center;
   justify-content:center;
   flex-shrink:0;
-  font-size:12px;
+  font-size:11px;
   font-weight:600;
   border:2px solid var(--border);
   color:var(--text-muted);
   transition:all var(--transition-normal);
 }
 
-.creation-step.completed .creation-step-dot{
+.progress-step.completed .progress-step-icon{
   background:var(--success);
   border-color:var(--success);
   color:#fff;
 }
 
-.creation-step.active .creation-step-dot{
+.progress-step.active .progress-step-icon{
   border-color:var(--accent);
   color:var(--accent);
   box-shadow:0 0 0 4px var(--accent-subtle);
 }
 
-.creation-step-label{
+.progress-step-text{
   font-size:13px;
   color:var(--text-secondary);
 }
 
-.creation-step.completed .creation-step-label{color:var(--text)}
-.creation-step.active .creation-step-label{color:var(--text);font-weight:500}
+.progress-step.completed .progress-step-text{
+  color:var(--text);
+}
+
+.progress-step.active .progress-step-text{
+  color:var(--text);
+  font-weight:500;
+}
+
+.progress-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 18px;
+  border-top:1px solid var(--border);
+  background:var(--bg-elevated);
+  justify-content:flex-end;
+}
 
 .server-select-card{
   background:var(--bg-surface);
@@ -881,8 +1026,12 @@ html,body,#root{
 }
 
 .template-page-header{
-  max-width:var(--max-w);
+  max-width:960px;
   margin:0 auto 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
 }
 
 .template-page-title{
@@ -1837,7 +1986,8 @@ html,body,#root{
   margin-bottom:20px;
 }
 
-.modal-header h2{
+.modal-header h2,
+.modal-header h3{
   font-size:18px;
   font-weight:600;
   color:var(--text);
@@ -1860,6 +2010,49 @@ html,body,#root{
   display:flex;
   flex-direction:column;
   gap:20px;
+}
+
+.modal-footer{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+}
+
+.form-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.form-label{
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-secondary);
+}
+
+.form-input{
+  width:100%;
+  padding:10px 14px;
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-size:14px;
+  font-family:var(--font);
+  outline:none;
+  transition:border-color var(--transition-fast);
+}
+
+.form-input:focus{
+  border-color:var(--border-focus);
+}
+
+.form-input::placeholder{
+  color:var(--text-muted);
 }
 
 /* Settings styles */
