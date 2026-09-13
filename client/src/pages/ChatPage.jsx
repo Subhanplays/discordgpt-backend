@@ -57,14 +57,15 @@ export default function ChatPage() {
   const handleCreate = async (content) => {
     sendingRef.current = true
     try {
+      const msg = `Create a Discord server: ${content}`
       if (!activeConversation) {
-        const conv = await createConversation(content.slice(0, 80))
+        const conv = await createConversation(msg.slice(0, 80))
         if (conv) {
           navigate(`/c/${conv.id || conv._id}`)
-          await sendMessage(content, conv.id || conv._id, true)
+          await sendMessage(msg, conv.id || conv._id)
         }
       } else {
-        await sendMessage(content, activeConversation.id || activeConversation._id, true)
+        await sendMessage(msg, activeConversation.id || activeConversation._id)
       }
     } finally {
       sendingRef.current = false
