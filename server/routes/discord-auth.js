@@ -118,20 +118,26 @@ router.get('/callback', async (req, res) => {
       user.discord_discriminator = discordUser.discriminator || '0';
     } else {
       const email = discordUser.email || `${discordUser.id}@discord.local`;
+      const userCount = await db.getPool().query('SELECT COUNT(*) as count FROM users');
+      const isFirstUser = parseInt(userCount.rows[0].count) === 0;
       const result = await db.getPool().query(
         `INSERT INTO users (id, username, email, discord_id, discord_access_token, role,
          discord_avatar, discord_discriminator, discord_banner, discord_accent_color,
          discord_public_flags, discord_locale, discord_mfa_enabled)
-         VALUES ($1, $2, $3, $4, $5, 'user', $6, $7, $8, $9, $10, $11, $12)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING *`,
         [
           crypto.randomUUID(), discordUser.username, email, discordUser.id, tokenData.access_token,
+          isFirstUser ? 'admin' : 'user',
           avatarUrl, discordUser.discriminator || '0', discordUser.banner || null,
           discordUser.accent_color || null, discordUser.public_flags || 0,
           discordUser.locale || 'en-US', discordUser.mfa_enabled || false
         ]
       );
       user = result.rows[0];
+      if (isFirstUser) {
+        console.log(`First user "${discordUser.username}" auto-promoted to admin`);
+      }
     }
 
     if (user.two_fa_enabled) {
@@ -145,10 +151,19 @@ router.get('/callback', async (req, res) => {
       return;
     }
 
+    if (user.role !== 'admin') {
+      const adminCheck = await db.getPool().query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'");
+      if (parseInt(adminCheck.rows[0].count) === 0) {
+        await db.getPool().query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
+        user.role = 'admin';
+        console.log(`Auto-promoted "${user.username}" to admin (no admins existed)`);
+      }
+    }
+
     const expiryMs = parseInt(process.env.SESSION_EXPIRY) || 86400000;
     const session = await db.createSession(user.id, expiryMs);
 
-    console.log('Auth success:', user.username);
+    console.log('Auth success:', user.username, 'role:', user.role);
 
     const encodedToken = encodeURIComponent(session.token);
     res.redirect(`${FRONTEND_REDIRECT}?token=${encodedToken}`);

@@ -188,4 +188,36 @@ router.post('/reset-usage', async (req, res) => {
   }
 });
 
+router.post('/promote', async (req, res) => {
+  try {
+    const { discord_id } = req.body;
+    if (!discord_id) {
+      return res.status(400).json({ error: 'discord_id is required' });
+    }
+    const result = await db.getPool().query(
+      `UPDATE users SET role = 'admin' WHERE discord_id = $1 RETURNING id, username, role`,
+      [discord_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found with that Discord ID' });
+    }
+    res.json({ message: 'User promoted to admin', user: result.rows[0] });
+  } catch (error) {
+    console.error('Promote user error:', error);
+    res.status(500).json({ error: 'Failed to promote user' });
+  }
+});
+
+router.get('/users', async (req, res) => {
+  try {
+    const result = await db.getPool().query(
+      `SELECT id, username, discord_id, role, created_at FROM users ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
 module.exports = router;
