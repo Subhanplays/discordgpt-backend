@@ -911,8 +911,8 @@ module.exports = {
   },
 
   async cancelSubscription(userId) {
-    await q('UPDATE subscriptions SET status = 'canceled' WHERE user_id = $1', [userId]);
-    await q('UPDATE users SET plan_id = 'free' WHERE id = $1', [userId]);
+    await q(`UPDATE subscriptions SET status = 'canceled' WHERE user_id = $1`, [userId]);
+    await q(`UPDATE users SET plan_id = 'free' WHERE id = $1`, [userId]);
   },
 
   async updateSubscriptionPeriod(userId, periodStart, periodEnd) {
