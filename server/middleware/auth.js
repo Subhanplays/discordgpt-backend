@@ -20,6 +20,17 @@ async function authMiddleware(req, res, next) {
         email: session.email,
         role: session.role
       };
+
+      const banCheck = await db.getPool().query('SELECT is_banned, ban_reason FROM users WHERE id = $1', [session.user_id]);
+      if (banCheck.rows[0]?.is_banned) {
+        return res.status(403).json({ error: 'Account banned', reason: banCheck.rows[0].ban_reason || 'No reason provided' });
+      }
+
+      const clientIp = req.ip || req.connection?.remoteAddress || '';
+      if (clientIp && await db.isIpBanned(clientIp)) {
+        return res.status(403).json({ error: 'IP address banned' });
+      }
+
       return next();
     }
 

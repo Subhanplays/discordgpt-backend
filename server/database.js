@@ -184,7 +184,12 @@ async function initDatabase() {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT false`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_secret TEXT`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TEXT DEFAULT (now()::text)`,
-    `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`
+    `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_ip TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TEXT`,
+    `CREATE TABLE IF NOT EXISTS ip_bans (id TEXT PRIMARY KEY, ip TEXT NOT NULL UNIQUE, reason TEXT, banned_by TEXT, created_at TEXT DEFAULT (now()::text))`
   ];
   for (const sql of discordMigrations) {
     try { await db.query(sql); } catch (e) { /* already exists */ }
@@ -586,6 +591,45 @@ module.exports = {
        WHERE created_at >= (now() at time zone 'utc')::date::text`
     );
     return result;
+  },
+
+  async banUser(userId, reason) {
+    await q('UPDATE users SET is_banned = true, ban_reason = $1 WHERE id = $2', [reason || '', userId]);
+    await q('DELETE FROM sessions WHERE user_id = $1', [userId]);
+  },
+
+  async unbanUser(userId) {
+    await q('UPDATE users SET is_banned = false, ban_reason = NULL WHERE id = $1', [userId]);
+  },
+
+  async resetUserUsage(userId) {
+    const result = await q(
+      `DELETE FROM generation_logs
+       WHERE user_id = $1 AND created_at >= (now() at time zone 'utc')::date::text`,
+      [userId]
+    );
+    return result;
+  },
+
+  async banIp(ip, reason, bannedBy) {
+    const id = uuidv4();
+    await q(
+      'INSERT INTO ip_bans (id, ip, reason, banned_by) VALUES ($1, $2, $3, $4) ON CONFLICT (ip) DO UPDATE SET reason = $2, banned_by = $3',
+      [id, ip, reason || '', bannedBy]
+    );
+  },
+
+  async unbanIp(ip) {
+    await q('DELETE FROM ip_bans WHERE ip = $1', [ip]);
+  },
+
+  async getBannedIps() {
+    return (await q('SELECT * FROM ip_bans ORDER BY created_at DESC')).rows;
+  },
+
+  async isIpBanned(ip) {
+    const row = await qOne('SELECT id FROM ip_bans WHERE ip = $1', [ip]);
+    return !!row;
   },
 
   // Pending Blueprints (deploy codes)
