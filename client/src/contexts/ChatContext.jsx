@@ -45,10 +45,6 @@ export function ChatProvider({ children }) {
   }, [token])
 
   useEffect(() => {
-    if (token) fetchConversations()
-  }, [token, fetchConversations])
-
-  useEffect(() => {
     if (botConnected && token) {
       fetch('/api/bot/servers', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
@@ -87,6 +83,10 @@ export function ChatProvider({ children }) {
       }
     } catch {}
   }, [authHeaders])
+
+  useEffect(() => {
+    if (token) fetchConversations()
+  }, [token, fetchConversations])
 
   const createConversation = useCallback(async (title) => {
     try {

@@ -877,9 +877,45 @@ function simulateAIResponse(messages, errorMsg) {
   return `I'm DiscordGPT, your Discord server builder. Describe the server you want and I'll create the full structure — categories, channels, roles, and permissions.\n\nFor example:\n- "Create a Minecraft hosting server called MineVo"\n- "Build a gaming community with LFG and voice channels"\n- "Generate a professional support server with tickets"`;
 }
 
+async function generateConversationTitle(userMessage) {
+  const db = require('../database');
+  let provider;
+  try {
+    provider = await db.getActiveAiProvider();
+  } catch (e) {}
+
+  const titlePrompt = [
+    { role: 'system', content: 'Generate a short conversation title (max 50 chars) based on the user\'s first message. Reply with ONLY the title, no quotes, no punctuation at the end.' },
+    { role: 'user', content: userMessage }
+  ];
+
+  if (provider && provider.api_key) {
+    try {
+      const response = await callProviderAPI(provider, titlePrompt);
+      const cleaned = response.replace(/^["']|["']$/g, '').trim();
+      if (cleaned.length > 0 && cleaned.length <= 80) return cleaned;
+    } catch (e) {}
+  }
+
+  if (process.env.AI_API_KEY && process.env.AI_API_KEY !== 'your-ai-api-key') {
+    try {
+      const response = await callProviderAPI({
+        provider: 'openai',
+        api_key: process.env.AI_API_KEY,
+        models: ['gpt-3.5-turbo']
+      }, titlePrompt);
+      const cleaned = response.replace(/^["']|["']$/g, '').trim();
+      if (cleaned.length > 0 && cleaned.length <= 80) return cleaned;
+    } catch (e) {}
+  }
+
+  return userMessage.length > 60 ? userMessage.substring(0, 60) + '...' : userMessage;
+}
+
 module.exports = {
   generateBlueprint,
   generateChatResponse,
+  generateConversationTitle,
   extractServerName,
   extractThemes
 };

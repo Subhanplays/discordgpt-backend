@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const db = require('../database');
-const { generateChatResponse, generateBlueprint } = require('../utils/ai');
+const { generateChatResponse, generateBlueprint, generateConversationTitle } = require('../utils/ai');
 
 function parseBlueprintFromAI(aiResponse) {
   try {
@@ -149,13 +149,13 @@ router.post('/send', async (req, res) => {
         return res.status(404).json({ error: 'Conversation not found' });
       }
       if (conversation.title === 'New Chat') {
-        const newTitle = content.length > 60 ? content.substring(0, 60) + '...' : content;
+        const newTitle = await generateConversationTitle(content);
         await db.updateConversation(convId, newTitle);
         conversation.title = newTitle;
       }
     } else {
-      const title = content.length > 60 ? content.substring(0, 60) + '...' : content;
-      conversation = await db.createConversation(req.user.id, title);
+      const newTitle = await generateConversationTitle(content);
+      conversation = await db.createConversation(req.user.id, newTitle);
       convId = conversation.id;
     }
 
