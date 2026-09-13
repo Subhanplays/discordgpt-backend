@@ -10,6 +10,8 @@ import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import AuthPage from './pages/AuthPage'
 import AuthCallback from './pages/AuthCallback'
+import PricingPage from './pages/PricingPage'
+import BillingPage from './pages/BillingPage'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -44,6 +46,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
       <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/" element={<ChatPage />} />

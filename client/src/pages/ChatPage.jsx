@@ -5,11 +5,14 @@ import MessageList from '../components/MessageList'
 import MessageComposer from '../components/MessageComposer'
 import BlueprintPreview from '../components/BlueprintPreview'
 import CreationProgress from '../components/CreationProgress'
+import CreditBalance from '../components/CreditBalance'
 import { useChat } from '../contexts/ChatContext'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function ChatPage() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const {
     messages, aiTyping, sendMessage, activeConversation,
     createConversation, botConnected, blueprint, creationProgress,
@@ -74,6 +77,9 @@ export default function ChatPage() {
 
   return (
     <div className="chat-area">
+      <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 10 }}>
+        <CreditBalance user={user} />
+      </div>
       {(!hasMessages && !blueprint && !creationProgress) ? (
         <WelcomeScreen />
       ) : (

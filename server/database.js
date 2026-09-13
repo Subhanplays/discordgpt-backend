@@ -144,6 +144,53 @@ async function initDatabase() {
       expires_at TEXT NOT NULL,
       used INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS plans (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      credits_per_month INTEGER NOT NULL,
+      credit_price_cents INTEGER NOT NULL,
+      max_servers INTEGER NOT NULL,
+      ai_access_level TEXT NOT NULL DEFAULT 'basic',
+      priority_support BOOLEAN DEFAULT false,
+      stripe_price_id TEXT,
+      created_at TEXT DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT UNIQUE NOT NULL REFERENCES users(id),
+      plan_id TEXT NOT NULL REFERENCES plans(id),
+      status TEXT NOT NULL DEFAULT 'active',
+      stripe_customer_id TEXT,
+      stripe_subscription_id TEXT,
+      credits_used_this_period INTEGER DEFAULT 0,
+      current_period_start TEXT,
+      current_period_end TEXT,
+      created_at TEXT DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS credit_transactions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      amount INTEGER NOT NULL,
+      balance_after INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      description TEXT,
+      created_at TEXT DEFAULT (now()::text)
+    );
+
+    CREATE TABLE IF NOT EXISTS credit_purchases (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      credits INTEGER NOT NULL,
+      amount_cents INTEGER NOT NULL,
+      stripe_session_id TEXT,
+      stripe_payment_intent TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT DEFAULT (now()::text)
+    );
   `);
 
   // Create default admin if none exists
@@ -196,6 +243,41 @@ async function initDatabase() {
   }
 
   console.log('Discord profile columns ready');
+
+  // Billing/plan columns
+  const billingMigrations = [
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_id TEXT DEFAULT 'free'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS credits_balance INTEGER DEFAULT 50`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS credits_used_this_month INTEGER DEFAULT 0`
+  ];
+  for (const sql of billingMigrations) {
+    try { await db.query(sql); } catch (e) { /* already exists */ }
+  }
+
+  // Seed default plans
+  const plansCheck = await db.query('SELECT COUNT(*) as count FROM plans');
+  if (parseInt(plansCheck.rows[0].count) === 0) {
+    const defaultPlans = [
+      { id: 'free', name: 'free', display_name: 'Free', credits_per_month: 50, credit_price_cents: 0, max_servers: 3, ai_access_level: 'basic', priority_support: false },
+      { id: 'pro', name: 'pro', display_name: 'Pro', credits_per_month: 500, credit_price_cents: 200, max_servers: 25, ai_access_level: 'all', priority_support: true },
+      { id: 'enterprise', name: 'enterprise', display_name: 'Enterprise', credits_per_month: 5000, credit_price_cents: 150, max_servers: -1, ai_access_level: 'all', priority_support: true }
+    ];
+    for (const p of defaultPlans) {
+      await db.query(
+        'INSERT INTO plans (id, name, display_name, credits_per_month, credit_price_cents, max_servers, ai_access_level, priority_support) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [p.id, p.name, p.display_name, p.credits_per_month, p.credit_price_cents, p.max_servers, p.ai_access_level, p.priority_support]
+      );
+    }
+    console.log('Default plans seeded');
+  }
+
+  // Ensure existing users have default plan and credits
+  try {
+    await db.query(`UPDATE users SET plan_id = 'free' WHERE plan_id IS NULL`);
+    await db.query(`UPDATE users SET credits_balance = 50 WHERE credits_balance IS NULL`);
+  } catch (e) { /* column may not exist yet */ }
+
+  console.log('Billing columns ready');
 }
 
 function q(text, params) {
@@ -755,5 +837,176 @@ module.exports = {
 
   async markBlueprintUsed(code) {
     await q('UPDATE pending_blueprints SET used = 1 WHERE code = $1', [code.toUpperCase()]);
+  },
+
+  // ===== Plans =====
+  async getAllPlans() {
+    return qAll('SELECT * FROM plans ORDER BY credit_price_cents ASC');
+  },
+
+  async getPlanById(id) {
+    return qOne('SELECT * FROM plans WHERE id = $1', [id]);
+  },
+
+  async getPlanByName(name) {
+    return qOne('SELECT * FROM plans WHERE name = $1', [name]);
+  },
+
+  async createPlan(name, displayName, creditsPerMonth, creditPriceCents, maxServers, aiAccessLevel, prioritySupport, stripePriceId) {
+    const id = name;
+    await q(
+      'INSERT INTO plans (id, name, display_name, credits_per_month, credit_price_cents, max_servers, ai_access_level, priority_support, stripe_price_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [id, name, displayName, creditsPerMonth, creditPriceCents, maxServers, aiAccessLevel, prioritySupport, stripePriceId || null]
+    );
+    return { id, name, display_name: displayName };
+  },
+
+  async updatePlan(id, updates) {
+    const existing = await qOne('SELECT * FROM plans WHERE id = $1', [id]);
+    if (!existing) return null;
+    await q(
+      `UPDATE plans SET display_name = $1, credits_per_month = $2, credit_price_cents = $3, max_servers = $4, ai_access_level = $5, priority_support = $6, stripe_price_id = $7 WHERE id = $8`,
+      [
+        updates.display_name || existing.display_name,
+        updates.credits_per_month ?? existing.credits_per_month,
+        updates.credit_price_cents ?? existing.credit_price_cents,
+        updates.max_servers ?? existing.max_servers,
+        updates.ai_access_level || existing.ai_access_level,
+        updates.priority_support ?? existing.priority_support,
+        updates.stripe_price_id ?? existing.stripe_price_id,
+        id
+      ]
+    );
+    return qOne('SELECT * FROM plans WHERE id = $1', [id]);
+  },
+
+  async deletePlan(id) {
+    await q('DELETE FROM plans WHERE id = $1', [id]);
+  },
+
+  // ===== Subscriptions =====
+  async getUserSubscription(userId) {
+    return qOne(
+      `SELECT s.*, p.name as plan_name, p.display_name, p.credits_per_month, p.credit_price_cents, p.max_servers, p.ai_access_level, p.priority_support
+       FROM subscriptions s JOIN plans p ON s.plan_id = p.id
+       WHERE s.user_id = $1`, [userId]
+    );
+  },
+
+  async createSubscription(userId, planId, stripeCustomerId, stripeSubscriptionId) {
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    await q(
+      `INSERT INTO subscriptions (id, user_id, plan_id, status, stripe_customer_id, stripe_subscription_id, current_period_start, current_period_end)
+       VALUES ($1,$2,$3,'active',$4,$5,$6,$7)
+       ON CONFLICT (user_id) DO UPDATE SET plan_id = $3, status = 'active', stripe_customer_id = $4, stripe_subscription_id = $5, current_period_start = $6, current_period_end = $7`,
+      [id, userId, planId, stripeCustomerId || null, stripeSubscriptionId || null, now, periodEnd]
+    );
+    await q('UPDATE users SET plan_id = $1 WHERE id = $2', [planId, userId]);
+  },
+
+  async updateSubscriptionStatus(userId, status) {
+    await q('UPDATE subscriptions SET status = $1 WHERE user_id = $2', [status, userId]);
+  },
+
+  async cancelSubscription(userId) {
+    await q('UPDATE subscriptions SET status = 'canceled' WHERE user_id = $1', [userId]);
+    await q('UPDATE users SET plan_id = 'free' WHERE id = $1', [userId]);
+  },
+
+  async updateSubscriptionPeriod(userId, periodStart, periodEnd) {
+    await q('UPDATE subscriptions SET current_period_start = $1, current_period_end = $2, credits_used_this_period = 0 WHERE user_id = $3', [periodStart, periodEnd, userId]);
+  },
+
+  async getSubscriptionByStripeId(stripeSubscriptionId) {
+    return qOne('SELECT * FROM subscriptions WHERE stripe_subscription_id = $1', [stripeSubscriptionId]);
+  },
+
+  async getSubscriptionByStripeCustomer(stripeCustomerId) {
+    return qOne('SELECT * FROM subscriptions WHERE stripe_customer_id = $1', [stripeCustomerId]);
+  },
+
+  // ===== Credits =====
+  async getUserCredits(userId) {
+    const row = await qOne('SELECT credits_balance FROM users WHERE id = $1', [userId]);
+    return row ? row.credits_balance : 0;
+  },
+
+  async deductCredits(userId, amount) {
+    const result = await q(
+      'UPDATE users SET credits_balance = GREATEST(0, credits_balance - $1), credits_used_this_month = credits_used_this_month + $1 WHERE id = $2 RETURNING credits_balance',
+      [amount, userId]
+    );
+    return result.rows[0] ? result.rows[0].credits_balance : 0;
+  },
+
+  async addCredits(userId, amount) {
+    const result = await q(
+      'UPDATE users SET credits_balance = credits_balance + $1 WHERE id = $2 RETURNING credits_balance',
+      [amount, userId]
+    );
+    return result.rows[0] ? result.rows[0].credits_balance : 0;
+  },
+
+  async setCredits(userId, amount) {
+    await q('UPDATE users SET credits_balance = $1 WHERE id = $2', [amount, userId]);
+  },
+
+  async resetMonthlyCredits(userId) {
+    const user = await qOne('SELECT plan_id FROM users WHERE id = $1', [userId]);
+    if (!user) return;
+    const plan = await qOne('SELECT credits_per_month FROM plans WHERE id = $1', [user.plan_id]);
+    if (!plan) return;
+    await q('UPDATE users SET credits_balance = $1, credits_used_this_month = 0 WHERE id = $2', [plan.credits_per_month, userId]);
+  },
+
+  async logCreditTransaction(userId, amount, balanceAfter, type, description) {
+    const id = uuidv4();
+    await q(
+      'INSERT INTO credit_transactions (id, user_id, amount, balance_after, type, description) VALUES ($1,$2,$3,$4,$5,$6)',
+      [id, userId, amount, balanceAfter, type, description || null]
+    );
+    return id;
+  },
+
+  async getCreditTransactions(userId, limit = 50) {
+    return qAll('SELECT * FROM credit_transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
+  },
+
+  async getAllSubscriptions(limit = 100) {
+    return qAll(
+      `SELECT s.*, u.username, p.display_name as plan_display_name
+       FROM subscriptions s
+       JOIN users u ON s.user_id = u.id
+       JOIN plans p ON s.plan_id = p.id
+       ORDER BY s.created_at DESC LIMIT $1`, [limit]
+    );
+  },
+
+  async getUserServersCount(userId) {
+    const result = await qOne('SELECT COUNT(*) as count FROM server_configs WHERE user_id = $1', [userId]);
+    return parseInt(result?.count || '0');
+  },
+
+  // ===== Credit Purchases =====
+  async createCreditPurchase(userId, credits, amountCents, stripeSessionId) {
+    const id = uuidv4();
+    await q(
+      'INSERT INTO credit_purchases (id, user_id, credits, amount_cents, stripe_session_id, status) VALUES ($1,$2,$3,$4,$5,\'pending\')',
+      [id, userId, credits, amountCents, stripeSessionId]
+    );
+    return id;
+  },
+
+  async updateCreditPurchase(stripeSessionId, status, stripePaymentIntent) {
+    await q(
+      'UPDATE credit_purchases SET status = $1, stripe_payment_intent = $2 WHERE stripe_session_id = $3',
+      [status, stripePaymentIntent || null, stripeSessionId]
+    );
+  },
+
+  async getCreditPurchases(userId, limit = 50) {
+    return qAll('SELECT * FROM credit_purchases WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
   }
 };

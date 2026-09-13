@@ -5,7 +5,9 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const [text, setText] = useState('')
   const textareaRef = useRef(null)
 
-  const isLimitReached = usage && usage.remaining <= 0
+  const isLimitReached = usage && (usage.remaining !== undefined ? usage.remaining <= 0 : false)
+  const balance = usage?.balance ?? usage?.remaining ?? 0
+  const plan = usage?.plan?.display_name || 'Free'
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -52,7 +54,7 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isLimitReached ? 'Daily message limit reached. Resets at midnight UTC.' : 'Describe the Discord server you want to create...'}
+          placeholder={isLimitReached ? 'No credits remaining. Purchase more at /billing.' : 'Describe the Discord server you want to create...'}
           rows={1}
           disabled={disabled || isLimitReached}
         />
@@ -88,10 +90,12 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
       {usage && (
         <div className="composer-usage">
           <span className={`composer-usage-count ${isLimitReached ? 'limit-reached' : ''}`}>
-            {usage.count}/{usage.limit} messages today
+            {balance} credits remaining · {plan}
           </span>
-          {usage.remaining > 0 && usage.remaining <= 10 && (
-            <span className="composer-usage-warning">{usage.remaining} remaining</span>
+          {isLimitReached && (
+            <span className="composer-usage-warning" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/billing'}>
+              Buy more →
+            </span>
           )}
         </div>
       )}

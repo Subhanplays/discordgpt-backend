@@ -40,7 +40,7 @@ router.post('/register', async (req, res) => {
     const session = await db.createSession(user.id, expiryMs);
 
     res.status(201).json({
-      user: { id: user.id, username: user.username, email: user.email, role: user.role },
+      user: { id: user.id, username: user.username, email: user.email, role: user.role, plan_id: 'free', credits_balance: 50 },
       token: session.token,
       expiresAt: session.expiresAt
     });
@@ -74,7 +74,7 @@ router.post('/login', async (req, res) => {
     const session = await db.createSession(user.id, expiryMs);
 
     res.json({
-      user: { id: user.id, username: user.username, email: user.email, role: user.role },
+      user: { id: user.id, username: user.username, email: user.email, role: user.role, plan_id: user.plan_id || 'free', credits_balance: user.credits_balance || 0 },
       token: session.token,
       expiresAt: session.expiresAt
     });
@@ -108,6 +108,9 @@ router.get('/me', authMiddleware, async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      plan_id: user.plan_id || 'free',
+      credits_balance: user.credits_balance || 0,
+      credits_used_this_month: user.credits_used_this_month || 0,
       created_at: user.created_at,
       last_login: user.last_login,
       discord_id: user.discord_id || null,
@@ -174,7 +177,7 @@ router.post('/2fa/verify', async (req, res) => {
     const session = await db.createSession(userData.id, expiryMs);
 
     res.json({
-      user: { id: userData.id, username: userData.username, email: userData.email, role: userData.role },
+      user: { id: userData.id, username: userData.username, email: userData.email, role: userData.role, plan_id: userData.plan_id || 'free', credits_balance: userData.credits_balance || 0 },
       token: session.token,
       expiresAt: session.expiresAt
     });

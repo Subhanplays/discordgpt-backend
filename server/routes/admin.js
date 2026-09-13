@@ -467,4 +467,65 @@ router.get('/deployments', async (req, res) => {
   }
 });
 
+// ===== Plan Management =====
+router.get('/plans', async (req, res) => {
+  try {
+    const plans = await db.getAllPlans();
+    res.json(plans);
+  } catch (error) {
+    console.error('Get plans error:', error);
+    res.status(500).json({ error: 'Failed to get plans' });
+  }
+});
+
+router.put('/plans/:id', async (req, res) => {
+  try {
+    const updated = await db.updatePlan(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Plan not found' });
+    res.json(updated);
+  } catch (error) {
+    console.error('Update plan error:', error);
+    res.status(500).json({ error: 'Failed to update plan' });
+  }
+});
+
+// ===== Credit Management =====
+router.post('/users/:id/grant-credits', async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    const balance = await db.addCredits(req.params.id, amount);
+    await db.logCreditTransaction(req.params.id, amount, balance, 'admin_adjust', `Admin granted ${amount} credits`);
+    res.json({ balance });
+  } catch (error) {
+    console.error('Grant credits error:', error);
+    res.status(500).json({ error: 'Failed to grant credits' });
+  }
+});
+
+router.post('/users/:id/set-credits', async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (amount === undefined) return res.status(400).json({ error: 'Amount required' });
+    await db.setCredits(req.params.id, amount);
+    res.json({ balance: amount });
+  } catch (error) {
+    console.error('Set credits error:', error);
+    res.status(500).json({ error: 'Failed to set credits' });
+  }
+});
+
+router.post('/reset-monthly-credits', async (req, res) => {
+  try {
+    const users = await db.getAllUsers();
+    for (const u of users) {
+      await db.resetMonthlyCredits(u.id);
+    }
+    res.json({ message: 'Monthly credits reset for all users' });
+  } catch (error) {
+    console.error('Reset credits error:', error);
+    res.status(500).json({ error: 'Failed to reset credits' });
+  }
+});
+
 module.exports = router;
