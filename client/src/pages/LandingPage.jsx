@@ -1,6 +1,9 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
-import { Sun, Moon, ArrowRight, ChevronRight, Bot, Zap, LayoutTemplate, Shield, Brain, Rocket, Check } from 'lucide-react'
+import { Sun, Moon, ArrowRight, ChevronRight, Bot, Zap, LayoutTemplate, Shield, Brain, Rocket } from 'lucide-react'
+
+const EASE = 'cubic-bezier(0.16,1,0.3,1)'
+const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif'
 
 function Counter({ target, duration = 1800, suffix = '' }) {
   const [count, setCount] = useState(0)
@@ -15,145 +18,323 @@ function Counter({ target, duration = 1800, suffix = '' }) {
     if (!vis) return
     const start = performance.now()
     const animate = (now) => {
-      const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * target))
-      if (progress < 1) requestAnimationFrame(animate)
+      const p = Math.min((now - start) / duration, 1)
+      setCount(Math.floor((1 - Math.pow(1 - p, 3)) * target))
+      if (p < 1) requestAnimationFrame(animate)
     }
     requestAnimationFrame(animate)
   }, [vis, target, duration])
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
 }
 
-function Reveal({ children, delay = 0, className = '' }) {
+function Reveal({ children, delay = 0, className = '', style = {} }) {
   const [v, setV] = useState(false)
   const r = useRef(null)
   useEffect(() => {
-    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setV(true) }, { threshold: 0.15 })
+    const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setV(true) }, { threshold: 0.12 })
     if (r.current) o.observe(r.current)
     return () => o.disconnect()
   }, [])
   return (
     <div ref={r} className={className} style={{
       opacity: v ? 1 : 0,
-      transform: v ? 'translateY(0)' : 'translateY(40px)',
-      transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      transform: v ? 'translateY(0)' : 'translateY(32px)',
+      transition: `opacity 0.8s ${EASE} ${delay}ms, transform 0.8s ${EASE} ${delay}ms`,
+      ...style,
     }}>{children}</div>
   )
 }
 
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+
+  const [loaded, setLoaded] = useState(false)
+  const [logoPulse, setLogoPulse] = useState(false)
+  const [contentReady, setContentReady] = useState(false)
   const [scrollY, setScrollY] = useState(0)
   const previewRef = useRef(null)
   const [previewRotate, setPreviewRotate] = useState({ x: 0, y: 0 })
+  const cursorRef = useRef(null)
+  const cursorRingRef = useRef(null)
+  const mousePos = useRef({ x: -100, y: -100 })
+  const ringPos = useRef({ x: -100, y: -100 })
+  const magnetRefs = useRef([])
+  const featureRefs = useRef([])
 
+  const colors = useMemo(() => ({
+    bg: isDark ? '#09090b' : '#ffffff',
+    bgSurface: isDark ? '#111113' : '#f8f8fa',
+    text: isDark ? '#fafafa' : '#09090b',
+    textSec: isDark ? '#71717a' : '#71717a',
+    border: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    borderHover: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+    accent: isDark ? '#3b82f6' : '#2563eb',
+    accentBg: isDark ? 'rgba(59,130,246,0.1)' : 'rgba(37,99,235,0.06)',
+    cardBg: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+    muted: isDark ? '#3f3f46' : '#a1a1aa',
+    chipBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    chipBorder: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+    glow: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(37,99,235,0.05)',
+    white: '#fafafa',
+  }), [isDark])
+
+  // Page load animation
+  useEffect(() => {
+    const t1 = setTimeout(() => setLoaded(true), 100)
+    const t2 = setTimeout(() => setLogoPulse(true), 400)
+    const t3 = setTimeout(() => setContentReady(true), 900)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [])
+
+  // Scroll
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Custom cursor
+  useEffect(() => {
+    const onMove = (e) => {
+      mousePos.current = { x: e.clientX, y: e.clientY }
+    }
+    window.addEventListener('mousemove', onMove, { passive: true })
+    let raf
+    const tick = () => {
+      ringPos.current.x += (mousePos.current.x - ringPos.current.x) * 0.15
+      ringPos.current.y += (mousePos.current.y - ringPos.current.y) * 0.15
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${mousePos.current.x - 3}px, ${mousePos.current.y - 3}px)`
+      }
+      if (cursorRingRef.current) {
+        cursorRingRef.current.style.transform = `translate(${ringPos.current.x - 16}px, ${ringPos.current.y - 16}px)`
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  // Magnetic buttons
+  const onMagnetMove = useCallback((e, idx) => {
+    const el = magnetRefs.current[idx]
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = e.clientX - rect.left - rect.width / 2
+    const y = e.clientY - rect.top - rect.height / 2
+    el.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`
+  }, [])
+
+  const onMagnetLeave = useCallback((idx) => {
+    const el = magnetRefs.current[idx]
+    if (el) el.style.transform = 'translate(0,0)'
+  }, [])
+
+  // 3D preview tilt
   const onPreviewMouse = useCallback((e) => {
     const el = previewRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width - 0.5
     const y = (e.clientY - rect.top) / rect.height - 0.5
-    setPreviewRotate({ x: y * -6, y: x * 6 })
+    setPreviewRotate({ x: y * -8, y: x * 8 })
   }, [])
 
   const onPreviewLeave = useCallback(() => setPreviewRotate({ x: 0, y: 0 }), [])
 
+  // Feature card glare
+  const onFeatureMove = useCallback((e, idx) => {
+    const el = featureRefs.current[idx]
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width
+    const y = (e.clientY - rect.top) / rect.height
+    const rx = (y - 0.5) * -6
+    const ry = (x - 0.5) * 6
+    el.style.transform = `perspective(600px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`
+    el.style.setProperty('--glare-x', `${x * 100}%`)
+    el.style.setProperty('--glare-y', `${y * 100}%`)
+  }, [])
+
+  const onFeatureLeave = useCallback((idx) => {
+    const el = featureRefs.current[idx]
+    if (el) {
+      el.style.transform = 'perspective(600px) rotateX(0) rotateY(0) scale(1)'
+    }
+  }, [])
+
+  const navBg = scrollY > 40
+    ? isDark ? 'rgba(9,9,11,0.85)' : 'rgba(255,255,255,0.85)'
+    : 'transparent'
+
   return (
-    <div style={{ minHeight: '100vh', background: '#09090b', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif', color: '#fafafa', overflowX: 'hidden' }}>
+    <div style={{
+      minHeight: '100vh', background: colors.bg, fontFamily: FONT,
+      color: colors.text, overflowX: 'hidden', cursor: 'none',
+    }}>
       <style>{`
         * { margin:0; padding:0; box-sizing:border-box; }
+        html { cursor: none !important; }
+        body { cursor: none !important; }
+        a, button { cursor: none !important; }
+
+        @keyframes float1 { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(30px,-20px) scale(1.05); } }
+        @keyframes float2 { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(-20px,30px) scale(1.08); } }
+        @keyframes float3 { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(15px,15px) scale(1.03); } }
+        @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.7; transform:scale(1.15); } }
+        @keyframes drawLine { from { width:0; } to { width:100%; } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+        .load-screen {
+          position:fixed; inset:0; z-index:9999;
+          display:flex; align-items:center; justify-content:center;
+          background:${colors.bg}; pointer-events:none;
+          opacity:${loaded ? 0 : 1}; transition:opacity 0.6s ${EASE};
+        }
+        .load-logo {
+          width:48px; height:48px; border-radius:12px;
+          filter:var(--logo-filter);
+          animation:${logoPulse ? 'pulse 0.8s ease-in-out' : 'none'};
+          transform:scale(${logoPulse ? 1.2 : 1});
+          transition:transform 0.4s ${EASE};
+        }
+
+        .l-cursor {
+          position:fixed; top:0; left:0; width:6px; height:6px;
+          border-radius:50%; background:${colors.text};
+          mix-blend-mode:difference; pointer-events:none; z-index:10000;
+          will-change:transform;
+        }
+        .l-cursor-ring {
+          position:fixed; top:0; left:0; width:32px; height:32px;
+          border-radius:50%; border:1.5px solid ${isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)'};
+          mix-blend-mode:difference; pointer-events:none; z-index:10000;
+          will-change:transform; transition:width 0.2s ${EASE}, height 0.2s ${EASE}, border-color 0.2s;
+        }
+        .l-cursor-ring.expanded {
+          width:56px; height:56px;
+          border-color:${isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)'};
+        }
+
+        @media(max-width:768px) {
+          html, body, a, button { cursor: auto !important; }
+          .l-cursor, .l-cursor-ring { display:none !important; }
+        }
+
         .l-nav {
           position:fixed; top:0; left:0; right:0; z-index:100;
           display:flex; align-items:center; justify-content:space-between;
           padding:0 48px; height:64px;
-          background:rgba(9,9,11,${scrollY > 40 ? '0.8' : '0'});
+          background:${navBg};
           backdrop-filter:blur(${scrollY > 40 ? '16px' : '0'});
-          border-bottom:1px solid rgba(255,255,255,${scrollY > 40 ? '0.06' : '0'});
-          transition:all 0.3s ease;
+          border-bottom:1px solid ${scrollY > 40 ? colors.border : 'transparent'};
+          transition:all 0.4s ${EASE};
+          opacity:${contentReady ? 1 : 0};
+          transform:translateY(${contentReady ? 0 : -10}px);
         }
         .l-nav-brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
         .l-nav-logo { width:28px; height:28px; border-radius:7px; filter:var(--logo-filter); }
-        .l-nav-name { font-size:15px; font-weight:600; color:#fafafa; letter-spacing:-0.01em; }
+        .l-nav-name { font-size:15px; font-weight:600; color:${colors.text}; letter-spacing:-0.01em; }
         .l-nav-right { display:flex; align-items:center; gap:4px; }
         .l-nav-item {
-          font-size:13.5px; color:#a1a1aa; background:none; border:none;
-          padding:8px 14px; border-radius:6px; cursor:pointer; font-family:inherit;
+          font-size:13.5px; color:${colors.textSec}; background:none; border:none;
+          padding:8px 14px; border-radius:6px; cursor:none; font-family:inherit;
           transition:all 0.15s;
         }
-        .l-nav-item:hover { color:#fafafa; background:rgba(255,255,255,0.06); }
+        .l-nav-item:hover { color:${colors.text}; background:${colors.chipBg}; }
         .l-nav-cta {
-          margin-left:8px; padding:8px 18px; background:#fff; color:#09090b;
+          margin-left:8px; padding:8px 18px; background:${colors.text}; color:${colors.bg};
           border:none; border-radius:8px; font-size:13.5px; font-weight:600;
-          cursor:pointer; font-family:inherit; transition:all 0.2s;
+          cursor:none; font-family:inherit; transition:all 0.2s;
         }
-        .l-nav-cta:hover { background:#e4e4e7; transform:translateY(-1px); }
+        .l-nav-cta:hover { opacity:0.9; transform:translateY(-1px); }
 
         .l-hero {
           position:relative; min-height:100vh; display:flex; flex-direction:column;
           align-items:center; justify-content:center; padding:120px 24px 80px;
           text-align:center;
         }
-        .l-hero-bg {
-          position:absolute; inset:0; pointer-events:none;
-          background:
-            radial-gradient(ellipse 50% 40% at 50% 20%, rgba(59,130,246,0.08) 0%, transparent 100%),
-            radial-gradient(ellipse 40% 30% at 70% 60%, rgba(139,92,246,0.04) 0%, transparent 100%);
+        .l-hero-orb {
+          position:absolute; border-radius:50%; pointer-events:none;
+          filter:blur(80px); opacity:0.5;
+        }
+        .l-hero-orb.o1 {
+          width:500px; height:500px; top:-10%; left:10%;
+          background:${isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.05)'};
+          animation:float1 20s ease-in-out infinite;
+        }
+        .l-hero-orb.o2 {
+          width:400px; height:400px; top:20%; right:5%;
+          background:${isDark ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.04)'};
+          animation:float2 25s ease-in-out infinite;
+        }
+        .l-hero-orb.o3 {
+          width:350px; height:350px; bottom:10%; left:30%;
+          background:${isDark ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.03)'};
+          animation:float3 18s ease-in-out infinite;
+        }
+        .l-hero-orb.o4 {
+          width:300px; height:300px; top:40%; left:60%;
+          background:${isDark ? 'rgba(249,115,22,0.04)' : 'rgba(249,115,22,0.02)'};
+          animation:float2 22s ease-in-out infinite reverse;
         }
         .l-hero-content { position:relative; z-index:1; max-width:720px; }
         .l-hero-chip {
-          display:inline-flex; align-items:center; gap:6px;
-          padding:5px 14px 5px 8px; background:rgba(255,255,255,0.06);
-          border:1px solid rgba(255,255,255,0.08); border-radius:100px;
-          font-size:12.5px; color:#a1a1aa; margin-bottom:32px;
+          display:inline-flex; align-items:center; gap:8px;
+          padding:6px 16px 6px 10px; background:${colors.chipBg};
+          border:1px solid ${colors.chipBorder}; border-radius:100px;
+          font-size:12.5px; color:${colors.textSec}; margin-bottom:36px;
         }
-        .l-hero-chip-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; }
+        .l-hero-chip-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; animation:pulse 2s ease infinite; }
         .l-hero h1 {
-          font-size:clamp(48px,7.5vw,84px); font-weight:700; letter-spacing:-0.04em;
-          line-height:1.05; margin-bottom:24px; color:#fafafa;
+          font-size:clamp(44px,7vw,80px); font-weight:700; letter-spacing:-0.04em;
+          line-height:1.05; margin-bottom:24px; color:${colors.text};
         }
         .l-hero h1 em {
-          font-style:normal;
-          background:linear-gradient(135deg, #3b82f6, #8b5cf6);
-          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+          font-style:normal; position:relative; display:inline-block;
         }
+        .l-hero h1 em::after {
+          content:''; position:absolute; left:0; bottom:4px;
+          width:100%; height:6px; border-radius:3px;
+          background:linear-gradient(90deg, #3b82f6, #8b5cf6);
+          opacity:0.4; transform-origin:left;
+          animation:drawIn 0.8s ${EASE} 1.2s both;
+        }
+        @keyframes drawIn { from { transform:scaleX(0); } to { transform:scaleX(1); } }
         .l-hero p {
-          font-size:18px; color:#71717a; line-height:1.7;
+          font-size:18px; color:${colors.textSec}; line-height:1.7;
           max-width:520px; margin:0 auto 40px;
         }
-        .l-hero-btns { display:flex; gap:12px; justify-content:center; margin-bottom:56px; }
+        .l-hero-btns { display:flex; gap:12px; justify-content:center; margin-bottom:60px; }
         .l-btn-primary {
           display:inline-flex; align-items:center; gap:8px;
-          padding:12px 28px; background:#fafafa; color:#09090b;
+          padding:13px 30px; background:${colors.text}; color:${colors.bg};
           border:none; border-radius:10px; font-size:14px; font-weight:600;
-          cursor:pointer; font-family:inherit; transition:all 0.2s;
-          text-decoration:none;
+          cursor:none; font-family:inherit; transition:all 0.25s ${EASE};
+          text-decoration:none; will-change:transform;
         }
-        .l-btn-primary:hover { background:#e4e4e7; transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,255,255,0.1); }
+        .l-btn-primary:hover { box-shadow:0 8px 30px ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}; }
         .l-btn-secondary {
           display:inline-flex; align-items:center; gap:8px;
-          padding:12px 28px; background:transparent; color:#fafafa;
-          border:1px solid rgba(255,255,255,0.12); border-radius:10px;
-          font-size:14px; font-weight:500; cursor:pointer; font-family:inherit;
-          transition:all 0.2s; text-decoration:none;
+          padding:13px 30px; background:transparent; color:${colors.text};
+          border:1px solid ${colors.borderHover}; border-radius:10px;
+          font-size:14px; font-weight:500; cursor:none; font-family:inherit;
+          transition:all 0.25s ${EASE}; text-decoration:none; will-change:transform;
         }
-        .l-btn-secondary:hover { border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04); }
+        .l-btn-secondary:hover { border-color:${isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'}; background:${colors.chipBg}; }
 
-        .l-hero-metrics {
-          display:flex; justify-content:center; gap:48px;
-        }
+        .l-hero-metrics { display:flex; justify-content:center; gap:56px; }
         .l-metric { text-align:left; }
-        .l-metric-val { font-size:28px; font-weight:700; color:#fafafa; letter-spacing:-0.02em; }
-        .l-metric-label { font-size:13px; color:#52525b; margin-top:2px; }
+        .l-metric-val { font-size:30px; font-weight:700; color:${colors.text}; letter-spacing:-0.02em; }
+        .l-metric-label { font-size:13px; color:${colors.muted}; margin-top:2px; }
 
         .l-preview-section {
-          position:relative; padding:0 24px 120px;
+          position:relative; padding:0 24px 140px;
           display:flex; justify-content:center;
         }
         .l-preview-wrap {
@@ -163,124 +344,135 @@ export default function LandingPage() {
         .l-preview-glow {
           position:absolute; top:50%; left:50%; width:600px; height:400px;
           transform:translate(-50%,-50%); z-index:0;
-          background:radial-gradient(ellipse, rgba(59,130,246,0.1) 0%, transparent 70%);
+          background:radial-gradient(ellipse, ${colors.glow} 0%, transparent 70%);
           filter:blur(60px); pointer-events:none;
+          transition:opacity 0.3s;
         }
         .l-preview {
           position:relative; z-index:1;
-          background:#111113; border:1px solid rgba(255,255,255,0.08);
+          background:${colors.bgSurface}; border:1px solid ${colors.border};
           border-radius:16px; overflow:hidden;
-          box-shadow:0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+          box-shadow:0 32px 80px ${isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.08)'}, 0 0 0 1px ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'} inset;
           transform:perspective(1200px) rotateX(${previewRotate.x}deg) rotateY(${previewRotate.y}deg);
           transition:transform 0.15s ease-out;
         }
         .l-preview-bar {
           display:flex; align-items:center; gap:8px; padding:12px 16px;
-          background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.06);
+          background:${isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'};
+          border-bottom:1px solid ${colors.border};
         }
         .l-dot { width:10px; height:10px; border-radius:50%; }
         .l-dot.r { background:#ff5f56; }
         .l-dot.y { background:#ffbd2e; }
         .l-dot.g { background:#27c93f; }
-        .l-preview-title { flex:1; text-align:center; font-size:12px; color:#52525b; }
+        .l-preview-title { flex:1; text-align:center; font-size:12px; color:${colors.muted}; }
         .l-preview-body { display:flex; min-height:420px; }
         .l-preview-side {
-          width:200px; border-right:1px solid rgba(255,255,255,0.06);
+          width:200px; border-right:1px solid ${colors.border};
           padding:12px 8px; display:flex; flex-direction:column; gap:2px;
         }
         .l-side-label {
-          font-size:10px; font-weight:700; color:#52525b; text-transform:uppercase;
+          font-size:10px; font-weight:700; color:${colors.muted}; text-transform:uppercase;
           letter-spacing:0.1em; padding:12px 12px 6px;
         }
         .l-side-item {
-          padding:8px 12px; border-radius:6px; font-size:13px; color:#71717a;
-          display:flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.1s;
+          padding:8px 12px; border-radius:6px; font-size:13px; color:${colors.textSec};
+          display:flex; align-items:center; gap:8px; transition:all 0.1s;
         }
-        .l-side-item:hover { background:rgba(255,255,255,0.04); color:#a1a1aa; }
-        .l-side-item.active { background:rgba(59,130,246,0.1); color:#3b82f6; }
+        .l-side-item:hover { background:${colors.chipBg}; color:${isDark ? '#a1a1aa' : '#52525b'}; }
+        .l-side-item.active { background:${colors.accentBg}; color:${colors.accent}; }
         .l-preview-chat { flex:1; padding:24px; display:flex; flex-direction:column; gap:16px; }
         .l-msg { display:flex; gap:12px; }
         .l-msg-av {
           width:32px; height:32px; border-radius:50%; flex-shrink:0;
           display:flex; align-items:center; justify-content:center;
         }
-        .l-msg-av.user { background:#3b82f6; color:#fff; font-size:12px; font-weight:600; }
-        .l-msg-av.ai { background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.2); }
+        .l-msg-av.user { background:${colors.accent}; color:#fff; font-size:12px; font-weight:600; }
+        .l-msg-av.ai {
+          background:${isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)'};
+          border:1px solid ${isDark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.12)'};
+        }
         .l-msg-av.ai img { width:16px; height:16px; filter:var(--logo-filter); }
         .l-msg-body { flex:1; }
-        .l-msg-name { font-size:12px; font-weight:600; color:#a1a1aa; margin-bottom:4px; }
-        .l-msg-text { font-size:13.5px; color:#d4d4d8; line-height:1.6; }
-        .l-msg-text strong { color:#fafafa; font-weight:600; }
-        .l-msg-bubble {
-          padding:12px 16px; border-radius:12px; margin-top:4px;
-        }
-        .l-msg-bubble.user { background:#3b82f6; color:#fff; display:inline-block; border-bottom-left-radius:4px; }
-        .l-msg-bubble.ai { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); }
+        .l-msg-name { font-size:12px; font-weight:600; color:${isDark ? '#a1a1aa' : '#71717a'}; margin-bottom:4px; }
+        .l-msg-text { font-size:13.5px; color:${isDark ? '#d4d4d8' : '#3f3f46'}; line-height:1.6; }
+        .l-msg-text strong { color:${colors.text}; font-weight:600; }
+        .l-msg-bubble { padding:12px 16px; border-radius:12px; margin-top:4px; }
+        .l-msg-bubble.user { background:${colors.accent}; color:#fff; display:inline-block; border-bottom-left-radius:4px; }
+        .l-msg-bubble.ai { background:${colors.cardBg}; border:1px solid ${colors.border}; }
         .l-blueprint-card {
-          margin-top:12px; padding:12px 14px; background:rgba(59,130,246,0.06);
-          border:1px solid rgba(59,130,246,0.12); border-radius:10px;
-          font-size:12px; color:#a1a1aa;
+          margin-top:12px; padding:12px 14px; background:${colors.accentBg};
+          border:1px solid ${isDark ? 'rgba(59,130,246,0.12)' : 'rgba(37,99,235,0.08)'};
+          border-radius:10px; font-size:12px; color:${isDark ? '#a1a1aa' : '#71717a'};
         }
-        .l-blueprint-card strong { color:#3b82f6; }
+        .l-blueprint-card strong { color:${colors.accent}; }
         .l-deploy-badge {
           display:inline-flex; align-items:center; gap:8px; margin-top:10px;
-          padding:8px 14px; background:rgba(34,197,94,0.08);
-          border:1px solid rgba(34,197,94,0.15); border-radius:8px;
-          font-size:12px; color:#22c55e; font-weight:500;
+          padding:8px 14px; background:${isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)'};
+          border:1px solid ${isDark ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.1)'};
+          border-radius:8px; font-size:12px; color:#22c55e; font-weight:500;
         }
 
         .l-section { padding:120px 24px; max-width:1120px; margin:0 auto; }
         .l-label {
-          font-size:12px; font-weight:600; color:#3b82f6; text-transform:uppercase;
+          font-size:12px; font-weight:600; color:${colors.accent}; text-transform:uppercase;
           letter-spacing:0.1em; margin-bottom:12px;
         }
         .l-heading {
-          font-size:clamp(28px,4vw,40px); font-weight:700; color:#fafafa;
+          font-size:clamp(28px,4vw,40px); font-weight:700; color:${colors.text};
           letter-spacing:-0.03em; line-height:1.15; margin-bottom:14px;
         }
-        .l-desc { font-size:16px; color:#71717a; line-height:1.7; max-width:480px; margin-bottom:56px; }
+        .l-desc { font-size:16px; color:${colors.textSec}; line-height:1.7; max-width:480px; margin-bottom:56px; }
 
         .l-features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
         .l-feature {
-          padding:32px 28px; background:rgba(255,255,255,0.02);
-          border:1px solid rgba(255,255,255,0.06); border-radius:14px;
-          transition:all 0.25s ease;
+          position:relative; padding:32px 28px; background:${colors.cardBg};
+          border:1px solid ${colors.border}; border-radius:14px;
+          transition:all 0.3s ${EASE}; overflow:hidden; will-change:transform;
         }
-        .l-feature:hover {
-          border-color:rgba(255,255,255,0.12);
-          background:rgba(255,255,255,0.03);
-          transform:translateY(-2px);
+        .l-feature::before {
+          content:''; position:absolute; inset:0;
+          background:radial-gradient(400px circle at var(--glare-x,50%) var(--glare-y,50%),
+            ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'} 0%, transparent 70%);
+          pointer-events:none; opacity:0; transition:opacity 0.3s;
         }
+        .l-feature:hover::before { opacity:1; }
         .l-feature-icon {
           width:40px; height:40px; border-radius:10px;
-          background:rgba(59,130,246,0.1); color:#3b82f6;
+          background:${colors.accentBg}; color:${colors.accent};
           display:flex; align-items:center; justify-content:center;
           margin-bottom:20px;
         }
-        .l-feature h3 { font-size:16px; font-weight:600; color:#fafafa; margin-bottom:8px; }
-        .l-feature p { font-size:14px; color:#71717a; line-height:1.65; }
+        .l-feature h3 { font-size:16px; font-weight:600; color:${colors.text}; margin-bottom:8px; }
+        .l-feature p { font-size:14px; color:${colors.textSec}; line-height:1.65; }
 
-        .l-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+        .l-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; position:relative; }
         .l-step { position:relative; }
         .l-step-num {
-          font-size:48px; font-weight:800; color:rgba(255,255,255,0.06);
-          letter-spacing:-0.04em; margin-bottom:12px; line-height:1;
+          font-size:52px; font-weight:800; color:${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'};
+          letter-spacing:-0.04em; margin-bottom:16px; line-height:1;
         }
-        .l-step h3 { font-size:17px; font-weight:600; color:#fafafa; margin-bottom:8px; }
-        .l-step p { font-size:14px; color:#71717a; line-height:1.65; }
+        .l-step h3 { font-size:17px; font-weight:600; color:${colors.text}; margin-bottom:8px; }
+        .l-step p { font-size:14px; color:${colors.textSec}; line-height:1.65; }
         .l-step-line {
-          position:absolute; top:24px; left:calc(50% + 20px);
-          width:calc(100% - 40px); height:1px;
-          background:linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+          position:absolute; top:28px; left:calc(50% + 24px);
+          width:calc(100% - 48px); height:1px;
+          background:linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}, transparent);
+        }
+        .l-step-line::before {
+          content:''; position:absolute; top:0; left:0;
+          height:1px; width:100%;
+          background:linear-gradient(90deg, ${colors.accent}, transparent);
+          animation:drawLine 1.5s ${EASE} forwards; transform-origin:left;
         }
 
         .l-logos {
           padding:80px 24px; text-align:center;
-          border-top:1px solid rgba(255,255,255,0.04);
-          border-bottom:1px solid rgba(255,255,255,0.04);
+          border-top:1px solid ${colors.border};
+          border-bottom:1px solid ${colors.border};
         }
         .l-logos-label {
-          font-size:12px; font-weight:600; color:#52525b; text-transform:uppercase;
+          font-size:12px; font-weight:600; color:${colors.muted}; text-transform:uppercase;
           letter-spacing:0.1em; margin-bottom:32px;
         }
         .l-logos-row {
@@ -288,48 +480,42 @@ export default function LandingPage() {
           gap:48px; flex-wrap:wrap; max-width:800px; margin:0 auto;
         }
         .l-logo-item {
-          font-size:15px; font-weight:600; color:#3f3f46;
+          font-size:15px; font-weight:600; color:${isDark ? '#3f3f46' : '#a1a1aa'};
           display:flex; align-items:center; gap:8px; transition:color 0.2s;
         }
-        .l-logo-item:hover { color:#a1a1aa; }
+        .l-logo-item:hover { color:${isDark ? '#a1a1aa' : '#52525b'}; }
 
-        .l-cta {
-          padding:120px 24px; text-align:center;
-        }
+        .l-cta { padding:120px 24px; text-align:center; }
         .l-cta-box {
           max-width:640px; margin:0 auto; padding:64px 48px;
-          background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+          background:${colors.cardBg}; border:1px solid ${colors.border};
           border-radius:20px;
         }
         .l-cta h2 {
-          font-size:clamp(24px,4vw,36px); font-weight:700; color:#fafafa;
+          font-size:clamp(24px,4vw,36px); font-weight:700; color:${colors.text};
           letter-spacing:-0.03em; margin-bottom:14px;
         }
-        .l-cta p { font-size:16px; color:#71717a; margin-bottom:32px; max-width:420px; margin-left:auto; margin-right:auto; line-height:1.7; }
+        .l-cta p { font-size:16px; color:${colors.textSec}; margin-bottom:32px; max-width:420px; margin-left:auto; margin-right:auto; line-height:1.7; }
         .l-cta-btn {
           display:inline-flex; align-items:center; gap:8px;
-          padding:14px 32px; background:#fafafa; color:#09090b;
+          padding:14px 32px; background:${colors.text}; color:${colors.bg};
           border:none; border-radius:10px; font-size:15px; font-weight:600;
-          cursor:pointer; font-family:inherit; transition:all 0.2s;
+          cursor:none; font-family:inherit; transition:all 0.25s ${EASE};
         }
-        .l-cta-btn:hover { background:#e4e4e7; transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,255,255,0.1); }
+        .l-cta-btn:hover { box-shadow:0 8px 30px ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}; transform:translateY(-1px); }
 
         .l-footer {
-          padding:32px 48px; border-top:1px solid rgba(255,255,255,0.04);
+          padding:32px 48px; border-top:1px solid ${colors.border};
           display:flex; align-items:center; justify-content:space-between;
         }
-        .l-footer-left { font-size:13px; color:#3f3f46; display:flex; align-items:center; gap:8px; }
+        .l-footer-left { font-size:13px; color:${colors.muted}; display:flex; align-items:center; gap:8px; }
         .l-footer-right { display:flex; align-items:center; gap:16px; }
-        .l-footer-link {
-          font-size:13px; color:#52525b; text-decoration:none; transition:color 0.15s;
-        }
-        .l-footer-link:hover { color:#a1a1aa; }
         .l-footer-theme {
-          background:none; border:1px solid rgba(255,255,255,0.08);
-          border-radius:6px; color:#52525b; padding:6px; cursor:pointer;
+          background:none; border:1px solid ${colors.border};
+          border-radius:6px; color:${colors.muted}; padding:6px; cursor:none;
           display:flex; align-items:center; transition:all 0.15s;
         }
-        .l-footer-theme:hover { color:#a1a1aa; border-color:rgba(255,255,255,0.15); }
+        .l-footer-theme:hover { color:${isDark ? '#a1a1aa' : '#52525b'}; border-color:${colors.borderHover}; }
 
         @media(max-width:768px) {
           .l-nav { padding:0 16px; }
@@ -340,8 +526,18 @@ export default function LandingPage() {
           .l-hero-metrics { gap:24px; }
           .l-metric-val { font-size:22px; }
           .l-footer { flex-direction:column; gap:16px; text-align:center; }
+          .l-hero h1 { font-size:clamp(36px,10vw,56px); }
         }
       `}</style>
+
+      {/* Load screen */}
+      <div className="load-screen">
+        <img src="/logo.svg" alt="" className="load-logo" />
+      </div>
+
+      {/* Cursor */}
+      <div className="l-cursor" ref={cursorRef} />
+      <div className="l-cursor-ring" ref={cursorRingRef} />
 
       {/* Nav */}
       <nav className="l-nav">
@@ -351,7 +547,7 @@ export default function LandingPage() {
         </a>
         <div className="l-nav-right">
           <button className="l-nav-item" onClick={toggleTheme}>
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <button className="l-nav-item" onClick={() => window.location.href = '/api/auth/discord'}>Sign in</button>
           <button className="l-nav-cta" onClick={() => window.location.href = '/api/auth/discord'}>Get Started</button>
@@ -360,7 +556,10 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="l-hero">
-        <div className="l-hero-bg" />
+        <div className="l-hero-orb o1" />
+        <div className="l-hero-orb o2" />
+        <div className="l-hero-orb o3" />
+        <div className="l-hero-orb o4" />
         <div className="l-hero-content">
           <Reveal>
             <div className="l-hero-chip">
@@ -381,10 +580,22 @@ export default function LandingPage() {
           </Reveal>
           <Reveal delay={240}>
             <div className="l-hero-btns">
-              <a href="/api/auth/discord" className="l-btn-primary">
+              <a
+                href="/api/auth/discord"
+                className="l-btn-primary"
+                ref={el => magnetRefs.current[0] = el}
+                onMouseMove={(e) => onMagnetMove(e, 0)}
+                onMouseLeave={() => onMagnetLeave(0)}
+              >
                 Get started free <ArrowRight size={15} />
               </a>
-              <button className="l-btn-secondary" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+              <button
+                className="l-btn-secondary"
+                ref={el => magnetRefs.current[1] = el}
+                onMouseMove={(e) => onMagnetMove(e, 1)}
+                onMouseLeave={() => onMagnetLeave(1)}
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 Learn more <ChevronRight size={15} />
               </button>
             </div>
@@ -411,7 +622,13 @@ export default function LandingPage() {
       {/* Preview */}
       <div className="l-preview-section">
         <Reveal>
-          <div className="l-preview-wrap" ref={previewRef} onMouseMove={onPreviewMouse} onMouseLeave={onPreviewLeave}>
+          <div
+            className="l-preview-wrap"
+            ref={previewRef}
+            onMouseMove={onPreviewMouse}
+            onMouseLeave={onPreviewLeave}
+            style={{ transform: `translateY(${scrollY * -0.05}px)` }}
+          >
             <div className="l-preview-glow" />
             <div className="l-preview">
               <div className="l-preview-bar">
@@ -465,10 +682,10 @@ export default function LandingPage() {
                         Generated a complete blueprint with 4 categories, 16 channels, and 8 custom roles.
                         <div className="l-blueprint-card">
                           <strong>Categories & Channels</strong><br />
-                          <span style={{color:'#71717a'}}>Info</span> — #rules · #announcements · #roles<br />
-                          <span style={{color:'#71717a'}}>General</span> — #general · #memes · #off-topic<br />
-                          <span style={{color:'#71717a'}}>Gaming</span> — #looking-for-group · #clips · #lfg<br />
-                          <span style={{color:'#71717a'}}>Voice</span> — General · Gaming · AFK
+                          <span style={{color: colors.textSec}}>Info</span> — #rules · #announcements · #roles<br />
+                          <span style={{color: colors.textSec}}>General</span> — #general · #memes · #off-topic<br />
+                          <span style={{color: colors.textSec}}>Gaming</span> — #looking-for-group · #clips · #lfg<br />
+                          <span style={{color: colors.textSec}}>Voice</span> — General · Gaming · AFK
                         </div>
                       </div>
                     </div>
@@ -495,14 +712,16 @@ export default function LandingPage() {
 
       {/* Logos */}
       <div className="l-logos">
-        <div className="l-logos-label">Powered by</div>
-        <div className="l-logos-row">
-          <div className="l-logo-item"><Bot size={18} /> OpenAI</div>
-          <div className="l-logo-item"><Brain size={18} /> Anthropic</div>
-          <div className="l-logo-item"><Zap size={18} /> Groq</div>
-          <div className="l-logo-item"><Rocket size={18} /> DeepSeek</div>
-          <div className="l-logo-item"><Shield size={18} /> Gemini</div>
-        </div>
+        <Reveal>
+          <div className="l-logos-label">Powered by</div>
+          <div className="l-logos-row">
+            <div className="l-logo-item"><Bot size={18} /> OpenAI</div>
+            <div className="l-logo-item"><Brain size={18} /> Anthropic</div>
+            <div className="l-logo-item"><Zap size={18} /> Groq</div>
+            <div className="l-logo-item"><Rocket size={18} /> DeepSeek</div>
+            <div className="l-logo-item"><Shield size={18} /> Gemini</div>
+          </div>
+        </Reveal>
       </div>
 
       {/* Features */}
@@ -521,8 +740,13 @@ export default function LandingPage() {
             { icon: <Brain size={20} />, title: 'Multi-AI Router', desc: 'Intelligent provider selection. Fallback chains ensure your requests always complete.' },
             { icon: <Rocket size={20} />, title: 'Bot Generation', desc: 'Generate Discord.js bot code with slash commands and event handlers.' },
           ].map((f, i) => (
-            <Reveal key={i} delay={i * 60}>
-              <div className="l-feature">
+            <Reveal key={i} delay={i * 80}>
+              <div
+                className="l-feature"
+                ref={el => featureRefs.current[i] = el}
+                onMouseMove={(e) => onFeatureMove(e, i)}
+                onMouseLeave={() => onFeatureLeave(i)}
+              >
                 <div className="l-feature-icon">{f.icon}</div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
@@ -532,7 +756,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How */}
+      {/* How it works */}
       <section className="l-section">
         <Reveal>
           <div className="l-label">How it works</div>
@@ -545,7 +769,7 @@ export default function LandingPage() {
             { num: '02', title: 'Review', desc: 'Get a complete blueprint with channels, roles, and settings. Adjust anything.' },
             { num: '03', title: 'Deploy', desc: 'One click and your server is live on Discord with everything configured.' },
           ].map((s, i) => (
-            <Reveal key={i} delay={i * 100}>
+            <Reveal key={i} delay={i * 120}>
               <div className="l-step">
                 <div className="l-step-num">{s.num}</div>
                 <h3>{s.title}</h3>
@@ -578,7 +802,7 @@ export default function LandingPage() {
         </div>
         <div className="l-footer-right">
           <button className="l-footer-theme" onClick={toggleTheme}>
-            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
         </div>
       </footer>
