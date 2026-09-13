@@ -113,7 +113,10 @@ export default function AdminPanel() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
-          <h2>DiscordGPT Admin</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.svg" alt="" className="admin-logo" />
+            <h2>DiscordGPT Admin</h2>
+          </div>
         </div>
         <nav className="admin-sidebar-nav">
           <button className="admin-nav-item" onClick={() => navigate('/')}>

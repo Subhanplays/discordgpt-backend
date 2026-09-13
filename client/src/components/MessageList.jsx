@@ -15,7 +15,9 @@ export default function MessageList({ messages, aiTyping }) {
       ))}
       {aiTyping && (
         <div className="typing-indicator">
-          <div className="message-avatar assistant-avatar">D</div>
+          <div className="message-avatar assistant-avatar">
+            <img src="/logo.svg" alt="" className="message-avatar-logo" />
+          </div>
           <div className="typing-dots">
             <div className="typing-dot" />
             <div className="typing-dot" />

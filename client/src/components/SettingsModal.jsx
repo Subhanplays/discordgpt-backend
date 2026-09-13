@@ -15,7 +15,10 @@ export default function SettingsModal({ open, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Settings</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, filter: 'var(--logo-filter)' }} />
+            <h2>Settings</h2>
+          </div>
           <button className="modal-close" onClick={onClose}>
             <X size={20} />
           </button>

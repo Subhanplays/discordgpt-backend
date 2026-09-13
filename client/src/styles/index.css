@@ -40,6 +40,7 @@
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255,255,255,0.03);
   --shadow-glow: 0 0 30px rgba(255, 255, 255, 0.06);
   --shadow-glow-lg: 0 0 50px rgba(255, 255, 255, 0.1);
+  --logo-filter: invert(1);
 }
 [data-theme="light"] {
   --bg-primary: #ffffff;
@@ -62,6 +63,7 @@
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8);
   --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255,255,255,0.7);
   --shadow-glow: 0 0 30px rgba(0, 0, 0, 0.05);
+  --logo-filter: none;
 }
 [data-theme="light"] .sidebar-logo-img,
 [data-theme="light"] .auth-logo-img,
@@ -126,7 +128,8 @@ a:hover{color:var(--accent-hover)}
 .sidebar-footer button:hover{color:var(--text-primary);background:var(--bg-glass-hover)}
 
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:15}
-.mobile-toggle{display:none;position:fixed;top:14px;left:14px;z-index:25;background:var(--bg-glass-solid);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-glass);border-radius:var(--radius-md);padding:10px;cursor:pointer;color:var(--text-primary);box-shadow:var(--shadow-glass)}
+.mobile-toggle{display:none;position:fixed;top:14px;left:14px;z-index:25;background:var(--bg-glass-solid);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-glass);border-radius:var(--radius-md);padding:8px;cursor:pointer;color:var(--text-primary);box-shadow:var(--shadow-glass);overflow:hidden}
+.mobile-toggle-logo{width:28px;height:28px;filter:var(--logo-filter)}
 
 .main-content{flex:1;display:flex;flex-direction:column;min-width:0;height:100%;position:relative;overflow:hidden}
 .main-content>div,.main-content>section{overflow-y:auto;height:100%}
@@ -157,6 +160,7 @@ a:hover{color:var(--accent-hover)}
 .message-avatar{width:34px;height:34px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;margin-top:2px}
 .message-avatar.user-avatar{background:var(--bg-glass);color:var(--text-primary);font-weight:600;border:1px solid var(--border-glass)}
 .message-avatar.assistant-avatar{background:var(--accent-gradient);color:#000;font-weight:600;box-shadow:0 2px 10px rgba(255,255,255,0.1)}
+.message-avatar-logo{width:18px;height:18px;filter:var(--logo-filter);object-fit:contain}
 .message-body{flex:1;min-width:0}
 .message-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .message-role{font-size:14px;font-weight:600;color:var(--text-primary);letter-spacing:-0.01em}
@@ -269,6 +273,7 @@ a:hover{color:var(--accent-hover)}
 .template-page{padding:40px;max-width:1200px;width:100%;margin:0 auto}
 .template-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
 .template-page-header h1{font-size:26px;font-weight:700;letter-spacing:-0.03em}
+.page-header-logo{width:32px;height:32px;border-radius:var(--radius-sm);filter:var(--logo-filter);object-fit:contain}
 .template-search{padding:11px 16px;background:var(--bg-glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-glass);border-radius:var(--radius-full);color:var(--text-primary);font-size:14px;outline:none;width:300px;font-family:var(--font-family);transition:all var(--transition-fast)}
 .template-search:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(255,255,255,0.06), var(--shadow-glow)}
 .template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
@@ -341,6 +346,7 @@ a:hover{color:var(--accent-hover)}
 .admin-sidebar{width:240px;background:var(--bg-glass-solid);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-right:1px solid var(--border-glass);display:flex;flex-direction:column;flex-shrink:0}
 .admin-sidebar-header{padding:18px;border-bottom:1px solid var(--border-glass)}
 .admin-sidebar-header h2{font-size:16px;font-weight:700;letter-spacing:-0.02em}
+.admin-logo{width:28px;height:28px;border-radius:var(--radius-sm);filter:var(--logo-filter);object-fit:contain}
 .admin-sidebar-nav{padding:10px;flex:1}
 .admin-nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--transition-fast);border:none;background:none;width:100%;text-align:left;font-family:var(--font-family)}
 .admin-nav-item:hover{background:var(--bg-glass-hover);color:var(--text-primary)}

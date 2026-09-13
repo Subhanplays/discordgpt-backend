@@ -23,7 +23,10 @@ export default function TemplatesPage() {
   return (
     <div className="template-page">
       <div className="template-page-header">
-        <h1>Templates</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/logo.svg" alt="" className="page-header-logo" />
+          <h1>Templates</h1>
+        </div>
         <div style={{ position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input

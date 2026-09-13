@@ -127,7 +127,10 @@ export default function SettingsPage() {
 
   return (
     <div className="settings-page">
-      <h1>Settings</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+        <img src="/logo.svg" alt="" className="page-header-logo" />
+        <h1 style={{ margin: 0 }}>Settings</h1>
+      </div>
 
       <div className="settings-section">
         <div className="settings-section-title"><User size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />Discord Profile</div>

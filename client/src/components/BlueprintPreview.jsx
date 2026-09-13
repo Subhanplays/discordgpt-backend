@@ -78,7 +78,10 @@ export default function BlueprintPreview() {
     <div className="blueprint-preview slide-up">
       <div className="blueprint-card">
         <div className="blueprint-header">
-          <h3>Server Blueprint</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6 }} />
+            <h3>Server Blueprint</h3>
+          </div>
           {!deployInfo && <span className="badge badge-success">Ready</span>}
           {deployInfo && <span className="badge" style={{ background: '#5865F2', color: 'white' }}>Deploy Code Generated</span>}
         </div>

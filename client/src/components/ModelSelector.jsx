@@ -23,6 +23,7 @@ export default function ModelSelector({ value, onChange }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button className="model-selector" onClick={() => setOpen(!open)}>
+        <img src="/logo.svg" alt="" style={{ width: 14, height: 14, borderRadius: 3, filter: 'var(--logo-filter)' }} />
         {current.name}
         <ChevronDown size={14} />
       </button>

@@ -63,6 +63,7 @@ export default function MessageComposer({ onSend, disabled }) {
             <Mic size={16} />
           </button>
           <button className="model-selector">
+            <img src="/logo.svg" alt="" style={{ width: 14, height: 14, borderRadius: 3, filter: 'var(--logo-filter)' }} />
             DiscordGPT
             <ChevronDown size={14} />
           </button>

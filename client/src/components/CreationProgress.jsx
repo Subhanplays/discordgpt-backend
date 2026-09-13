@@ -39,12 +39,15 @@ export default function CreationProgress() {
     <div className="progress-container slide-up">
       <div className="progress-card">
         <div className="progress-header">
-          <h3>
-            {isDone && 'Server Created Successfully!'}
-            {isFailed && 'Creation Failed'}
-            {isQueued && `Queued (Position ${position || '...'})`}
-            {isProcessing && 'Creating Your Server...'}
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6 }} />
+            <h3 style={{ margin: 0 }}>
+              {isDone && 'Server Created Successfully!'}
+              {isFailed && 'Creation Failed'}
+              {isQueued && `Queued (Position ${position || '...'})`}
+              {isProcessing && 'Creating Your Server...'}
+            </h3>
+          </div>
           {!isFailed && (
             <div className="progress-bar-container">
               <div className="progress-bar-track">
