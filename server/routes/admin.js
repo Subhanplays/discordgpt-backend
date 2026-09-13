@@ -178,4 +178,14 @@ router.put('/usage-limits', async (req, res) => {
   }
 });
 
+router.post('/reset-usage', async (req, res) => {
+  try {
+    const result = await db.resetAllDailyUsage();
+    res.json({ message: 'All daily usage counts reset', affected: result });
+  } catch (error) {
+    console.error('Reset usage error:', error);
+    res.status(500).json({ error: 'Failed to reset usage' });
+  }
+});
+
 module.exports = router;

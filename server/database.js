@@ -580,6 +580,14 @@ module.exports = {
     );
   },
 
+  async resetAllDailyUsage() {
+    const result = await q(
+      `DELETE FROM generation_logs
+       WHERE created_at >= (now() at time zone 'utc')::date::text`
+    );
+    return result;
+  },
+
   // Pending Blueprints (deploy codes)
   async createPendingBlueprint(userId, blueprintJson, serverName) {
     const id = uuidv4();
