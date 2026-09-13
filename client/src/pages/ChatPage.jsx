@@ -20,12 +20,14 @@ export default function ChatPage() {
   const activeConversationRef = useRef(activeConversation)
   activeConversationRef.current = activeConversation
 
+  const sendingRef = useRef(false)
+
   useEffect(() => {
     fetchUsage()
   }, [fetchUsage])
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && !sendingRef.current) {
       const activeId = activeConversationRef.current?._id || activeConversationRef.current?.id
       if (!activeConversationRef.current || activeId !== conversationId) {
         loadConversation(conversationId)
@@ -36,14 +38,19 @@ export default function ChatPage() {
   const hasMessages = messages.length > 0
 
   const handleSend = async (content) => {
-    if (!activeConversation) {
-      const conv = await createConversation(content.slice(0, 80))
-      if (conv) {
-        navigate(`/c/${conv.id || conv._id}`)
-        await sendMessage(content, conv.id || conv._id)
+    sendingRef.current = true
+    try {
+      if (!activeConversation) {
+        const conv = await createConversation(content.slice(0, 80))
+        if (conv) {
+          navigate(`/c/${conv.id || conv._id}`)
+          await sendMessage(content, conv.id || conv._id)
+        }
+      } else {
+        await sendMessage(content, activeConversation.id || activeConversation._id)
       }
-    } else {
-      await sendMessage(content, activeConversation.id || activeConversation._id)
+    } finally {
+      sendingRef.current = false
     }
   }
 
