@@ -186,9 +186,7 @@ export function ChatProvider({ children }) {
           setBlueprint(data.blueprint)
         }
         if (data.conversation) {
-          if (!conversationId) {
-            setActiveConversation(data.conversation)
-          }
+          setActiveConversation(data.conversation)
           setConversations(prev => {
             const updated = data.conversation
             const exists = prev.find(c => (c._id || c.id) === (updated._id || updated.id))

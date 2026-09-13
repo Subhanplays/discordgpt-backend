@@ -203,8 +203,10 @@ router.post('/send', async (req, res) => {
 
     if (isBlueprintRequest) {
       blueprint = parseBlueprintFromAI(aiResponse);
+      console.log('parseBlueprintFromAI result:', blueprint ? `found (${blueprint.categories?.length} categories, ${blueprint.roles?.length} roles)` : 'null — falling back to generateBlueprint');
       if (!blueprint) {
         blueprint = generateBlueprint(content);
+        console.log('generateBlueprint fallback:', blueprint ? `generated (${blueprint.categories?.length} categories)` : 'null');
       }
       await db.updateConversationBlueprint(convId, JSON.stringify(blueprint));
       await db.createMessage(convId, 'assistant', aiResponse);
@@ -216,9 +218,7 @@ router.post('/send', async (req, res) => {
         console.error('Generation log error:', logError);
       }
     } else {
-      if (conversation && conversation.blueprint_json) {
-        try { blueprint = JSON.parse(conversation.blueprint_json); } catch (e) {}
-      }
+      blueprint = null;
       await db.createMessage(convId, 'assistant', aiResponse);
       await db.createGenerationLog(
         req.user.id, convId, content, aiResponse, 'success', null, durationMs
@@ -295,9 +295,11 @@ router.post('/:id/messages', async (req, res) => {
     }
 
     let returnBlueprint = null;
-    const freshConvo = await db.getConversationById(req.params.id, req.user.id);
-    if (freshConvo?.blueprint_json) {
-      try { returnBlueprint = JSON.parse(freshConvo.blueprint_json); } catch (e) {}
+    if (isBlueprintRequest) {
+      const freshConvo = await db.getConversationById(req.params.id, req.user.id);
+      if (freshConvo?.blueprint_json) {
+        try { returnBlueprint = JSON.parse(freshConvo.blueprint_json); } catch (e) {}
+      }
     }
 
     res.json({
