@@ -309,6 +309,12 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
     setGrantModal(null)
   }
 
+  const handleAssignPlan = async (u, planId) => {
+    await api(`/api/admin/users/${u.id}/assign-plan`, 'POST', { planId })
+    update('users', data.users.map(x => x.id === u.id ? { ...x, plan_id: planId } : x))
+    showSuccess(`${u.username} → ${planId}`)
+  }
+
   const handleDeleteConv = async (convId) => {
     await api(`/api/admin/conversations/${convId}`, 'DELETE')
     if (userConvs) setUserConvs(prev => ({ ...prev, conversations: prev.conversations.filter(c => c.id !== convId) }))
@@ -331,7 +337,7 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
       <div style={{ ...card, overflow: 'hidden', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ borderBottom: '1px solid #1e1e22' }}>
-            {['User', 'Discord ID', 'Role', 'Status', 'Joined', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}
+            {['User', 'Discord ID', 'Role', 'Plan', 'Status', 'Joined', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}
           </tr></thead>
           <tbody>
             {filtered.map(u => (
@@ -342,6 +348,12 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
                 </div></td>
                 <td style={td}><code style={{ fontSize: 11, background: '#0a0a0a', padding: '2px 6px', borderRadius: 4, color: '#a1a1aa', border: '1px solid #1e1e22' }}>{u.discord_id || '-'}</code></td>
                 <td style={td}><span className={`badge ${u.role === 'admin' ? 'badge-warning' : 'badge-default'}`}>{u.role}</span></td>
+                <td style={td}>
+                  <select value={u.plan_id || 'free'} onChange={e => handleAssignPlan(u, e.target.value)}
+                    style={{ background: '#0a0a0a', border: '1px solid #1e1e22', borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option>
+                  </select>
+                </td>
                 <td style={td}>{u.is_banned ? <span className="badge badge-error" title={u.ban_reason}>Banned</span> : <span className="badge badge-success">Active</span>}</td>
                 <td style={{ ...td, color: '#71717a' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
                 <td style={td}><div style={{ display: 'flex', gap: 4 }}>

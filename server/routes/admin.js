@@ -503,6 +503,21 @@ router.post('/users/:id/grant-credits', async (req, res) => {
   }
 });
 
+router.post('/users/:id/assign-plan', async (req, res) => {
+  try {
+    const { planId } = req.body;
+    const plan = await db.getPlanById(planId);
+    if (!plan) return res.status(404).json({ error: 'Plan not found' });
+    await db.getPool().query('UPDATE users SET plan_id = $1 WHERE id = $2', [planId, req.params.id]);
+    const balance = await db.addCredits(req.params.id, plan.credits_per_month);
+    await db.logCreditTransaction(req.params.id, plan.credits_per_month, balance, 'grant', `${plan.display_name} plan assigned by admin`);
+    res.json({ plan: planId, balance });
+  } catch (error) {
+    console.error('Assign plan error:', error);
+    res.status(500).json({ error: 'Failed to assign plan' });
+  }
+});
+
 router.post('/users/:id/set-credits', async (req, res) => {
   try {
     const { amount } = req.body;

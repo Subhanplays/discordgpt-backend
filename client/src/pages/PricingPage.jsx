@@ -33,6 +33,8 @@ export default function PricingPage() {
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+      } else if (data.error?.includes('not configured')) {
+        alert('Stripe is not configured. Please contact your admin to upgrade your plan.')
       } else {
         alert(data.error || 'Failed to start checkout')
       }
