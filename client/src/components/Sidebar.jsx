@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2, Sun, Moon } from 'lucide-react'
+import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2, Sun, Moon, Pin } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -8,7 +8,7 @@ import FolderList from './FolderList'
 
 export default function Sidebar({ open, onClose, searchInputRef }) {
   const { user, logout } = useAuth()
-  const { conversations, activeConversation, loadConversation, deleteConversation, createConversation } = useChat()
+  const { conversations, activeConversation, loadConversation, deleteConversation, createConversation, togglePinConversation } = useChat()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
@@ -20,7 +20,7 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
 
   const filtered = conversations.filter(c =>
     (c.title || '').toLowerCase().includes(search.toLowerCase())
-  )
+  ).sort((a, b) => (b.is_pinned || 0) - (a.is_pinned || 0))
 
   const handleNewChat = useCallback(() => {
     createConversation('New Chat')
@@ -38,6 +38,11 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
     e.stopPropagation()
     deleteConversation(id)
   }, [deleteConversation])
+
+  const handlePin = useCallback((e, id) => {
+    e.stopPropagation()
+    togglePinConversation(id)
+  }, [togglePinConversation])
 
   const handleNav = useCallback((path) => {
     navigate(path)
@@ -104,10 +109,16 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
             className={`sidebar-history-item ${(activeConversation?._id || activeConversation?.id) === (conv._id || conv.id) ? 'active' : ''}`}
             onClick={() => handleSelect(conv._id || conv.id)}
           >
+            {conv.is_pinned === 1 && <Pin size={12} className="pin-icon" />}
             <span className="title">{conv.title || 'New Conversation'}</span>
-            <button className="delete-btn" onClick={e => handleDelete(e, conv._id || conv.id)} aria-label="Delete conversation">
-              <Trash2 size={14} />
-            </button>
+            <div className="conversation-actions">
+              <button className="pin-btn" onClick={e => handlePin(e, conv._id || conv.id)} aria-label={conv.is_pinned ? 'Unpin conversation' : 'Pin conversation'}>
+                <Pin size={14} className={conv.is_pinned ? 'pinned' : ''} />
+              </button>
+              <button className="delete-btn" onClick={e => handleDelete(e, conv._id || conv.id)} aria-label="Delete conversation">
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
         {conversations.length === 0 && (

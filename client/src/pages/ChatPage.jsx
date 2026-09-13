@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import WelcomeScreen from '../components/WelcomeScreen'
 import MessageList from '../components/MessageList'
@@ -38,24 +38,24 @@ export default function ChatPage() {
 
   const hasMessages = messages.length > 0
 
-  const handleSend = async (content) => {
+  const handleSend = async (content, personality = 'professional') => {
     sendingRef.current = true
     try {
       if (!activeConversation) {
         const conv = await createConversation(content.slice(0, 80))
         if (conv) {
           navigate(`/c/${conv.id || conv._id}`)
-          await sendMessage(content, conv.id || conv._id)
+          await sendMessage(content, conv.id || conv._id, false, personality)
         }
       } else {
-        await sendMessage(content, activeConversation.id || activeConversation._id)
+        await sendMessage(content, activeConversation.id || activeConversation._id, false, personality)
       }
     } finally {
       sendingRef.current = false
     }
   }
 
-  const handleCreate = async (content) => {
+  const handleCreate = async (content, personality = 'professional') => {
     sendingRef.current = true
     try {
       const msg = `Create a Discord server: ${content}`
@@ -63,20 +63,33 @@ export default function ChatPage() {
         const conv = await createConversation(msg.slice(0, 80))
         if (conv) {
           navigate(`/c/${conv.id || conv._id}`)
-          await sendMessage(msg, conv.id || conv._id)
+          await sendMessage(msg, conv.id || conv._id, true, personality)
         }
       } else {
-        await sendMessage(msg, activeConversation.id || activeConversation._id)
+        await sendMessage(msg, activeConversation.id || activeConversation._id, true, personality)
       }
     } finally {
       sendingRef.current = false
     }
   }
 
+  const handleRegenerate = useCallback(async (messageId) => {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg || !activeConversation) return
+
+    setMessages(prev => {
+      const idx = prev.findIndex(m => m.id === messageId)
+      if (idx === -1) return prev
+      return prev.slice(0, idx)
+    })
+
+    await sendMessage(lastUserMsg.content, activeConversation.id || activeConversation._id)
+  }, [messages, activeConversation, sendMessage, setMessages])
+
   return (
     <div className="chat-area">
       {(!hasMessages && !blueprint && !creationProgress) ? (
-        <WelcomeScreen />
+        <WelcomeScreen onPrompt={handleSend} />
       ) : (
         <div className="message-container">
           {hasMessages && (
@@ -85,7 +98,7 @@ export default function ChatPage() {
               <ChatExport />
             </div>
           )}
-          <MessageList messages={messages} aiTyping={aiTyping} />
+          <MessageList messages={messages} aiTyping={aiTyping} onRegenerate={handleRegenerate} />
           {blueprint && !creationProgress && <BlueprintPreview />}
           {creationProgress && <CreationProgress />}
         </div>

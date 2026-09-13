@@ -137,6 +137,27 @@ export function ChatProvider({ children }) {
     } catch {}
   }, [activeConversation, authHeaders])
 
+  const togglePinConversation = useCallback(async (id) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}/pin`, {
+        method: 'PUT',
+        headers: authHeaders()
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setConversations(prev => {
+          const updated = prev.map(c => (c._id || c.id) === id ? { ...c, is_pinned: data.is_pinned } : c)
+          return updated.sort((a, b) => (b.is_pinned || 0) - (a.is_pinned || 0))
+        })
+        if ((activeConversation?._id || activeConversation?.id) === id) {
+          setActiveConversation(prev => prev ? { ...prev, is_pinned: data.is_pinned } : prev)
+        }
+        return data.is_pinned
+      }
+    } catch {}
+    return null
+  }, [activeConversation, authHeaders])
+
   const loadConversation = useCallback(async (conversationId) => {
     try {
       const res = await fetch(`/api/conversations/${conversationId}`, { headers: authHeaders() })
@@ -156,7 +177,7 @@ export function ChatProvider({ children }) {
     return null
   }, [authHeaders])
 
-  const sendMessage = useCallback(async (content, conversationId, forceBlueprint = false) => {
+  const sendMessage = useCallback(async (content, conversationId, forceBlueprint = false, personality = 'professional') => {
     const userMsg = { id: Date.now().toString(), role: 'user', content, timestamp: new Date().toISOString() }
     setMessages(prev => [...prev, userMsg])
     setBlueprint(null)
@@ -167,7 +188,7 @@ export function ChatProvider({ children }) {
       const res = await fetch('/api/chat/send', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ message: content, conversationId, forceBlueprint })
+        body: JSON.stringify({ message: content, conversationId, forceBlueprint, personality })
       })
 
       if (res.status === 429) {
@@ -328,7 +349,7 @@ export function ChatProvider({ children }) {
     creationProgress, setCreationProgress,
     activeJobId, setActiveJobId,
     templates, usage, fetchUsage,
-    fetchConversations, createConversation, deleteConversation, updateConversation,
+    fetchConversations, createConversation, deleteConversation, updateConversation, togglePinConversation,
     loadConversation, sendMessage,
     createServer, pollJobStatus,
     fetchTemplates, saveTemplate, deleteTemplate

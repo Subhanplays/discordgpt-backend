@@ -1,5 +1,6 @@
 import React from 'react'
 import { useChat } from '../contexts/ChatContext'
+import QuickActions from './QuickActions'
 
 export default function WelcomeScreen({ onPrompt }) {
   const { botConnected, selectedServer } = useChat()
@@ -34,6 +35,8 @@ export default function WelcomeScreen({ onPrompt }) {
             <button className="welcome-server-change">Change</button>
           </div>
         )}
+
+        {onPrompt && <QuickActions onAction={onPrompt} />}
       </div>
     </div>
   )

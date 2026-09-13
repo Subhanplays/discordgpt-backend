@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
 
-export default function MessageList({ messages, aiTyping }) {
+export default function MessageList({ messages, aiTyping, onRegenerate }) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -11,7 +11,7 @@ export default function MessageList({ messages, aiTyping }) {
   return (
     <div className="message-list">
       {messages.map((msg) => (
-        <MessageBubble key={msg.id} message={msg} />
+        <MessageBubble key={msg.id} message={msg} onRegenerate={onRegenerate} />
       ))}
       {aiTyping && (
         <div className="typing-indicator fade-in">

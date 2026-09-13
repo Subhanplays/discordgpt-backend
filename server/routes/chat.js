@@ -153,10 +153,17 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/send', async (req, res) => {
   try {
-    const { message: content, conversationId, forceBlueprint } = req.body;
+    const { message: content, conversationId, forceBlueprint, personality } = req.body;
     if (!content) {
       return res.status(400).json({ error: 'Message is required' });
     }
+
+    const personalityPrefixes = {
+      professional: 'Respond in a formal, detailed, and professional tone. ',
+      casual: 'Respond in a friendly, relaxed, and casual tone. ',
+      expert: 'Respond in a highly technical, concise, and expert tone. '
+    };
+    const personalityPrefix = personalityPrefixes[personality] || '';
 
     let convId = conversationId;
     let conversation = null;
@@ -182,10 +189,12 @@ router.post('/send', async (req, res) => {
     await db.createMessage(convId, 'user', content);
 
     const existingMessages = await db.getConversationMessages(convId);
-    const messagesForAI = existingMessages.map(m => ({
-      role: m.role,
-      content: m.content
-    }));
+    const messagesForAI = existingMessages.map(m => {
+      if (m.role === 'user' && m.content === content) {
+        return { role: m.role, content: personalityPrefix + m.content };
+      }
+      return { role: m.role, content: m.content };
+    });
 
     let aiResponse;
     let blueprint = null;
@@ -249,20 +258,29 @@ router.post('/:id/messages', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    const { content, forceBlueprint } = req.body;
+    const { content, forceBlueprint, personality } = req.body;
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
     }
+
+    const personalityPrefixes = {
+      professional: 'Respond in a formal, detailed, and professional tone. ',
+      casual: 'Respond in a friendly, relaxed, and casual tone. ',
+      expert: 'Respond in a highly technical, concise, and expert tone. '
+    };
+    const personalityPrefix = personalityPrefixes[personality] || '';
 
     const startTime = Date.now();
 
     await db.createMessage(req.params.id, 'user', content);
 
     const existingMessages = await db.getConversationMessages(req.params.id);
-    const messagesForAI = existingMessages.map(m => ({
-      role: m.role,
-      content: m.content
-    }));
+    const messagesForAI = existingMessages.map(m => {
+      if (m.role === 'user' && m.content === content) {
+        return { role: m.role, content: personalityPrefix + m.content };
+      }
+      return { role: m.role, content: m.content };
+    });
 
     let aiResponse;
     try {
@@ -360,6 +378,18 @@ router.put('/conversations/:id/folder', async (req, res) => {
   } catch (error) {
     console.error('Move conversation error:', error);
     res.status(500).json({ error: 'Failed to move conversation' });
+  }
+});
+
+router.put('/conversations/:id/pin', async (req, res) => {
+  try {
+    const conversation = await db.getConversationById(req.params.id, req.user.id);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found' });
+    const isPinned = await db.togglePinConversation(req.params.id, req.user.id);
+    res.json({ is_pinned: isPinned });
+  } catch (error) {
+    console.error('Toggle pin error:', error);
+    res.status(500).json({ error: 'Failed to toggle pin' });
   }
 });
 

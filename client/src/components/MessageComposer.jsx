@@ -1,11 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ArrowUp, Paperclip, Mic, Globe, Sparkles } from 'lucide-react'
+import PersonalitySelector from './PersonalitySelector'
+
+const PERSONALITY_KEY = 'discordgpt_personality'
 
 export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const [text, setText] = useState('')
+  const [personality, setPersonality] = useState(() => {
+    return localStorage.getItem(PERSONALITY_KEY) || 'professional'
+  })
   const textareaRef = useRef(null)
 
   const isLimitReached = usage && usage.remaining <= 0
+
+  useEffect(() => {
+    localStorage.setItem(PERSONALITY_KEY, personality)
+  }, [personality])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -17,7 +27,7 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const handleSend = () => {
     const trimmed = text.trim()
     if (!trimmed || disabled) return
-    onSend(trimmed)
+    onSend(trimmed, personality)
     setText('')
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
@@ -27,7 +37,7 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const handleCreate = () => {
     const trimmed = text.trim()
     if (!trimmed || disabled) return
-    onCreate(trimmed)
+    onCreate(trimmed, personality)
     setText('')
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
@@ -74,15 +84,18 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           <ArrowUp size={16} />
         </button>
         <div className="composer-actions">
-          <button className="composer-action-btn" title="Attach file">
-            <Paperclip size={14} />
-          </button>
-          <button className="composer-action-btn disabled" title="Web search (coming soon)">
-            <Globe size={14} />
-          </button>
-          <button className="composer-action-btn disabled" title="Voice input (coming soon)">
-            <Mic size={14} />
-          </button>
+          <div className="composer-actions-left">
+            <button className="composer-action-btn" title="Attach file">
+              <Paperclip size={14} />
+            </button>
+            <button className="composer-action-btn disabled" title="Web search (coming soon)">
+              <Globe size={14} />
+            </button>
+            <button className="composer-action-btn disabled" title="Voice input (coming soon)">
+              <Mic size={14} />
+            </button>
+          </div>
+          <PersonalitySelector selected={personality} onChange={setPersonality} />
         </div>
       </div>
       {usage && (

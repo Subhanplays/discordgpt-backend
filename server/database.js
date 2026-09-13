@@ -313,6 +313,12 @@ async function initDatabase() {
     // column may already exist
   }
 
+  try {
+    await q('ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_pinned INTEGER DEFAULT 0');
+  } catch (e) {
+    // column may already exist
+  }
+
   console.log('Folder and versioning columns ready');
 }
 
@@ -761,7 +767,7 @@ module.exports = {
 
   async getUserConversations(userId) {
     return (await q(
-      `SELECT id, title, created_at FROM conversations WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT id, title, created_at, is_pinned FROM conversations WHERE user_id = $1 ORDER BY is_pinned DESC, created_at DESC`,
       [userId]
     )).rows;
   },
@@ -769,6 +775,15 @@ module.exports = {
   async deleteConversation(conversationId, userId) {
     await q('DELETE FROM messages WHERE conversation_id = $1', [conversationId]);
     await q('DELETE FROM conversations WHERE id = $1 AND user_id = $2', [conversationId, userId]);
+  },
+
+  async togglePinConversation(conversationId, userId) {
+    const result = await q(
+      `UPDATE conversations SET is_pinned = CASE WHEN is_pinned = 1 THEN 0 ELSE 1 END
+       WHERE id = $1 AND user_id = $2 RETURNING is_pinned`,
+      [conversationId, userId]
+    );
+    return result.rows[0] ? result.rows[0].is_pinned : null;
   },
 
   async getAllConversations(limit = 100) {

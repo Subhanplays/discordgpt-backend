@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { Copy, ThumbsUp, ThumbsDown, Check } from 'lucide-react'
+import { Copy, ThumbsUp, ThumbsDown, Check, RefreshCw } from 'lucide-react'
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, onRegenerate }) {
   const [copied, setCopied] = useState(false)
   const [liked, setLiked] = useState(false)
   const [disliked, setDisliked] = useState(false)
@@ -109,6 +109,11 @@ export default function MessageBubble({ message }) {
             <button onClick={handleDislike} className={disliked ? 'active' : ''} title="Bad response">
               <ThumbsDown size={13} />
             </button>
+            {onRegenerate && (
+              <button onClick={() => onRegenerate(message.id)} title="Regenerate response">
+                <RefreshCw size={13} />
+              </button>
+            )}
           </div>
         )}
       </div>

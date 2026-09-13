@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -10,6 +10,7 @@ import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import AuthPage from './pages/AuthPage'
 import AuthCallback from './pages/AuthCallback'
+import SearchModal from './components/SearchModal'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
 function ProtectedRoute({ children }) {
@@ -43,13 +44,11 @@ function PublicRoute({ children }) {
 function AppRoutes() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const [searchOpen, setSearchOpen] = useState(false)
 
   useKeyboardShortcuts({
     onNewChat: () => { if (isAuthenticated) navigate('/') },
-    onFocusSearch: () => {
-      const el = document.querySelector('.sidebar-search-input')
-      if (el) el.focus()
-    },
+    onFocusSearch: () => { if (isAuthenticated) setSearchOpen(true) },
     onOpenSettings: () => { if (isAuthenticated) navigate('/settings') },
     onClose: () => {
       document.dispatchEvent(new CustomEvent('app:close'))
@@ -57,18 +56,21 @@ function AppRoutes() {
   })
 
   return (
-    <Routes>
-      <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
-      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/" element={<ChatPage />} />
-        <Route path="/c/:conversationId" element={<ChatPage />} />
-        <Route path="/templates" element={<TemplatesPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+          <Route path="/" element={<ChatPage />} />
+          <Route path="/c/:conversationId" element={<ChatPage />} />
+          <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   )
 }
 
