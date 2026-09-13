@@ -1,64 +1,8 @@
 import React from 'react'
-import { Hammer, Gamepad2, Headphones, Palette, Store, Music, GraduationCap, Building } from 'lucide-react'
 import { useChat } from '../contexts/ChatContext'
 
-const prompts = [
-  {
-    icon: Hammer,
-    title: 'Moderation',
-    desc: 'Auto-moderate messages, warn or ban rule-breakers',
-    prompt: 'Help me set up auto-moderation for my Discord server'
-  },
-  {
-    icon: Gamepad2,
-    title: 'Games & Fun',
-    desc: 'Create trivia, word games, and mini-games',
-    prompt: 'Create a fun trivia game for my Discord server'
-  },
-  {
-    icon: Headphones,
-    title: 'Music Queue',
-    desc: 'Manage music queue and playback controls',
-    prompt: 'Help me build a music queue management system'
-  },
-  {
-    icon: Palette,
-    title: 'Embed Builder',
-    desc: 'Design rich embeds and announcements',
-    prompt: 'Create a beautiful embed for my server announcements'
-  },
-  {
-    icon: Store,
-    title: 'Shop System',
-    desc: 'Virtual economy, items, and store setup',
-    prompt: 'Help me create a virtual shop system for my server'
-  },
-  {
-    icon: Music,
-    title: 'Welcome Messages',
-    desc: 'Personalized greetings for new members',
-    prompt: 'Design personalized welcome messages for new members'
-  },
-  {
-    icon: GraduationCap,
-    title: 'Onboarding',
-    desc: 'Role assignment and server tutorial flow',
-    prompt: 'Create an onboarding flow with role assignment'
-  },
-  {
-    icon: Building,
-    title: 'Server Analytics',
-    desc: 'Track activity, growth, and engagement',
-    prompt: 'Help me set up server analytics and tracking'
-  }
-]
-
 export default function WelcomeScreen({ onPrompt }) {
-  const { activeConversation, botConnected, selectedServer } = useChat()
-
-  const handlePromptClick = (prompt) => {
-    if (onPrompt) onPrompt(prompt)
-  }
+  const { botConnected, selectedServer } = useChat()
 
   return (
     <div className="welcome-screen">
@@ -90,27 +34,6 @@ export default function WelcomeScreen({ onPrompt }) {
             <button className="welcome-server-change">Change</button>
           </div>
         )}
-
-        <div className="prompt-cards">
-          {prompts.map((item, i) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={i}
-                className="prompt-card"
-                onClick={() => handlePromptClick(item.prompt)}
-              >
-                <div className="prompt-card-icon">
-                  <Icon size={18} />
-                </div>
-                <div className="prompt-card-text">
-                  <div className="prompt-card-title">{item.title}</div>
-                  <div className="prompt-card-desc">{item.desc}</div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </div>
     </div>
   )

@@ -54,14 +54,10 @@ export default function ChatPage() {
     }
   }
 
-  const handleSelectPrompt = (prompt) => {
-    handleSend(prompt)
-  }
-
   return (
     <div className="chat-area">
       {(!hasMessages && !blueprint && !creationProgress) ? (
-        <WelcomeScreen onPrompt={handleSelectPrompt} />
+        <WelcomeScreen />
       ) : (
         <div className="message-container">
           <MessageList messages={messages} aiTyping={aiTyping} />

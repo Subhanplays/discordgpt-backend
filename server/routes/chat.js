@@ -8,14 +8,8 @@ function parseBlueprintFromAI(aiResponse) {
   try {
     let jsonStr = null;
 
-    const codeBlockMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1].trim();
-    }
-
-    if (!jsonStr) {
-      const firstBrace = aiResponse.indexOf('{');
-      if (firstBrace === -1) return null;
+    const firstBrace = aiResponse.indexOf('{');
+    if (firstBrace !== -1) {
       let depth = 0;
       let lastBrace = -1;
       for (let i = firstBrace; i < aiResponse.length; i++) {
@@ -25,9 +19,19 @@ function parseBlueprintFromAI(aiResponse) {
           if (depth === 0) { lastBrace = i; break; }
         }
       }
-      if (lastBrace === -1) return null;
-      jsonStr = aiResponse.substring(firstBrace, lastBrace + 1);
+      if (lastBrace !== -1) {
+        jsonStr = aiResponse.substring(firstBrace, lastBrace + 1);
+      }
     }
+
+    if (!jsonStr) {
+      const codeBlockMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      }
+    }
+
+    if (!jsonStr) return null;
 
     const parsed = JSON.parse(jsonStr);
 
