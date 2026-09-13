@@ -692,7 +692,7 @@ async function callOpenAI(apiKey, model, baseUrl, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model, messages, max_tokens: 4096, temperature: 0.7 }),
+    body: JSON.stringify({ model, messages, max_tokens: 8192, temperature: 0.7 }),
     signal: AbortSignal.timeout(45000)
   });
 
@@ -718,7 +718,7 @@ async function callAnthropic(apiKey, model, messages) {
     },
     body: JSON.stringify({
       model: model || 'claude-3-haiku-20240307',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemMsg?.content || '',
       messages: chatMessages.map(m => ({ role: m.role, content: m.content }))
     }),
@@ -792,7 +792,7 @@ async function callMistral(apiKey, model, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 4096 }),
+    body: JSON.stringify({ model: model || 'mistral-small-latest', messages, max_tokens: 8192 }),
     signal: AbortSignal.timeout(45000)
   });
 
@@ -812,7 +812,7 @@ async function callGroq(apiKey, model, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 4096 }),
+    body: JSON.stringify({ model: model || 'llama-3.1-8b-instant', messages, max_tokens: 8192 }),
     signal: AbortSignal.timeout(45000)
   });
 
@@ -832,7 +832,7 @@ async function callCustom(apiKey, model, baseUrl, messages) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 4096 }),
+    body: JSON.stringify({ model: model || 'default', messages, max_tokens: 8192 }),
     signal: AbortSignal.timeout(45000)
   });
 

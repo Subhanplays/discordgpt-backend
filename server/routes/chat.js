@@ -6,13 +6,27 @@ const { generateChatResponse, generateBlueprint, generateConversationTitle } = r
 
 function parseBlueprintFromAI(aiResponse) {
   try {
-    const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)```/);
-    if (!jsonMatch) {
-      const altMatch = aiResponse.match(/\{[\s\S]*"categories"[\s\S]*"roles"[\s\S]*\}/);
-      if (!altMatch) return null;
-      var jsonStr = altMatch[0];
-    } else {
-      var jsonStr = jsonMatch[1];
+    let jsonStr = null;
+
+    const codeBlockMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1].trim();
+    }
+
+    if (!jsonStr) {
+      const firstBrace = aiResponse.indexOf('{');
+      if (firstBrace === -1) return null;
+      let depth = 0;
+      let lastBrace = -1;
+      for (let i = firstBrace; i < aiResponse.length; i++) {
+        if (aiResponse[i] === '{') depth++;
+        else if (aiResponse[i] === '}') {
+          depth--;
+          if (depth === 0) { lastBrace = i; break; }
+        }
+      }
+      if (lastBrace === -1) return null;
+      jsonStr = aiResponse.substring(firstBrace, lastBrace + 1);
     }
 
     const parsed = JSON.parse(jsonStr);
