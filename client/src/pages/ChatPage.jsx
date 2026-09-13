@@ -30,11 +30,6 @@ export default function ChatPage() {
       if (!activeConversationRef.current || activeId !== conversationId) {
         loadConversation(conversationId)
       }
-    } else if (!conversationId && activeConversation) {
-      setActiveConversation(null)
-      setMessages([])
-      setBlueprint(null)
-      setCreationProgress(null)
     }
   }, [conversationId])
 
@@ -58,7 +53,7 @@ export default function ChatPage() {
 
   return (
     <div className="chat-area">
-      {!hasMessages && !creationProgress ? (
+      {(!hasMessages && !blueprint && !creationProgress) ? (
         <WelcomeScreen onPrompt={handleSelectPrompt} />
       ) : (
         <div className="message-container">
