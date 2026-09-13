@@ -8,7 +8,7 @@ import ChatPage from './pages/ChatPage'
 import TemplatesPage from './pages/TemplatesPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
-import AuthPage from './pages/AuthPage'
+import LandingPage from './pages/LandingPage'
 import AuthCallback from './pages/AuthCallback'
 import SearchModal from './components/SearchModal'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
@@ -22,22 +22,15 @@ function ProtectedRoute({ children }) {
       </div>
     )
   }
-  if (!isAuthenticated) return <Navigate to="/auth" replace />
+  if (!isAuthenticated) return <Navigate to="/" replace />
   return children
 }
 
 function AdminRoute({ children }) {
   const { user, isAuthenticated, loading } = useAuth()
   if (loading) return null
-  if (!isAuthenticated) return <Navigate to="/auth" replace />
-  if (user?.role !== 'admin') return <Navigate to="/" replace />
-  return children
-}
-
-function PublicRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
-  if (loading) return null
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (!isAuthenticated) return <Navigate to="/" replace />
+  if (user?.role !== 'admin') return <Navigate to="/chat" replace />
   return children
 }
 
@@ -58,15 +51,15 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route path="/" element={<ChatPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="/c/:conversationId" element={<ChatPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+        <Route path="/" element={isAuthenticated ? <Navigate to="/chat" replace /> : <LandingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
