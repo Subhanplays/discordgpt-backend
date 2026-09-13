@@ -282,15 +282,28 @@ export function ChatProvider({ children }) {
 
   const saveTemplate = useCallback(async (template) => {
     try {
-      const res = await fetch('/api/templates', {
-        method: 'POST',
+      const isUpdate = !!template.id
+      const url = isUpdate ? `/api/templates/${template.id}` : '/api/templates'
+      const method = isUpdate ? 'PUT' : 'POST'
+      const body = {
+        name: template.name,
+        description: template.description || '',
+        blueprint: template.blueprint || template.blueprint_json || {}
+      }
+      const res = await fetch(url, {
+        method,
         headers: authHeaders(),
-        body: JSON.stringify(template)
+        body: JSON.stringify(body)
       })
       if (res.ok) {
         const data = await res.json()
         const saved = data.template || data
-        setTemplates(prev => [saved, ...prev.filter(t => t.id !== saved.id)])
+        setTemplates(prev => {
+          if (isUpdate) {
+            return prev.map(t => t.id === saved.id ? saved : t)
+          }
+          return [saved, ...prev.filter(t => t.id !== saved.id)]
+        })
         return saved
       }
     } catch {}

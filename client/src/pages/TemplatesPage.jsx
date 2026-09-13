@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { Search, FolderOpen } from 'lucide-react'
+import { Search, FolderOpen, X, Loader2 } from 'lucide-react'
 import TemplateCard from '../components/TemplateCard'
 import { useChat } from '../contexts/ChatContext'
+import { useNavigate } from 'react-router-dom'
 
 export default function TemplatesPage() {
-  const { templates, fetchTemplates, deleteTemplate, saveTemplate } = useChat()
+  const { templates, fetchTemplates, deleteTemplate, saveTemplate, setBlueprint } = useChat()
   const [search, setSearch] = useState('')
+  const [editing, setEditing] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editDesc, setEditDesc] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchTemplates()
@@ -17,7 +23,37 @@ export default function TemplatesPage() {
   )
 
   const handleDuplicate = async (template) => {
-    await saveTemplate({ ...template, id: undefined, name: `${template.name} (Copy)` })
+    const bp = template.blueprint_json || {}
+    await saveTemplate({
+      name: `${template.name} (Copy)`,
+      description: template.description || '',
+      blueprint: bp
+    })
+  }
+
+  const handleEdit = (template) => {
+    setEditing(template)
+    setEditName(template.name)
+    setEditDesc(template.description || '')
+  }
+
+  const handleSaveEdit = async () => {
+    setEditSaving(true)
+    try {
+      await saveTemplate({
+        id: editing.id,
+        name: editName,
+        description: editDesc,
+        blueprint: editing.blueprint_json || {}
+      })
+      setEditing(null)
+    } catch {}
+    setEditSaving(false)
+  }
+
+  const handleUse = (template) => {
+    setBlueprint(template.blueprint_json || {})
+    navigate('/')
   }
 
   return (
@@ -50,12 +86,51 @@ export default function TemplatesPage() {
             <TemplateCard
               key={t.id}
               template={t}
-              onUse={(tpl) => {}}
-              onEdit={(tpl) => {}}
+              onUse={handleUse}
+              onEdit={handleEdit}
               onDuplicate={handleDuplicate}
               onDelete={deleteTemplate}
             />
           ))}
+        </div>
+      )}
+
+      {editing && (
+        <div className="modal-overlay" onClick={() => setEditing(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="modal-header">
+              <h3>Edit Template</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}><X size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Name</label>
+                <input
+                  className="form-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Template name"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  placeholder="Optional description"
+                  rows={3}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSaveEdit} disabled={editSaving || !editName.trim()}>
+                {editSaving ? <><Loader2 size={14} className="spinner" /> Saving...</> : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

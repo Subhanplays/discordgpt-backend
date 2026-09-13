@@ -1,15 +1,17 @@
 import React, { useState } from 'react'
 import { useChat } from '../contexts/ChatContext'
 import { useAuth } from '../contexts/AuthContext'
-import { Loader2, Copy, Check, ExternalLink } from 'lucide-react'
+import { Loader2, Copy, Check, ExternalLink, Save } from 'lucide-react'
 
 export default function BlueprintPreview() {
-  const { blueprint, setBlueprint } = useChat()
+  const { blueprint, setBlueprint, saveTemplate } = useChat()
   const { token } = useAuth()
   const [deployInfo, setDeployInfo] = useState(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState(null)
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   if (!blueprint) return null
 
@@ -48,6 +50,20 @@ export default function BlueprintPreview() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
+  }
+
+  const handleSaveAsTemplate = async () => {
+    setSaveLoading(true)
+    try {
+      await saveTemplate({
+        name: blueprint.serverName || blueprint.name || 'Untitled Template',
+        description: blueprint.description || '',
+        blueprint: blueprint
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {}
+    setSaveLoading(false)
   }
 
   const renderTree = () => {
@@ -174,6 +190,14 @@ export default function BlueprintPreview() {
 
         <div className="blueprint-actions">
           <button className="btn btn-ghost" onClick={() => { setBlueprint(null); setDeployInfo(null) }}>Cancel</button>
+          <button
+            className="btn btn-ghost"
+            onClick={handleSaveAsTemplate}
+            disabled={saveLoading || saved}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            {saved ? <><Check size={14} /> Saved</> : saveLoading ? <><Loader2 size={14} className="spinner" /> Saving...</> : <><Save size={14} /> Save as Template</>}
+          </button>
           {!deployInfo ? (
             <button
               className="btn btn-primary"

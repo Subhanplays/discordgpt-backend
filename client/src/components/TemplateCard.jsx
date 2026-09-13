@@ -2,8 +2,9 @@ import React from 'react'
 import { Layers, Hash, Clock, Play, Edit, Copy, Trash2 } from 'lucide-react'
 
 export default function TemplateCard({ template, onUse, onEdit, onDuplicate, onDelete }) {
-  const catCount = template.categories?.length || 0
-  const chCount = template.categories?.reduce((acc, cat) => acc + (cat.channels?.length || 0), 0) || 0
+  const bp = template.blueprint_json || {}
+  const catCount = bp.categories?.length || 0
+  const chCount = bp.categories?.reduce((acc, cat) => acc + (cat.channels?.length || 0), 0) || 0
 
   return (
     <div className="template-card">
@@ -12,7 +13,7 @@ export default function TemplateCard({ template, onUse, onEdit, onDuplicate, onD
       <div className="template-card-meta">
         <span><Layers size={12} /> {catCount} categories</span>
         <span><Hash size={12} /> {chCount} channels</span>
-        {template.createdAt && <span><Clock size={12} /> {new Date(template.createdAt).toLocaleDateString()}</span>}
+        {template.created_at && <span><Clock size={12} /> {new Date(template.created_at).toLocaleDateString()}</span>}
       </div>
       <div className="template-card-actions">
         <button className="btn btn-primary btn-sm" onClick={() => onUse?.(template)}>
