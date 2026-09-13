@@ -177,17 +177,6 @@ export function ChatProvider({ children }) {
         return null
       }
 
-      if (res.status === 403) {
-        const err = await res.json().catch(() => ({}))
-        if (err.error === 'Insufficient credits') {
-          setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: 'You have run out of credits. Please purchase more or upgrade your plan.', timestamp: new Date().toISOString() }])
-          fetchUsage()
-          return null
-        }
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: err.error || 'Access denied.', timestamp: new Date().toISOString() }])
-        return null
-      }
-
       if (res.ok) {
         const data = await res.json()
         if (data.message) {

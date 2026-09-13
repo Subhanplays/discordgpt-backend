@@ -7,13 +7,12 @@ import {
   Edit3, PowerOff, Save, X, Loader2, Server, Copy,
   Ban, ShieldOff, Globe, RotateCcw, UserCheck, Key,
   Search, MessageSquare, Download, Send, Eye, Copy as CopyIcon,
-  MessageCircle, Megaphone, Clock, LogOut, CreditCard, Zap
+  MessageCircle, Megaphone, Clock, LogOut
 } from 'lucide-react'
 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'Users', icon: Users },
-  { id: 'plans', label: 'Plans', icon: CreditCard },
   { id: 'conversations', label: 'Conversations', icon: MessageSquare },
   { id: 'blueprints', label: 'Blueprints', icon: Eye },
   { id: 'deployments', label: 'Deployments', icon: Server },
@@ -55,7 +54,7 @@ export default function AdminPanel() {
   const navigate = useNavigate()
   const { token, logout, user } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [data, setData] = useState({ stats: null, users: [], bots: [], logs: [], aiProviders: [], templates: [], usageLimits: { limit: 50, usage: [] }, ipBans: [], conversations: [], blueprints: [], deployments: [], broadcasts: [], plans: [], subscriptions: [] })
+  const [data, setData] = useState({ stats: null, users: [], bots: [], logs: [], aiProviders: [], templates: [], usageLimits: { limit: 50, usage: [] }, ipBans: [], conversations: [], blueprints: [], deployments: [], broadcasts: [] })
   const [newLimit, setNewLimit] = useState(50)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -71,9 +70,9 @@ export default function AdminPanel() {
       const urls = ['/api/admin/stats', '/api/admin/users', '/api/admin/bots', '/api/admin/logs?limit=50',
         '/api/admin/ai-providers', '/api/admin/templates', '/api/admin/usage-limits',
         '/api/admin/ip-bans', '/api/admin/all-conversations?limit=50', '/api/admin/blueprints',
-        '/api/admin/deployments', '/api/admin/broadcasts', '/api/billing/plans']
+        '/api/admin/deployments', '/api/admin/broadcasts']
       const results = await Promise.all(urls.map(u => fetch(u, { headers }).then(r => r.ok ? r.json() : null).catch(() => null)))
-      const keys = ['stats', 'users', 'bots', 'logs', 'aiProviders', 'templates', 'usageLimits', 'ipBans', 'conversations', 'blueprints', 'deployments', 'broadcasts', 'plans']
+      const keys = ['stats', 'users', 'bots', 'logs', 'aiProviders', 'templates', 'usageLimits', 'ipBans', 'conversations', 'blueprints', 'deployments', 'broadcasts']
       const newData = {}
       keys.forEach((k, i) => { if (results[i]) newData[k] = results[i] })
       setData(prev => ({ ...prev, ...newData }))
@@ -119,7 +118,6 @@ export default function AdminPanel() {
           <>
             {activeTab === 'dashboard' && <DashboardTab data={data} />}
             {activeTab === 'users' && <UsersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
-            {activeTab === 'plans' && <PlansTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'conversations' && <ConversationsTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'blueprints' && <BlueprintsTab data={data} />}
             {activeTab === 'deployments' && <DeploymentsTab data={data} />}
@@ -170,76 +168,6 @@ function DashboardTab({ data }) {
   )
 }
 
-function PlansTab({ data, api, update, setError, showSuccess }) {
-  const plans = data.plans || []
-  const [editPlan, setEditPlan] = useState(null)
-  const [form, setForm] = useState({})
-
-  const startEdit = (p) => { setEditPlan(p.id); setForm({ display_name: p.display_name, credits_per_month: p.credits_per_month, credit_price_cents: p.credit_price_cents, max_servers: p.max_servers, ai_access_level: p.ai_access_level, priority_support: p.priority_support }) }
-  const handleSave = async () => {
-    const res = await api(`/api/admin/plans/${editPlan}`, 'PUT', form)
-    if (res) {
-      const plans = await api('/api/billing/plans')
-      if (plans) update('plans', plans)
-      showSuccess('Plan updated')
-    }
-    setEditPlan(null)
-  }
-
-  const handleGrantCredits = async (userId, amount) => {
-    await api(`/api/admin/users/${userId}/grant-credits`, 'POST', { amount: parseInt(amount) })
-    showSuccess(`Granted ${amount} credits`)
-  }
-
-  return (
-    <>
-      <h2 style={{ fontSize: 20, fontWeight: 600, color: '#fff', marginBottom: 20 }}>Plan Management</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-        {plans.map(p => (
-          <div key={p.id} style={{ ...card, border: editPlan === p.id ? '2px solid #3b82f6' : '1px solid #1e1e22', transition: 'border-color 150ms' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Zap size={20} style={{ color: p.name === 'pro' ? '#3b82f6' : p.name === 'enterprise' ? '#f59e0b' : '#71717a' }} />
-              <span style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>{p.display_name}</span>
-            </div>
-            {editPlan === p.id ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: 12, color: '#71717a' }}>Display Name</label>
-                <input className="input-field" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} />
-                <label style={{ fontSize: 12, color: '#71717a' }}>Credits/Month</label>
-                <input type="number" className="input-field" value={form.credits_per_month} onChange={e => setForm(f => ({ ...f, credits_per_month: parseInt(e.target.value) || 0 }))} />
-                <label style={{ fontSize: 12, color: '#71717a' }}>Price (cents/credit)</label>
-                <input type="number" className="input-field" value={form.credit_price_cents} onChange={e => setForm(f => ({ ...f, credit_price_cents: parseInt(e.target.value) || 0 }))} />
-                <label style={{ fontSize: 12, color: '#71717a' }}>Max Servers (-1 = unlimited)</label>
-                <input type="number" className="input-field" value={form.max_servers} onChange={e => setForm(f => ({ ...f, max_servers: parseInt(e.target.value) || 0 }))} />
-                <label style={{ fontSize: 12, color: '#71717a' }}>AI Access Level</label>
-                <select className="input-field" value={form.ai_access_level} onChange={e => setForm(f => ({ ...f, ai_access_level: e.target.value }))}>
-                  <option value="basic">Basic</option><option value="all">All</option>
-                </select>
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button style={btnPrimary} onClick={handleSave}><Save size={14} /> Save</button>
-                  <button style={btnGhost} onClick={() => setEditPlan(null)}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
-                  {p.credit_price_cents === 0 ? 'Free' : `$${(p.credit_price_cents / 100).toFixed(2)}`}
-                  {p.credit_price_cents > 0 && <span style={{ fontSize: 13, color: '#71717a', fontWeight: 400 }}>/credit</span>}
-                </div>
-                <div style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 12 }}>{p.credits_per_month} credits/month</div>
-                <div style={{ fontSize: 13, color: '#71717a', marginBottom: 4 }}>Servers: {p.max_servers === -1 ? 'Unlimited' : p.max_servers}</div>
-                <div style={{ fontSize: 13, color: '#71717a', marginBottom: 4 }}>AI: {p.ai_access_level}</div>
-                <div style={{ fontSize: 13, color: '#71717a', marginBottom: 12 }}>Priority: {p.priority_support ? 'Yes' : 'No'}</div>
-                <button style={btnGhost} onClick={() => startEdit(p)}><Edit3 size={14} /> Edit</button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </>
-  )
-}
-
 function UsersTab({ data, api, update, setError, showSuccess }) {
   const [search, setSearch] = useState('')
   const [filtered, setFiltered] = useState([])
@@ -248,8 +176,6 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
   const [limitModal, setLimitModal] = useState(null)
   const [limitVal, setLimitVal] = useState(50)
   const [userConvs, setUserConvs] = useState(null)
-  const [grantModal, setGrantModal] = useState(null)
-  const [grantAmount, setGrantAmount] = useState(100)
 
   useEffect(() => {
     if (!search.trim()) { setFiltered(data.users); return }
@@ -302,19 +228,6 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
     }
   }
 
-  const handleGrantCredits = async () => {
-    if (!grantModal) return
-    await api(`/api/admin/users/${grantModal.id}/grant-credits`, 'POST', { amount: parseInt(grantAmount) })
-    showSuccess(`Granted ${grantAmount} credits to ${grantModal.username}`)
-    setGrantModal(null)
-  }
-
-  const handleAssignPlan = async (u, planId) => {
-    await api(`/api/admin/users/${u.id}/assign-plan`, 'POST', { planId })
-    update('users', data.users.map(x => x.id === u.id ? { ...x, plan_id: planId } : x))
-    showSuccess(`${u.username} → ${planId}`)
-  }
-
   const handleDeleteConv = async (convId) => {
     await api(`/api/admin/conversations/${convId}`, 'DELETE')
     if (userConvs) setUserConvs(prev => ({ ...prev, conversations: prev.conversations.filter(c => c.id !== convId) }))
@@ -337,7 +250,7 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
       <div style={{ ...card, overflow: 'hidden', padding: 0 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ borderBottom: '1px solid #1e1e22' }}>
-            {['User', 'Discord ID', 'Role', 'Plan', 'Status', 'Joined', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}
+            {['User', 'Discord ID', 'Role', 'Status', 'Joined', 'Actions'].map(h => <th key={h} style={th}>{h}</th>)}
           </tr></thead>
           <tbody>
             {filtered.map(u => (
@@ -348,12 +261,6 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
                 </div></td>
                 <td style={td}><code style={{ fontSize: 11, background: '#0a0a0a', padding: '2px 6px', borderRadius: 4, color: '#a1a1aa', border: '1px solid #1e1e22' }}>{u.discord_id || '-'}</code></td>
                 <td style={td}><span className={`badge ${u.role === 'admin' ? 'badge-warning' : 'badge-default'}`}>{u.role}</span></td>
-                <td style={td}>
-                  <select value={u.plan_id || 'free'} onChange={e => handleAssignPlan(u, e.target.value)}
-                    style={{ background: '#0a0a0a', border: '1px solid #1e1e22', borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    <option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option>
-                  </select>
-                </td>
                 <td style={td}>{u.is_banned ? <span className="badge badge-error" title={u.ban_reason}>Banned</span> : <span className="badge badge-success">Active</span>}</td>
                 <td style={{ ...td, color: '#71717a' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
                 <td style={td}><div style={{ display: 'flex', gap: 4 }}>
@@ -363,7 +270,6 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
                   <button style={btnGhost} onClick={() => handleViewConvs(u)} title="Conversations"><MessageSquare size={14} /></button>
                   <button style={btnGhost} onClick={() => { setLimitModal(u); setLimitVal(50) }} title="Set message limit"><BarChart3 size={14} /></button>
                   <button style={btnGhost} onClick={() => handleImpersonate(u)} title="Login as user"><LogOut size={14} /></button>
-                  <button style={btnGhost} onClick={() => { setGrantModal(u); setGrantAmount(100) }} title="Grant credits"><Zap size={14} style={{ color: '#f59e0b' }} /></button>
                 </div></td>
               </tr>
             ))}
@@ -402,14 +308,6 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
         )}
       </Modal>}
 
-      {grantModal && <Modal title={`Grant Credits — ${grantModal.username}`} onClose={() => setGrantModal(null)}>
-        <input type="number" className="input-field" value={grantAmount} onChange={e => setGrantAmount(e.target.value)} min={1} style={{ marginBottom: 12 }} />
-        <p style={{ fontSize: 13, color: '#71717a', marginBottom: 16 }}>Credits to add to this user's balance.</p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button style={btnGhost} onClick={() => setGrantModal(null)}>Cancel</button>
-          <button style={btnPrimary} onClick={handleGrantCredits}><Zap size={14} /> Grant</button>
-        </div>
-      </Modal>}
     </>
   )
 }

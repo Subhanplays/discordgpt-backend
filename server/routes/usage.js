@@ -7,25 +7,19 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
   try {
-    const user = await db.getUserById(req.user.id);
-    const subscription = await db.getUserSubscription(req.user.id);
-    const balance = user ? user.credits_balance || 0 : 0;
-    const plan = subscription ? {
-      id: subscription.plan_id,
-      name: subscription.plan_name,
-      display_name: subscription.display_name,
-      credits_per_month: subscription.credits_per_month,
-      max_servers: subscription.max_servers,
-      ai_access_level: subscription.ai_access_level
-    } : { id: 'free', name: 'free', display_name: 'Free', credits_per_month: 50, max_servers: 3, ai_access_level: 'basic' };
+    const [usageCount, limit] = await Promise.all([
+      db.getUserDailyUsageCount(req.user.id),
+      db.getDailyUsageLimit()
+    ]);
+
+    const now = new Date();
+    const midnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 
     res.json({
-      count: user ? user.credits_used_this_month || 0 : 0,
-      limit: plan.credits_per_month,
-      remaining: balance,
-      balance,
-      plan,
-      resetAt: null
+      count: usageCount,
+      limit,
+      remaining: Math.max(0, limit - usageCount),
+      resetAt: midnightUTC.toISOString()
     });
   } catch (error) {
     console.error('Get usage error:', error);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2, CreditCard, Zap } from 'lucide-react'
+import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
 
@@ -69,14 +69,6 @@ export default function Sidebar({ open, onClose }) {
         <button className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`} onClick={() => handleNav('/settings')}>
           <Settings size={18} />
           <span>Settings</span>
-        </button>
-        <button className={`sidebar-nav-item ${isActive('/pricing') ? 'active' : ''}`} onClick={() => handleNav('/pricing')}>
-          <Zap size={18} />
-          <span>Pricing</span>
-        </button>
-        <button className={`sidebar-nav-item ${isActive('/billing') ? 'active' : ''}`} onClick={() => handleNav('/billing')}>
-          <CreditCard size={18} />
-          <span>Billing</span>
         </button>
         {isAdmin && (
           <button className={`sidebar-nav-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => handleNav('/admin')}>

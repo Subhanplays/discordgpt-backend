@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { creditCheckMiddleware } = require('../middleware/creditCheck');
 const db = require('../database');
 const { generateChatResponse, generateBlueprint, generateConversationTitle } = require('../utils/ai');
 
@@ -77,7 +76,6 @@ function parseBlueprintFromAI(aiResponse) {
 }
 
 router.use(authMiddleware);
-router.use(creditCheckMiddleware);
 
 router.get('/', async (req, res) => {
   try {
@@ -227,16 +225,6 @@ router.post('/send', async (req, res) => {
       );
     }
 
-    // Deduct credits after successful response
-    if (req.creditCost) {
-      try {
-        const balance = await db.deductCredits(req.user.id, req.creditCost);
-        await db.logCreditTransaction(req.user.id, -req.creditCost, balance, 'usage', 'AI message');
-      } catch (creditError) {
-        console.error('Credit deduction error:', creditError);
-      }
-    }
-
     res.json({
       message: {
         id: Date.now().toString(),
@@ -304,16 +292,6 @@ router.post('/:id/messages', async (req, res) => {
       await db.createGenerationLog(
         req.user.id, req.params.id, content, aiResponse, 'success', null, durationMs
       );
-    }
-
-    // Deduct credits after successful response
-    if (req.creditCost) {
-      try {
-        const balance = await db.deductCredits(req.user.id, req.creditCost);
-        await db.logCreditTransaction(req.user.id, -req.creditCost, balance, 'usage', 'AI message');
-      } catch (creditError) {
-        console.error('Credit deduction error:', creditError);
-      }
     }
 
     let returnBlueprint = null;
