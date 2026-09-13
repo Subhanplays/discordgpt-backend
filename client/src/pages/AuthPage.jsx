@@ -15,7 +15,7 @@ export default function AuthPage() {
   }, [])
 
   const handleDiscordLogin = () => {
-    window.location.href = 'https://discordgpt-api.onrender.com/api/auth/discord'
+    window.location.href = '/api/auth/discord'
   }
 
   return (
@@ -33,7 +33,21 @@ export default function AuthPage() {
 
         <button
           className="btn btn-primary btn-lg"
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '13px 24px', borderRadius: 'var(--r-md)', fontSize: 14, fontWeight: 600 }}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            padding: '14px 24px',
+            borderRadius: 'var(--r-md)',
+            fontSize: 14,
+            fontWeight: 600,
+            background: '#5865F2',
+            color: '#fff',
+            border: 'none',
+            transition: 'all 0.2s ease'
+          }}
           onClick={handleDiscordLogin}
         >
           <svg width="18" height="14" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">

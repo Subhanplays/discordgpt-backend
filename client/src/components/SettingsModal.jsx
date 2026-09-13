@@ -16,7 +16,7 @@ export default function SettingsModal({ open, onClose }) {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, filter: 'var(--logo-filter)' }} />
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, color: 'var(--text)' }} />
             <h2>Settings</h2>
           </div>
           <button className="modal-close" onClick={onClose}>
@@ -27,7 +27,7 @@ export default function SettingsModal({ open, onClose }) {
           <div className="settings-section">
             <div className="settings-section-title"><User size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />Discord Profile</div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '16px 0' }}>
-              <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-full)', overflow: 'hidden', background: 'var(--accent-gradient)', flexShrink: 0 }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-subtle)', flexShrink: 0 }}>
                 {user?.discord_avatar ? (
                   <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
@@ -37,7 +37,7 @@ export default function SettingsModal({ open, onClose }) {
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.username || 'User'}
                   {user?.discord_discriminator && user.discord_discriminator !== '0' && (
                     <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' }}>#{user.discord_discriminator}</span>

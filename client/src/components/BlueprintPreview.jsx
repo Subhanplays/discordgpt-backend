@@ -79,11 +79,11 @@ export default function BlueprintPreview() {
       <div className="blueprint-card">
         <div className="blueprint-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6 }} />
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, color: 'var(--text)' }} />
             <h3>Server Blueprint</h3>
           </div>
           {!deployInfo && <span className="badge badge-success">Ready</span>}
-          {deployInfo && <span className="badge" style={{ background: '#5865F2', color: 'white' }}>Deploy Code Generated</span>}
+          {deployInfo && <span className="badge" style={{ background: '#3b82f6', color: 'white' }}>Deploy Code Generated</span>}
         </div>
         <div className="blueprint-body">
           {(blueprint.serverName || blueprint.name) && (
@@ -120,21 +120,21 @@ export default function BlueprintPreview() {
           )}
 
           {deployInfo && (
-            <div className="blueprint-section" style={{ background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', padding: 16, marginTop: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
+            <div className="blueprint-section" style={{ background: '#111113', borderRadius: 10, padding: 16, marginTop: 8, border: '1px solid rgba(59,130,246,0.15)' }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#ffffff', marginBottom: 12 }}>
                 How to deploy
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 24, height: 24, borderRadius: '50%', background: '#5865F2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
+                  <div style={{ minWidth: 28, height: 28, borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>Invite the bot to your server</div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#ffffff' }}>Invite the bot to your server</div>
                     <a
                       href={deployInfo.inviteURL}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#5865F2', marginTop: 4, textDecoration: 'none' }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#3b82f6', marginTop: 4, textDecoration: 'none' }}
                     >
                       Open invite link <ExternalLink size={12} />
                     </a>
@@ -142,14 +142,14 @@ export default function BlueprintPreview() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 24, height: 24, borderRadius: '50%', background: '#5865F2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+                  <div style={{ minWidth: 28, height: 28, borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>In your Discord server, type:</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', border: '1px solid var(--border-color)' }}>
-                      <code style={{ fontSize: 14, color: '#5865F2', fontFamily: 'monospace', letterSpacing: 1 }}>/load {deployInfo.code}</code>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#ffffff' }}>In your Discord server, type:</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, background: '#0a0a0a', borderRadius: 8, padding: '10px 14px', border: '1px solid #1e1e22' }}>
+                      <code style={{ fontSize: 14, color: '#3b82f6', fontFamily: 'monospace', letterSpacing: 1 }}>/load {deployInfo.code}</code>
                       <button
                         onClick={handleCopyCode}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: '#a1a1aa', transition: 'color 150ms' }}
                         title="Copy code"
                       >
                         {copied ? <Check size={14} style={{ color: '#22c55e' }} /> : <Copy size={14} />}
@@ -159,14 +159,14 @@ export default function BlueprintPreview() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+              <div style={{ marginTop: 12, fontSize: 12, color: '#71717a' }}>
                 Code expires in 24 hours
               </div>
             </div>
           )}
 
           {error && (
-            <div style={{ padding: 12, borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 13, marginTop: 8 }}>
+            <div style={{ padding: 12, borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', fontSize: 13, marginTop: 8 }}>
               {error}
             </div>
           )}

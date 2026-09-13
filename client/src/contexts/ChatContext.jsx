@@ -24,6 +24,7 @@ export function ChatProvider({ children }) {
   const [creationProgress, setCreationProgress] = useState(null)
   const [activeJobId, setActiveJobId] = useState(null)
   const [templates, setTemplates] = useState([])
+  const [usage, setUsage] = useState({ count: 0, limit: 50, remaining: 50, resetAt: null })
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
@@ -44,6 +45,10 @@ export function ChatProvider({ children }) {
   }, [token])
 
   useEffect(() => {
+    if (token) fetchConversations()
+  }, [token, fetchConversations])
+
+  useEffect(() => {
     if (botConnected && token) {
       fetch('/api/bot/servers', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
@@ -62,6 +67,16 @@ export function ChatProvider({ children }) {
         .catch(() => {})
     }
   }, [botConnected, token])
+
+  const fetchUsage = useCallback(async () => {
+    try {
+      const res = await fetch('/api/usage', { headers: authHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setUsage(data)
+      }
+    } catch {}
+  }, [authHeaders])
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -95,10 +110,26 @@ export function ChatProvider({ children }) {
   const deleteConversation = useCallback(async (id) => {
     try {
       await fetch(`/api/conversations/${id}`, { method: 'DELETE', headers: authHeaders() })
-      setConversations(prev => prev.filter(c => c.id !== id))
-      if (activeConversation?.id === id) {
+      setConversations(prev => prev.filter(c => (c._id || c.id) !== id))
+      if ((activeConversation?._id || activeConversation?.id) === id) {
         setActiveConversation(null)
         setMessages([])
+      }
+    } catch {}
+  }, [activeConversation, authHeaders])
+
+  const updateConversation = useCallback(async (id, title) => {
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ title })
+      })
+      if (res.ok) {
+        setConversations(prev => prev.map(c => (c._id || c.id) === id ? { ...c, title } : c))
+        if ((activeConversation?._id || activeConversation?.id) === id) {
+          setActiveConversation(prev => prev ? { ...prev, title } : prev)
+        }
       }
     } catch {}
   }, [activeConversation, authHeaders])
@@ -133,6 +164,14 @@ export function ChatProvider({ children }) {
         headers: authHeaders(),
         body: JSON.stringify({ message: content, conversationId })
       })
+
+      if (res.status === 429) {
+        const err = await res.json().catch(() => ({}))
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: err.error || 'Daily message limit reached. Please try again tomorrow.', timestamp: new Date().toISOString() }])
+        fetchUsage()
+        return null
+      }
+
       if (res.ok) {
         const data = await res.json()
         if (data.message) {
@@ -141,10 +180,20 @@ export function ChatProvider({ children }) {
         if (data.blueprint) {
           setBlueprint(data.blueprint)
         }
-        if (data.conversation && !conversationId) {
-          setActiveConversation(data.conversation)
-          setConversations(prev => [data.conversation, ...prev.filter(c => c.id !== data.conversation.id)])
+        if (data.conversation) {
+          if (!conversationId) {
+            setActiveConversation(data.conversation)
+          }
+          setConversations(prev => {
+            const updated = data.conversation
+            const exists = prev.find(c => (c._id || c.id) === (updated._id || updated.id))
+            if (exists) {
+              return prev.map(c => (c._id || c.id) === (updated._id || updated.id) ? updated : c)
+            }
+            return [updated, ...prev]
+          })
         }
+        fetchUsage()
         return data
       }
     } catch {
@@ -153,7 +202,7 @@ export function ChatProvider({ children }) {
       setAiTyping(false)
     }
     return null
-  }, [authHeaders])
+  }, [authHeaders, fetchUsage])
 
   const createServer = useCallback(async (blueprintData) => {
     if (!selectedServer) {
@@ -262,8 +311,8 @@ export function ChatProvider({ children }) {
     servers, blueprint, setBlueprint,
     creationProgress, setCreationProgress,
     activeJobId, setActiveJobId,
-    templates,
-    fetchConversations, createConversation, deleteConversation,
+    templates, usage, fetchUsage,
+    fetchConversations, createConversation, deleteConversation, updateConversation,
     loadConversation, sendMessage,
     createServer, pollJobStatus,
     fetchTemplates, saveTemplate, deleteTemplate

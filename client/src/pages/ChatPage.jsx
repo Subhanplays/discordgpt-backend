@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import WelcomeScreen from '../components/WelcomeScreen'
 import MessageList from '../components/MessageList'
 import MessageComposer from '../components/MessageComposer'
@@ -9,15 +9,22 @@ import { useChat } from '../contexts/ChatContext'
 
 export default function ChatPage() {
   const { conversationId } = useParams()
+  const navigate = useNavigate()
   const {
     messages, aiTyping, sendMessage, activeConversation,
     createConversation, botConnected, blueprint, creationProgress,
-    loadConversation, setActiveConversation, setMessages, setBlueprint, setCreationProgress
+    loadConversation, setActiveConversation, setMessages, setBlueprint, setCreationProgress,
+    usage, fetchUsage
   } = useChat()
 
   useEffect(() => {
+    fetchUsage()
+  }, [fetchUsage])
+
+  useEffect(() => {
     if (conversationId) {
-      if (!activeConversation || activeConversation.id !== conversationId) {
+      const activeId = activeConversation?._id || activeConversation?.id
+      if (!activeConversation || activeId !== conversationId) {
         loadConversation(conversationId)
       }
     } else if (!conversationId && activeConversation) {
@@ -34,10 +41,11 @@ export default function ChatPage() {
     if (!activeConversation) {
       const conv = await createConversation(content.slice(0, 80))
       if (conv) {
-        await sendMessage(content, conv.id)
+        navigate(`/c/${conv.id || conv._id}`)
+        await sendMessage(content, conv.id || conv._id)
       }
     } else {
-      await sendMessage(content, activeConversation.id)
+      await sendMessage(content, activeConversation.id || activeConversation._id)
     }
   }
 
@@ -48,7 +56,7 @@ export default function ChatPage() {
   return (
     <div className="chat-area">
       {!hasMessages && !creationProgress ? (
-        <WelcomeScreen onSelectPrompt={handleSelectPrompt} />
+        <WelcomeScreen onPrompt={handleSelectPrompt} />
       ) : (
         <div className="message-container">
           <MessageList messages={messages} aiTyping={aiTyping} />
@@ -58,7 +66,7 @@ export default function ChatPage() {
       {blueprint && !creationProgress && <BlueprintPreview />}
       {creationProgress && <CreationProgress />}
 
-      {!creationProgress && <MessageComposer onSend={handleSend} disabled={aiTyping} />}
+      {!creationProgress && <MessageComposer onSend={handleSend} disabled={aiTyping} usage={usage} />}
     </div>
   )
 }

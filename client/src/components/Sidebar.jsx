@@ -1,117 +1,126 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageSquarePlus, LayoutGrid, Settings, Trash2, LogOut, Shield } from 'lucide-react'
+import { MessageSquarePlus, MessageSquare, Settings, Shield, Search, X, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useChat } from '../contexts/ChatContext'
 
 export default function Sidebar({ open, onClose }) {
+  const { user, logout } = useAuth()
+  const { conversations, activeConversation, loadConversation, deleteConversation, createConversation } = useChat()
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = useAuth()
-  const { conversations, activeConversation, setActiveConversation, setMessages, fetchConversations, deleteConversation, setBlueprint, setCreationProgress } = useChat()
+  const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    fetchConversations()
-  }, [fetchConversations])
+  const isAdmin = user?.role === 'admin'
 
-  const handleNewChat = () => {
-    setActiveConversation(null)
-    setMessages([])
-    setBlueprint(null)
-    setCreationProgress(null)
+  const filtered = conversations.filter(c =>
+    (c.title || '').toLowerCase().includes(search.toLowerCase())
+  )
+
+  const handleNewChat = useCallback(() => {
+    createConversation('New Chat')
     navigate('/')
     onClose()
-  }
+  }, [createConversation, navigate, onClose])
 
-  const handleSelectConversation = (conv) => {
-    setActiveConversation(conv)
-    setBlueprint(null)
-    setCreationProgress(null)
-    navigate(`/c/${conv.id}`)
+  const handleSelect = useCallback((id) => {
+    loadConversation(id)
+    navigate(`/c/${id}`)
     onClose()
-  }
+  }, [loadConversation, navigate, onClose])
 
-  const handleDeleteConversation = async (e, id) => {
+  const handleDelete = useCallback((e, id) => {
     e.stopPropagation()
-    await deleteConversation(id)
-  }
+    deleteConversation(id)
+  }, [deleteConversation])
+
+  const handleNav = useCallback((path) => {
+    navigate(path)
+    onClose()
+  }, [navigate, onClose])
 
   const isActive = (path) => location.pathname === path
 
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : '??'
+
   return (
-    <aside className={`sidebar ${open ? 'open' : ''}`}>
+    <div className={`sidebar ${open ? 'open' : ''}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo" onClick={handleNewChat}>
-          <img src="/logo.svg" alt="DiscordGPT" className="sidebar-logo-img" />
-          <span className="sidebar-logo-text">DiscordGPT</span>
+        <div className="sidebar-brand">
+          <img src="/logo.svg" alt="" className="sidebar-logo" />
+          <span className="sidebar-brand-text">DiscordGPT</span>
         </div>
-        <button className="new-chat-btn" onClick={handleNewChat}>
-          <MessageSquarePlus size={15} />
-          New chat
+        <button className="sidebar-close" onClick={onClose} aria-label="Close menu">
+          <X size={18} />
         </button>
       </div>
 
-      <nav className="sidebar-nav">
-        <button className={`sidebar-nav-item ${isActive('/') ? 'active' : ''}`} onClick={handleNewChat}>
-          <MessageSquarePlus size={16} />
-          New chat
+      <div className="sidebar-nav">
+        <button className="sidebar-nav-item" onClick={handleNewChat}>
+          <MessageSquarePlus size={18} />
+          <span>New Chat</span>
         </button>
-        <button className={`sidebar-nav-item ${isActive('/templates') ? 'active' : ''}`} onClick={() => { navigate('/templates'); onClose() }}>
-          <LayoutGrid size={16} />
-          Templates
+        <button className={`sidebar-nav-item ${isActive('/templates') ? 'active' : ''}`} onClick={() => handleNav('/templates')}>
+          <MessageSquare size={18} />
+          <span>Templates</span>
         </button>
-        <button className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`} onClick={() => { navigate('/settings'); onClose() }}>
-          <Settings size={16} />
-          Settings
+        <button className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`} onClick={() => handleNav('/settings')}>
+          <Settings size={18} />
+          <span>Settings</span>
         </button>
-        {user?.role === 'admin' && (
-          <button className={`sidebar-nav-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => { navigate('/admin'); onClose() }}>
-            <Shield size={16} />
-            Admin
+        {isAdmin && (
+          <button className={`sidebar-nav-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => handleNav('/admin')}>
+            <Shield size={18} />
+            <span>Admin</span>
           </button>
         )}
-      </nav>
+      </div>
+
+      <div className="sidebar-search">
+        <input
+          className="sidebar-search-input"
+          type="text"
+          placeholder="Search conversations..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
 
       <div className="sidebar-history">
-        {conversations.length > 0 && (
-          <>
-            <div className="sidebar-history-header">Recent</div>
-            <div className="sidebar-history-list">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`conv-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
-                  onClick={() => handleSelectConversation(conv)}
-                >
-                  <span className="conv-item-title">{conv.title || 'New conversation'}</span>
-                  <div className="conv-item-actions">
-                    <button onClick={(e) => handleDeleteConversation(e, conv.id)} title="Delete">
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+        {conversations.length > 0 && <div className="sidebar-history-label">Recent</div>}
+        {filtered.map(conv => (
+          <div
+            key={conv._id || conv.id}
+            className={`sidebar-history-item ${(activeConversation?._id || activeConversation?.id) === (conv._id || conv.id) ? 'active' : ''}`}
+            onClick={() => handleSelect(conv._id || conv.id)}
+          >
+            <span className="title">{conv.title || 'New Conversation'}</span>
+            <button className="delete-btn" onClick={e => handleDelete(e, conv._id || conv.id)} aria-label="Delete conversation">
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+        {conversations.length === 0 && (
+          <div style={{ padding: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
+            No conversations yet
+          </div>
         )}
       </div>
 
       <div className="sidebar-footer">
-        <div className="sidebar-footer-avatar">
-          {user?.discord_avatar ? (
-            <img src={user.discord_avatar} alt="" />
-          ) : (
-            user?.username?.[0]?.toUpperCase() || 'U'
-          )}
+        <div className="sidebar-user">
+          <div className="sidebar-user-avatar">{initials}</div>
+          <div className="sidebar-user-info">
+            <div className="sidebar-user-name">{user?.username || 'User'}</div>
+            <div className="sidebar-user-status">{user?.role || 'Member'}</div>
+          </div>
+          <button className="sidebar-logout" onClick={logout} aria-label="Log out">
+            <LogOut size={16} />
+          </button>
         </div>
-        <div className="sidebar-footer-info">
-          <div className="sidebar-footer-name">{user?.username || 'User'}</div>
-          <div className="sidebar-footer-plan">{user?.two_fa_enabled ? '2FA Enabled' : 'Discord Account'}</div>
-        </div>
-        <button onClick={logout} title="Log out">
-          <LogOut size={16} />
-        </button>
       </div>
-    </aside>
+    </div>
   )
 }

@@ -14,7 +14,7 @@ export default function MessageList({ messages, aiTyping }) {
         <MessageBubble key={msg.id} message={msg} />
       ))}
       {aiTyping && (
-        <div className="typing-indicator">
+        <div className="typing-indicator fade-in">
           <div className="message-avatar assistant-avatar">
             <img src="/logo.svg" alt="" className="message-avatar-logo" />
           </div>

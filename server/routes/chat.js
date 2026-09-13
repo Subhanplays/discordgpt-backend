@@ -101,6 +101,24 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const conversation = await db.getConversationById(req.params.id, req.user.id);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    await db.updateConversation(req.params.id, title);
+    res.json({ id: req.params.id, title });
+  } catch (error) {
+    console.error('Update conversation error:', error);
+    res.status(500).json({ error: 'Failed to update conversation' });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const conversation = await db.getConversationById(req.params.id, req.user.id);
@@ -129,6 +147,11 @@ router.post('/send', async (req, res) => {
       conversation = await db.getConversationById(convId, req.user.id);
       if (!conversation) {
         return res.status(404).json({ error: 'Conversation not found' });
+      }
+      if (conversation.title === 'New Chat') {
+        const newTitle = content.length > 60 ? content.substring(0, 60) + '...' : content;
+        await db.updateConversation(convId, newTitle);
+        conversation.title = newTitle;
       }
     } else {
       const title = content.length > 60 ? content.substring(0, 60) + '...' : content;

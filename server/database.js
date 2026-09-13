@@ -545,6 +545,41 @@ module.exports = {
     await q('DELETE FROM ai_providers WHERE id = $1', [id]);
   },
 
+  // Daily Usage Tracking
+  async getUserDailyUsageCount(userId) {
+    const result = await qOne(
+      `SELECT COUNT(*) as count FROM generation_logs
+       WHERE user_id = $1 AND created_at >= (now() at time zone 'utc')::date::text`,
+      [userId]
+    );
+    return parseInt(result?.count || '0');
+  },
+
+  async getDailyUsageLimit() {
+    const result = await qOne(
+      `SELECT value FROM settings WHERE user_id = 'system' AND key = 'daily_message_limit'`
+    );
+    return parseInt(result?.value || '50');
+  },
+
+  async setDailyUsageLimit(limit) {
+    await q(
+      `INSERT INTO settings (id, user_id, key, value, updated_at)
+       VALUES ($1, 'system', 'daily_message_limit', $2, now()::text)
+       ON CONFLICT (user_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()::text`,
+      [require('uuid').v4(), String(limit)]
+    );
+  },
+
+  async getDailyUsageStats() {
+    return qAll(
+      `SELECT user_id, COUNT(*) as count
+       FROM generation_logs
+       WHERE created_at >= (now() at time zone 'utc')::date::text
+       GROUP BY user_id`
+    );
+  },
+
   // Pending Blueprints (deploy codes)
   async createPendingBlueprint(userId, blueprintJson, serverName) {
     const id = uuidv4();

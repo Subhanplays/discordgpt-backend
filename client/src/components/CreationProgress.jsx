@@ -40,8 +40,8 @@ export default function CreationProgress() {
       <div className="progress-card">
         <div className="progress-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6 }} />
-            <h3 style={{ margin: 0 }}>
+            <img src="/logo.svg" alt="" style={{ width: 24, height: 24, borderRadius: 6, color: 'var(--text)' }} />
+            <h3 style={{ margin: 0, color: '#ffffff' }}>
               {isDone && 'Server Created Successfully!'}
               {isFailed && 'Creation Failed'}
               {isQueued && `Queued (Position ${position || '...'})`}
@@ -51,7 +51,7 @@ export default function CreationProgress() {
           {!isFailed && (
             <div className="progress-bar-container">
               <div className="progress-bar-track">
-                <div className="progress-bar-fill" style={{ width: `${percentage}%`, background: isFailed ? 'var(--error)' : 'var(--accent)' }} />
+                <div className="progress-bar-fill" style={{ width: `${percentage}%`, background: isFailed ? '#ef4444' : '#3b82f6' }} />
               </div>
               <div className="progress-bar-text">{percentage}%</div>
             </div>
@@ -59,11 +59,11 @@ export default function CreationProgress() {
         </div>
 
         {isQueued && (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <Loader2 size={32} className="spinner" style={{ marginBottom: 12 }} />
-            <p style={{ fontSize: 15 }}>Your job is in queue. Position: <strong>{position || '...'}</strong></p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{message}</p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Only 1 server is created at a time. Please wait...</p>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#d4d4d8' }}>
+            <Loader2 size={32} className="spinner" style={{ marginBottom: 12, color: '#3b82f6' }} />
+            <p style={{ fontSize: 15, color: '#ffffff' }}>Your job is in queue. Position: <strong>{position || '...'}</strong></p>
+            <p style={{ fontSize: 13, color: '#a1a1aa', marginTop: 4 }}>{message}</p>
+            <p style={{ fontSize: 12, color: '#71717a', marginTop: 8 }}>Only 1 server is created at a time. Please wait...</p>
           </div>
         )}
 
@@ -86,11 +86,11 @@ export default function CreationProgress() {
 
         {isFailed && (
           <div style={{ padding: '20px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', marginBottom: 12 }}>
-              <AlertCircle size={16} style={{ color: 'var(--error)', flexShrink: 0 }} />
-              <span style={{ fontSize: 14, color: 'var(--error)' }}>{error || 'Server creation failed'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, marginBottom: 12 }}>
+              <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
+              <span style={{ fontSize: 14, color: '#ef4444' }}>{error || 'Server creation failed'}</span>
             </div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: 13, color: '#a1a1aa' }}>
               The bot may have gone offline or lost permissions. Make sure the bot is online and has Manage Server, Manage Roles, and Manage Channels permissions.
             </p>
           </div>

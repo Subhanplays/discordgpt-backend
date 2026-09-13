@@ -10,9 +10,9 @@ export default function ServerSelect({ compact = false }) {
   if (compact) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)', flexShrink: 0 }}>Target:</span>
+        <span style={{ fontSize: 13, color: '#a1a1aa', flexShrink: 0 }}>Target:</span>
         {servers.length === 0 ? (
-          <span style={{ fontSize: 13, color: 'var(--warning)' }}>No servers found. Invite the bot first.</span>
+          <span style={{ fontSize: 13, color: '#f59e0b' }}>No servers found. Invite the bot first.</span>
         ) : (
           <select
             className="settings-select"
@@ -41,7 +41,7 @@ export default function ServerSelect({ compact = false }) {
         </div>
         {servers.length === 0 ? (
           <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16 }}>No servers found. Invite DiscordGPT bot to your server first.</p>
+            <p style={{ color: '#a1a1aa', fontSize: 14, marginBottom: 16 }}>No servers found. Invite DiscordGPT bot to your server first.</p>
             <button className="btn btn-primary" onClick={() => {
               window.open(`https://discord.com/api/oauth2/authorize?client_id=1547979894548336720&permissions=8&scope=bot%20applications.commands`, '_blank')
             }}>
@@ -67,7 +67,7 @@ export default function ServerSelect({ compact = false }) {
                   <div className="server-name">{server.name}</div>
                   <div className="server-id">ID: {server.id}</div>
                 </div>
-                {selectedServer?.id === server.id && <Check size={18} color="var(--accent)" />}
+                {selectedServer?.id === server.id && <Check size={18} color="#3b82f6" />}
               </div>
             ))}
           </div>

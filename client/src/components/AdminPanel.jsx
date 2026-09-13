@@ -14,6 +14,7 @@ const tabs = [
   { id: 'ai', label: 'AI Providers', icon: Sparkles },
   { id: 'templates', label: 'Templates', icon: FileText },
   { id: 'logs', label: 'Logs', icon: Activity },
+  { id: 'usage', label: 'Usage Limits', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings }
 ]
 
@@ -47,6 +48,8 @@ export default function AdminPanel() {
   const [logs, setLogs] = useState([])
   const [aiProviders, setAiProviders] = useState([])
   const [templates, setTemplates] = useState([])
+  const [usageLimits, setUsageLimits] = useState({ limit: 50, usage: [] })
+  const [newLimit, setNewLimit] = useState(50)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -56,13 +59,14 @@ export default function AdminPanel() {
     setLoading(true)
     setError('')
     try {
-      const [statsRes, usersRes, botsRes, logsRes, aiRes, tplRes] = await Promise.all([
+      const [statsRes, usersRes, botsRes, logsRes, aiRes, tplRes, usageRes] = await Promise.all([
         fetch('/api/admin/stats', { headers }),
         fetch('/api/admin/users', { headers }),
         fetch('/api/admin/bots', { headers }),
         fetch('/api/admin/logs?limit=50', { headers }),
         fetch('/api/admin/ai-providers', { headers }),
-        fetch('/api/admin/templates', { headers })
+        fetch('/api/admin/templates', { headers }),
+        fetch('/api/admin/usage-limits', { headers })
       ])
 
       if (statsRes.ok) setStats(await statsRes.json())
@@ -71,6 +75,11 @@ export default function AdminPanel() {
       if (logsRes.ok) setLogs(await logsRes.json())
       if (aiRes.ok) setAiProviders(await aiRes.json())
       if (tplRes.ok) setTemplates(await tplRes.json())
+      if (usageRes.ok) {
+        const usageData = await usageRes.json()
+        setUsageLimits(usageData)
+        setNewLimit(usageData.limit)
+      }
     } catch (e) {
       setError('Failed to load admin data')
     } finally {
@@ -99,6 +108,24 @@ export default function AdminPanel() {
     }
   }
 
+  const handleUpdateLimit = async () => {
+    try {
+      const res = await fetch('/api/admin/usage-limits', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ limit: newLimit })
+      })
+      if (res.ok) {
+        setUsageLimits(prev => ({ ...prev, limit: newLimit }))
+      } else {
+        const err = await res.json()
+        setError(err.error || 'Failed to update limit')
+      }
+    } catch (e) {
+      setError('Failed to update limit')
+    }
+  }
+
   const handleDeleteAiProvider = async (id) => {
     if (!confirm('Delete this AI provider?')) return
     try {
@@ -110,74 +137,128 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.svg" alt="" className="admin-logo" />
-            <h2>DiscordGPT Admin</h2>
-          </div>
+    <div style={{ display: 'flex', height: '100vh', background: '#0a0a0a' }}>
+      <aside style={{
+        width: 260, background: '#111113', borderRight: '1px solid #1e1e22',
+        display: 'flex', flexDirection: 'column', flexShrink: 0
+      }}>
+        <div style={{
+          padding: '20px 16px', borderBottom: '1px solid #1e1e22',
+          display: 'flex', alignItems: 'center', gap: 10
+        }}>
+          <img src="/logo.svg" alt="" style={{ width: 28, height: 28, borderRadius: 8, color: 'var(--text)' }} />
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: 0 }}>DiscordGPT Admin</h2>
         </div>
-        <nav className="admin-sidebar-nav">
-          <button className="admin-nav-item" onClick={() => navigate('/')}>
+        <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: '10px 12px', background: 'transparent', border: 'none',
+              borderRadius: 8, cursor: 'pointer', color: '#a1a1aa', fontSize: 14,
+              fontFamily: 'var(--font-family)', textAlign: 'left', transition: 'all 150ms ease'
+            }}
+            onMouseEnter={e => { e.target.style.background = '#1a1a1e'; e.target.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#a1a1aa' }}
+          >
             <ArrowLeft size={18} /> Back to App
           </button>
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                padding: '10px 12px',
+                background: activeTab === tab.id ? 'rgba(59,130,246,0.1)' : 'transparent',
+                border: activeTab === tab.id ? '1px solid rgba(59,130,246,0.2)' : '1px solid transparent',
+                borderRadius: 8, cursor: 'pointer',
+                color: activeTab === tab.id ? '#3b82f6' : '#a1a1aa',
+                fontSize: 14, fontFamily: 'var(--font-family)', textAlign: 'left',
+                fontWeight: activeTab === tab.id ? 500 : 400, transition: 'all 150ms ease'
+              }}
+              onMouseEnter={e => { if (activeTab !== tab.id) { e.currentTarget.style.background = '#1a1a1e'; e.currentTarget.style.color = '#ffffff' } }}
+              onMouseLeave={e => { if (activeTab !== tab.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#a1a1aa' } }}
             >
               <tab.icon size={18} />
               {tab.label}
             </button>
           ))}
           <div style={{ flex: 1 }} />
-          <button className="admin-nav-item" onClick={() => { logout(); navigate('/') }}>
+          <button
+            onClick={() => { logout(); navigate('/') }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: '10px 12px', background: 'transparent', border: '1px solid transparent',
+              borderRadius: 8, cursor: 'pointer', color: '#a1a1aa', fontSize: 14,
+              fontFamily: 'var(--font-family)', textAlign: 'left', transition: 'all 150ms ease'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#ef4444' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#a1a1aa' }}
+          >
             <PowerOff size={18} /> Log Out
           </button>
         </nav>
       </aside>
 
-      <main className="admin-main">
+      <main style={{ flex: 1, overflow: 'auto', padding: '24px 32px' }}>
         {error && (
-          <div className="auth-error" style={{ marginBottom: 16 }}>{error}
-            <button onClick={() => setError('')} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer' }}><X size={14} /></button>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 16px', background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10,
+            marginBottom: 20, fontSize: 14, color: '#ef4444'
+          }}>
+            <span>{error}</span>
+            <button onClick={() => setError('')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 4 }}><X size={14} /></button>
           </div>
         )}
 
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: 'var(--text-muted)', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: '#71717a', gap: 8 }}>
             <Loader2 size={20} className="spinner" /> Loading...
           </div>
         ) : (
           <>
             {activeTab === 'dashboard' && (
               <>
-                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Dashboard</h1>
-                <div className="admin-stats">
+                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#ffffff' }}>Dashboard</h1>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
                   {[
-                    { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: 'var(--accent)' },
-                    { label: 'Connected Bots', value: stats?.totalBots || 0, icon: Bot, color: 'var(--success)' },
-                    { label: 'Servers Generated', value: stats?.totalServers || 0, icon: Server, color: 'var(--warning)' },
+                    { label: 'Total Users', value: stats?.totalUsers || 0, icon: Users, color: '#3b82f6' },
+                    { label: 'Connected Bots', value: stats?.totalBots || 0, icon: Bot, color: '#22c55e' },
+                    { label: 'Servers Generated', value: stats?.totalServers || 0, icon: Server, color: '#f59e0b' },
                     { label: 'Templates', value: stats?.totalTemplates || 0, icon: FileText, color: '#ec4899' },
                     { label: 'AI Providers', value: stats?.totalAiProviders || 0, icon: Sparkles, color: '#06b6d4' },
-                    { label: 'AI Requests', value: stats?.totalAiRequests || 0, icon: Activity, color: 'var(--error)' }
+                    { label: 'AI Requests', value: stats?.totalAiRequests || 0, icon: Activity, color: '#ef4444' }
                   ].map((stat, i) => (
-                    <div key={i} className="stat-card">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <div className="stat-card-label">{stat.label}</div>
-                        <stat.icon size={16} style={{ color: stat.color }} />
+                    <div key={i} style={{
+                      background: '#111113', border: '1px solid #1e1e22',
+                      borderRadius: 12, padding: '20px', transition: 'border-color 150ms ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = stat.color}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = '#1e1e22'}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <div style={{ fontSize: 13, color: '#a1a1aa', fontWeight: 500 }}>{stat.label}</div>
+                        <stat.icon size={18} style={{ color: stat.color }} />
                       </div>
-                      <div className="stat-card-value">{stat.value}</div>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: '#ffffff' }}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Activity (Last 7 Days)</h3>
-                  <div className="chart-placeholder">
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#ffffff' }}>Activity (Last 7 Days)</h3>
+                  <div style={{
+                    background: '#111113', border: '1px solid #1e1e22', borderRadius: 12,
+                    padding: '24px 20px', display: 'flex', alignItems: 'flex-end', gap: 12, height: 200
+                  }}>
                     {[40, 65, 45, 80, 55, 70, 90].map((h, i) => (
-                      <div key={i} className="chart-bar" style={{ height: `${h}%` }} />
+                      <div key={i} style={{
+                        flex: 1, height: `${h}%`, background: 'linear-gradient(to top, #3b82f6, #1d4ed8)',
+                        borderRadius: '6px 6px 0 0', transition: 'height 300ms ease',
+                        opacity: 0.8
+                      }} />
                     ))}
                   </div>
                 </div>
@@ -186,31 +267,36 @@ export default function AdminPanel() {
 
             {activeTab === 'users' && (
               <>
-                <div className="admin-section-header">
-                  <h2>Users</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>Users</h2>
                   <span className="badge badge-default">{users.length} total</span>
                 </div>
-                <div className="admin-table-container">
-                  <table className="admin-table">
+                <div style={{
+                  background: '#111113', border: '1px solid #1e1e22',
+                  borderRadius: 12, overflow: 'hidden'
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Joined</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
+                      <tr style={{ borderBottom: '1px solid #1e1e22' }}>
+                        {['Username', 'Email', 'Role', 'Joined', 'Last Login', 'Actions'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((u) => (
-                        <tr key={u.id}>
-                          <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{u.username}</td>
-                          <td>{u.email}</td>
-                          <td><span className={`badge ${u.role === 'admin' ? 'badge-warning' : 'badge-default'}`}>{u.role}</span></td>
-                          <td>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
-                          <td>{u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}</td>
-                          <td>
+                        <tr key={u.id} style={{ borderBottom: '1px solid #1e1e22', transition: 'background 150ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1e'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '14px 16px', fontWeight: 500, color: '#ffffff', fontSize: 14 }}>{u.username}</td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{u.email}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span className={`badge ${u.role === 'admin' ? 'badge-warning' : 'badge-default'}`}>{u.role}</span>
+                          </td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}</td>
+                          <td style={{ padding: '14px 16px' }}>
                             {u.role !== 'admin' && (
                               <button className="btn btn-danger btn-sm" onClick={() => handleDisableUser(u.id)}>
                                 Disable
@@ -220,7 +306,7 @@ export default function AdminPanel() {
                         </tr>
                       ))}
                       {users.length === 0 && (
-                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No users found</td></tr>
+                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: '#71717a' }}>No users found</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -230,33 +316,41 @@ export default function AdminPanel() {
 
             {activeTab === 'bots' && (
               <>
-                <div className="admin-section-header">
-                  <h2>Bot Connections</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>Bot Connections</h2>
                   <span className="badge badge-default">{bots.length} connected</span>
                 </div>
-                <div className="admin-table-container">
-                  <table className="admin-table">
+                <div style={{
+                  background: '#111113', border: '1px solid #1e1e22',
+                  borderRadius: 12, overflow: 'hidden'
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        <th>Bot</th>
-                        <th>Bot ID</th>
-                        <th>Owner</th>
-                        <th>Status</th>
-                        <th>Connected</th>
+                      <tr style={{ borderBottom: '1px solid #1e1e22' }}>
+                        {['Bot', 'Bot ID', 'Owner', 'Status', 'Connected'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {bots.map((b) => (
-                        <tr key={b.id}>
-                          <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{b.bot_username || 'Unknown'}</td>
-                          <td><code style={{ fontSize: 12, background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 4 }}>{b.bot_id || '-'}</code></td>
-                          <td>{b.username || '-'}</td>
-                          <td><span className={`badge ${b.is_active ? 'badge-success' : 'badge-error'}`}>{b.is_active ? 'Active' : 'Inactive'}</span></td>
-                          <td>{b.created_at ? new Date(b.created_at).toLocaleDateString() : '-'}</td>
+                        <tr key={b.id} style={{ borderBottom: '1px solid #1e1e22', transition: 'background 150ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1e'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '14px 16px', fontWeight: 500, color: '#ffffff', fontSize: 14 }}>{b.bot_username || 'Unknown'}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <code style={{ fontSize: 12, background: '#0a0a0a', padding: '3px 8px', borderRadius: 6, color: '#a1a1aa', border: '1px solid #1e1e22' }}>{b.bot_id || '-'}</code>
+                          </td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{b.username || '-'}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span className={`badge ${b.is_active ? 'badge-success' : 'badge-error'}`}>{b.is_active ? 'Active' : 'Inactive'}</span>
+                          </td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{b.created_at ? new Date(b.created_at).toLocaleDateString() : '-'}</td>
                         </tr>
                       ))}
                       {bots.length === 0 && (
-                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No bots connected</td></tr>
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: '#71717a' }}>No bots connected</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -288,33 +382,39 @@ export default function AdminPanel() {
 
             {activeTab === 'logs' && (
               <>
-                <div className="admin-section-header">
-                  <h2>Generation Logs</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>Generation Logs</h2>
                   <span className="badge badge-default">{logs.length} entries</span>
                 </div>
-                <div className="admin-table-container">
-                  <table className="admin-table">
+                <div style={{
+                  background: '#111113', border: '1px solid #1e1e22',
+                  borderRadius: 12, overflow: 'hidden'
+                }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        <th>User</th>
-                        <th>Prompt</th>
-                        <th>Status</th>
-                        <th>Duration</th>
-                        <th>Time</th>
+                      <tr style={{ borderBottom: '1px solid #1e1e22' }}>
+                        {['User', 'Prompt', 'Status', 'Duration', 'Time'].map(h => (
+                          <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {logs.map((log) => (
-                        <tr key={log.id}>
-                          <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{log.username || '-'}</td>
-                          <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.prompt || '-'}</td>
-                          <td><span className={`badge ${log.status === 'success' ? 'badge-success' : log.status === 'error' ? 'badge-error' : 'badge-warning'}`}>{log.status}</span></td>
-                          <td>{log.duration_ms ? `${log.duration_ms}ms` : '-'}</td>
-                          <td>{log.created_at ? new Date(log.created_at).toLocaleString() : '-'}</td>
+                        <tr key={log.id} style={{ borderBottom: '1px solid #1e1e22', transition: 'background 150ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1e'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '14px 16px', fontWeight: 500, color: '#ffffff', fontSize: 14 }}>{log.username || '-'}</td>
+                          <td style={{ padding: '14px 16px', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa', fontSize: 14 }}>{log.prompt || '-'}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span className={`badge ${log.status === 'success' ? 'badge-success' : log.status === 'error' ? 'badge-error' : 'badge-warning'}`}>{log.status}</span>
+                          </td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{log.duration_ms ? `${log.duration_ms}ms` : '-'}</td>
+                          <td style={{ padding: '14px 16px', color: '#a1a1aa', fontSize: 14 }}>{log.created_at ? new Date(log.created_at).toLocaleString() : '-'}</td>
                         </tr>
                       ))}
                       {logs.length === 0 && (
-                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>No logs yet</td></tr>
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: '#71717a' }}>No logs yet</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -322,32 +422,76 @@ export default function AdminPanel() {
               </>
             )}
 
+            {activeTab === 'usage' && (
+              <>
+                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#ffffff' }}>Usage Limits</h1>
+                <div style={{ background: '#111113', border: '1px solid #1e1e22', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 16 }}>Daily Message Limit</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <input
+                      type="number"
+                      value={newLimit}
+                      onChange={(e) => setNewLimit(parseInt(e.target.value) || 50)}
+                      min={1}
+                      max={10000}
+                      style={{
+                        background: '#0a0a0a',
+                        border: '1px solid #1e1e22',
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        color: '#ffffff',
+                        fontSize: 14,
+                        width: 120
+                      }}
+                    />
+                    <button className="btn btn-primary btn-sm" onClick={handleUpdateLimit}>Save Limit</button>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#71717a' }}>Users can send this many messages per day (resets at midnight UTC)</div>
+                </div>
+                <div style={{ background: '#111113', border: '1px solid #1e1e22', borderRadius: 12, padding: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 16 }}>Today's Usage</div>
+                  {usageLimits.usage.length === 0 ? (
+                    <div style={{ fontSize: 13, color: '#71717a' }}>No usage today</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {usageLimits.usage.map((u) => (
+                        <div key={u.userId} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e1e22' }}>
+                          <span style={{ fontSize: 14, color: '#ffffff' }}>{u.username}</span>
+                          <span style={{ fontSize: 14, color: u.count >= usageLimits.limit ? '#ef4444' : '#a1a1aa' }}>{u.count}/{usageLimits.limit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             {activeTab === 'settings' && (
               <>
-                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Admin Settings</h1>
-                <div className="settings-section">
-                  <div className="settings-section-title">System</div>
-                  <div className="settings-row">
+                <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#ffffff' }}>Admin Settings</h1>
+                <div style={{ background: '#111113', border: '1px solid #1e1e22', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#ffffff', marginBottom: 16 }}>System</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #1e1e22' }}>
                     <div>
-                      <div className="settings-row-label">Maintenance Mode</div>
-                      <div className="settings-row-desc">Temporarily disable public access</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#ffffff' }}>Maintenance Mode</div>
+                      <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>Temporarily disable public access</div>
                     </div>
                     <div className="toggle-switch" />
                   </div>
-                  <div className="settings-row">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0' }}>
                     <div>
-                      <div className="settings-row-label">Allow New Registrations</div>
-                      <div className="settings-row-desc">Allow new users to create accounts</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#ffffff' }}>Allow New Registrations</div>
+                      <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>Allow new users to create accounts</div>
                     </div>
                     <div className="toggle-switch active" />
                   </div>
                 </div>
-                <div className="settings-section">
-                  <div className="settings-section-title">Danger Zone</div>
-                  <div className="settings-row">
+                <div style={{ background: '#111113', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', marginBottom: 16 }}>Danger Zone</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div className="settings-row-label">Clear All Sessions</div>
-                      <div className="settings-row-desc">Force all users to re-login</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#ffffff' }}>Clear All Sessions</div>
+                      <div style={{ fontSize: 13, color: '#71717a', marginTop: 2 }}>Force all users to re-login</div>
                     </div>
                     <button className="btn btn-danger btn-sm">Clear Sessions</button>
                   </div>
@@ -422,17 +566,20 @@ function AiProvidersTab({ providers, setProviders, token, headers, onDelete, set
 
   return (
     <>
-      <div className="admin-section-header">
-        <h2>AI Providers</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>AI Providers</h2>
         <button className="btn btn-primary btn-sm" onClick={() => { resetForm(); setShowForm(true) }}>
           <Plus size={14} /> Add Provider
         </button>
       </div>
 
       {showForm && (
-        <div className="admin-template-form">
+        <div style={{
+          background: '#111113', border: '1px solid #1e1e22',
+          borderRadius: 12, padding: 20, marginBottom: 20
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3>{editingId ? 'Edit AI Provider' : 'Add AI Provider'}</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', margin: 0 }}>{editingId ? 'Edit AI Provider' : 'Add AI Provider'}</h3>
             <button className="btn btn-ghost btn-sm" onClick={resetForm}><X size={16} /></button>
           </div>
 
@@ -483,30 +630,38 @@ function AiProvidersTab({ providers, setProviders, token, headers, onDelete, set
         </div>
       )}
 
-      {providers.map(p => (
-        <div key={p.id} className="ai-provider-card">
-          <div className="ai-provider-header">
-            <div className="ai-provider-name">
-              {p.name}
-              <span className="ai-provider-type">{PROVIDER_TYPES.find(t => t.value === p.provider)?.label || p.provider}</span>
-              {!p.is_active && <span className="badge badge-error" style={{ marginLeft: 4 }}>Disabled</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {providers.map(p => (
+          <div key={p.id} style={{
+            background: '#111113', border: '1px solid #1e1e22',
+            borderRadius: 12, padding: '16px 20px', transition: 'border-color 150ms ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = '#1e1e22'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: '#ffffff' }}>{p.name}</span>
+                <span style={{ fontSize: 12, background: '#1a1a1e', padding: '2px 8px', borderRadius: 6, color: '#71717a' }}>{PROVIDER_TYPES.find(t => t.value === p.provider)?.label || p.provider}</span>
+                {!p.is_active && <span className="badge badge-error">Disabled</span>}
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} title="Edit"><Edit3 size={14} /></button>
+                <button className="btn btn-ghost btn-sm" onClick={() => onDelete(p.id)} title="Delete" style={{ color: '#ef4444' }}><Trash2 size={14} /></button>
+              </div>
             </div>
-            <div className="ai-provider-actions">
-              <button className="btn btn-ghost btn-sm" onClick={() => startEdit(p)} title="Edit"><Edit3 size={14} /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => onDelete(p.id)} title="Delete" style={{ color: 'var(--error)' }}><Trash2 size={14} /></button>
-            </div>
+            {p.api_key && <div style={{ fontSize: 12, color: '#71717a', marginBottom: 8 }}>API Key: {p.api_key}</div>}
+            {p.models?.length > 0 && (
+              <div className="ai-provider-models">
+                {p.models.map(m => <span key={m} className="ai-provider-model">{m}</span>)}
+              </div>
+            )}
           </div>
-          {p.api_key && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>API Key: {p.api_key}</div>}
-          {p.models?.length > 0 && (
-            <div className="ai-provider-models">
-              {p.models.map(m => <span key={m} className="ai-provider-model">{m}</span>)}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
 
       {providers.length === 0 && !showForm && (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', padding: 48, color: '#71717a', background: '#111113', border: '1px solid #1e1e22', borderRadius: 12 }}>
           <Sparkles size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
           <p>No AI providers configured yet.</p>
           <p style={{ fontSize: 13 }}>Add one to enable AI-powered server generation.</p>
@@ -571,17 +726,20 @@ function TemplatesTab({ templates, setTemplates, token, headers, onDelete, setEr
 
   return (
     <>
-      <div className="admin-section-header">
-        <h2>Templates</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>Templates</h2>
         <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
           <Plus size={14} /> Create Template
         </button>
       </div>
 
       {showForm && (
-        <div className="admin-template-form">
+        <div style={{
+          background: '#111113', border: '1px solid #1e1e22',
+          borderRadius: 12, padding: 20, marginBottom: 20
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3>Create Template</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', margin: 0 }}>Create Template</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}><X size={16} /></button>
           </div>
           <div className="input-group">
@@ -594,7 +752,7 @@ function TemplatesTab({ templates, setTemplates, token, headers, onDelete, setEr
           </div>
           <div className="input-group">
             <label className="input-label">Blueprint JSON</label>
-            <textarea className="textarea-field" style={{ minHeight: 200, fontFamily: 'monospace', fontSize: 12 }} placeholder={'{"server":{"name":"My Server"},"roles":[],"categories":[],"channels":[]}'} value={blueprintText} onChange={e => setBlueprintText(e.target.value)} />
+            <textarea className="textarea-field" style={{ minHeight: 200, fontFamily: 'monospace', fontSize: 12, background: '#0a0a0a', border: '1px solid #1e1e22', borderRadius: 8, color: '#ffffff' }} placeholder={'{"server":{"name":"My Server"},"roles":[],"categories":[],"channels":[]}'} value={blueprintText} onChange={e => setBlueprintText(e.target.value)} />
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn btn-secondary btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
@@ -605,27 +763,33 @@ function TemplatesTab({ templates, setTemplates, token, headers, onDelete, setEr
         </div>
       )}
 
-      <div className="template-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
         {templates.map(t => (
-          <div key={t.id} className="template-card">
-            <div className="template-card-name">{t.name}</div>
-            <div className="template-card-desc">{t.description || 'No description'}</div>
-            <div className="template-card-meta">
+          <div key={t.id} style={{
+            background: '#111113', border: '1px solid #1e1e22',
+            borderRadius: 12, padding: '20px', transition: 'border-color 150ms ease'
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = '#1e1e22'}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#ffffff', marginBottom: 6 }}>{t.name}</div>
+            <div style={{ fontSize: 13, color: '#71717a', marginBottom: 12 }}>{t.description || 'No description'}</div>
+            <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#a1a1aa', marginBottom: 16 }}>
               <span>{t.blueprint_json?.categories?.length || 0} categories</span>
               <span>{t.blueprint_json?.channels?.length || 0} channels</span>
               <span>{t.blueprint_json?.roles?.length || 0} roles</span>
             </div>
-            <div className="template-card-actions">
+            <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost btn-sm" onClick={() => duplicateTemplate(t)}><Copy size={14} /> Duplicate</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => onDelete(t.id)} style={{ color: 'var(--error)' }}><Trash2 size={14} /> Delete</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => onDelete(t.id)} style={{ color: '#ef4444' }}><Trash2 size={14} /> Delete</button>
             </div>
           </div>
         ))}
       </div>
 
       {templates.length === 0 && !showForm && (
-        <div className="template-empty">
-          <FileText size={48} />
+        <div style={{ textAlign: 'center', padding: 48, color: '#71717a', background: '#111113', border: '1px solid #1e1e22', borderRadius: 12 }}>
+          <FileText size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
           <p>No templates created yet.</p>
           <p style={{ fontSize: 13 }}>Create a template from the blueprint generator or manually here.</p>
         </div>

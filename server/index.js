@@ -17,6 +17,8 @@ const templateRoutes = require('./routes/templates');
 const adminRoutes = require('./routes/admin');
 const settingsRoutes = require('./routes/settings');
 const blueprintRoutes = require('./routes/blueprint');
+const usageRoutes = require('./routes/usage');
+const { usageLimitMiddleware } = require('./middleware/usageLimit');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,6 +52,10 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/blueprint', blueprintRoutes);
+app.use('/api/usage', usageRoutes);
+
+app.use('/api/conversations/send', usageLimitMiddleware);
+app.use('/api/chat/send', usageLimitMiddleware);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

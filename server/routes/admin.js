@@ -143,4 +143,39 @@ router.delete('/ai-providers/:id', async (req, res) => {
   }
 });
 
+router.get('/usage-limits', async (req, res) => {
+  try {
+    const limit = await db.getDailyUsageLimit();
+    const stats = await db.getDailyUsageStats();
+    const users = await db.getAllUsers();
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u.username; });
+
+    const usage = stats.map(s => ({
+      userId: s.user_id,
+      username: userMap[s.user_id] || 'Unknown',
+      count: parseInt(s.count)
+    }));
+
+    res.json({ limit, usage });
+  } catch (error) {
+    console.error('Get usage limits error:', error);
+    res.status(500).json({ error: 'Failed to get usage limits' });
+  }
+});
+
+router.put('/usage-limits', async (req, res) => {
+  try {
+    const { limit } = req.body;
+    if (!limit || limit < 1 || limit > 10000) {
+      return res.status(400).json({ error: 'Limit must be between 1 and 10000' });
+    }
+    await db.setDailyUsageLimit(limit);
+    res.json({ limit, message: 'Usage limit updated' });
+  } catch (error) {
+    console.error('Update usage limits error:', error);
+    res.status(500).json({ error: 'Failed to update usage limits' });
+  }
+});
+
 module.exports = router;
