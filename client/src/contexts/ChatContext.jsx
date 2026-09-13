@@ -159,6 +159,8 @@ export function ChatProvider({ children }) {
   const sendMessage = useCallback(async (content, conversationId) => {
     const userMsg = { id: Date.now().toString(), role: 'user', content, timestamp: new Date().toISOString() }
     setMessages(prev => [...prev, userMsg])
+    setBlueprint(null)
+    setCreationProgress(null)
     setAiTyping(true)
 
     try {
