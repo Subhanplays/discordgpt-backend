@@ -57,6 +57,27 @@ app.use('/api/usage', usageRoutes);
 app.use('/api/conversations/send', usageLimitMiddleware);
 app.use('/api/chat/send', usageLimitMiddleware);
 
+app.post('/api/bootstrap/promote', async (req, res) => {
+  try {
+    const { discord_id } = req.body;
+    if (discord_id !== '1314595225741688877') {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const pool = require('./database').getPool();
+    const result = await pool.query(
+      `UPDATE users SET role = 'admin' WHERE discord_id = $1 RETURNING id, username, role`,
+      [discord_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found. Please log in with Discord first.' });
+    }
+    res.json({ message: 'Admin promoted', user: result.rows[0] });
+  } catch (error) {
+    console.error('Bootstrap promote error:', error);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
