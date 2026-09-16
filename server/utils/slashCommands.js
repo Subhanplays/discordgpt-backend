@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits, ActivityType, REST, Routes, SlashCommandBuild
 const db = require('../database');
 const { createServerStructure } = require('./discord');
 
-const PANEL_URL = 'https://client-six-zeta-13.vercel.app';
+const PANEL_URL = process.env.CLIENT_URL || 'https://discordgpt.bond';
 
 const COMMANDS = [
   new SlashCommandBuilder()

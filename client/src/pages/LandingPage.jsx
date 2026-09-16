@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
-import { Sun, Moon, ArrowRight, ChevronRight, Bot, Zap, LayoutTemplate, Shield, Brain, Rocket } from 'lucide-react'
+import { Sun, Moon, ArrowRight, ChevronRight, Bot, Zap, LayoutTemplate, Shield, Brain, Rocket, Star, ChevronDown, MessageSquare, Users, CheckCircle } from 'lucide-react'
 
 const EASE = 'cubic-bezier(0.16,1,0.3,1)'
 const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif'
@@ -53,6 +53,8 @@ export default function LandingPage() {
   const [logoPulse, setLogoPulse] = useState(false)
   const [contentReady, setContentReady] = useState(false)
   const [scrollY, setScrollY] = useState(0)
+  const [scrollPct, setScrollPct] = useState(0)
+  const [faqOpen, setFaqOpen] = useState(null)
   const previewRef = useRef(null)
   const [previewRotate, setPreviewRotate] = useState({ x: 0, y: 0 })
   const cursorRef = useRef(null)
@@ -89,7 +91,11 @@ export default function LandingPage() {
 
   // Scroll
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY)
+    const onScroll = () => {
+      setScrollY(window.scrollY)
+      const docH = document.documentElement.scrollHeight - window.innerHeight
+      setScrollPct(docH > 0 ? (window.scrollY / docH) * 100 : 0)
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -424,6 +430,7 @@ export default function LandingPage() {
         }
         .l-desc { font-size:16px; color:${colors.textSec}; line-height:1.7; max-width:480px; margin-bottom:56px; }
 
+        .bento-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
         .l-features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
         .l-feature {
           position:relative; padding:32px 28px; background:${colors.cardBg};
@@ -445,6 +452,7 @@ export default function LandingPage() {
         }
         .l-feature h3 { font-size:16px; font-weight:600; color:${colors.text}; margin-bottom:8px; }
         .l-feature p { font-size:14px; color:${colors.textSec}; line-height:1.65; }
+        .l-feature--span { grid-column:span 2; }
 
         .l-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; position:relative; }
         .l-step { position:relative; }
@@ -517,16 +525,155 @@ export default function LandingPage() {
         }
         .l-footer-theme:hover { color:${isDark ? '#a1a1aa' : '#52525b'}; border-color:${colors.borderHover}; }
 
+        /* Scroll progress */
+        .scroll-progress {
+          position:fixed; top:0; left:0; height:2px; z-index:10001;
+          background:linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+          width:${scrollPct}%; transition:width 0.1s linear;
+          box-shadow:0 0 10px rgba(59,130,246,0.5);
+        }
+
+        /* Hero grid bg */
+        .hero-grid-bg {
+          position:absolute; inset:0; pointer-events:none;
+          background-image:
+            radial-gradient(circle at 1px 1px, ${isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'} 1px, transparent 0);
+          background-size:32px 32px;
+          mask-image:radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%);
+          -webkit-mask-image:radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%);
+          opacity:0.6;
+        }
+
+        /* Social proof */
+        .social-proof {
+          display:flex; align-items:center; justify-content:center; gap:16px; margin-top:40px;
+        }
+        .avatar-stack { display:flex; }
+        .avatar-stack-item {
+          width:32px; height:32px; border-radius:50%; border:2px solid ${colors.bg};
+          display:flex; align-items:center; justify-content:center;
+          font-size:11px; font-weight:600; color:#fff; margin-left:-8px;
+        }
+        .avatar-stack-item:first-child { margin-left:0; }
+        .social-proof-text { font-size:13px; color:${colors.muted}; }
+        .social-proof-text strong { color:${colors.textSec}; font-weight:600; }
+
+        /* Floating badges */
+        .float-badge {
+          position:absolute; padding:8px 14px; border-radius:10px;
+          background:${colors.bgSurface}; border:1px solid ${colors.border};
+          font-size:12px; font-weight:500; color:${colors.textSec};
+          display:flex; align-items:center; gap:6px; z-index:2;
+          box-shadow:0 4px 16px ${isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.06)'};
+          animation:floatBadge 6s ease-in-out infinite;
+        }
+        .float-badge.b1 { top:10%; left:-40px; animation-delay:0s; }
+        .float-badge.b2 { top:50%; right:-30px; animation-delay:1s; }
+        .float-badge.b3 { bottom:10%; left:-20px; animation-delay:2s; }
+        @keyframes floatBadge {
+          0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}
+        }
+
+        /* Marquee */
+        .marquee-section {
+          padding:60px 0; overflow:hidden;
+          border-top:1px solid ${colors.border};
+          border-bottom:1px solid ${colors.border};
+        }
+        .marquee-label {
+          text-align:center; font-size:12px; font-weight:600;
+          color:${colors.muted}; text-transform:uppercase;
+          letter-spacing:0.1em; margin-bottom:28px;
+        }
+        .marquee-track {
+          display:flex; gap:64px; width:max-content;
+          animation:marquee 30s linear infinite;
+        }
+        .marquee-track:hover { animation-play-state:paused; }
+        @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        .marquee-item {
+          font-size:16px; font-weight:600; color:${isDark ? '#3f3f46' : '#a1a1aa'};
+          display:flex; align-items:center; gap:10px; white-space:nowrap;
+          transition:color 0.2s; flex-shrink:0;
+        }
+        .marquee-item:hover { color:${isDark ? '#a1a1aa' : '#52525b'}; }
+
+        /* Testimonials */
+        .testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+        .testimonial {
+          padding:28px 24px; background:${colors.cardBg};
+          border:1px solid ${colors.border}; border-radius:14px;
+          border-left:3px solid ${colors.accent}; transition:all 0.25s;
+        }
+        .testimonial:hover { border-color:${colors.borderHover}; transform:translateY(-2px); }
+        .testimonial-stars { display:flex; gap:2px; margin-bottom:14px; color:#f59e0b; }
+        .testimonial-text { font-size:14px; color:${colors.textSec}; line-height:1.7; margin-bottom:18px; font-style:italic; }
+        .testimonial-author { display:flex; align-items:center; gap:10px; }
+        .testimonial-avatar {
+          width:36px; height:36px; border-radius:50%;
+          background:linear-gradient(135deg, ${colors.accent}, #8b5cf6);
+          display:flex; align-items:center; justify-content:center;
+          font-size:13px; font-weight:700; color:#fff; flex-shrink:0;
+        }
+        .testimonial-name { font-size:13px; font-weight:600; color:${colors.text}; }
+        .testimonial-role { font-size:12px; color:${colors.muted}; }
+
+        /* FAQ */
+        .faq-list { max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:8px; }
+        .faq-item {
+          background:${colors.cardBg}; border:1px solid ${colors.border};
+          border-radius:12px; overflow:hidden; transition:border-color 0.2s;
+        }
+        .faq-item.open { border-color:${colors.borderHover}; }
+        .faq-question {
+          display:flex; align-items:center; justify-content:space-between;
+          padding:18px 20px; cursor:pointer; font-size:14px; font-weight:600;
+          color:${colors.text}; background:none; border:none; width:100%;
+          text-align:left; font-family:inherit;
+        }
+        .faq-question:hover { color:${colors.accent}; }
+        .faq-chevron { transition:transform 0.3s ${EASE}; color:${colors.muted}; }
+        .faq-item.open .faq-chevron { transform:rotate(180deg); color:${colors.accent}; }
+        .faq-answer {
+          padding:0 20px; font-size:14px; color:${colors.textSec}; line-height:1.7;
+          max-height:0; overflow:hidden; transition:all 0.3s ${EASE};
+        }
+        .faq-item.open .faq-answer { max-height:200px; padding:0 20px 18px; }
+
+        /* Divider */
+        .section-divider {
+          height:1px; max-width:200px; margin:0 auto;
+          background:linear-gradient(90deg, transparent, ${colors.borderHover}, transparent);
+        }
+
+        /* Bento grid */
+        .bento-grid {
+          display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+        }
+        .bento-item:first-child { grid-column:span 2; }
+        .bento-item { min-height:200px; }
+
+        /* CTA glow */
+        .cta-glow {
+          animation:ctaPulse 3s ease-in-out infinite;
+        }
+        @keyframes ctaPulse {
+          0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0)} 50%{box-shadow:0 0 40px 4px rgba(59,130,246,0.1)}
+        }
+
         @media(max-width:768px) {
           .l-nav { padding:0 16px; }
           .l-nav-item { display:none; }
-          .l-features-grid, .l-steps { grid-template-columns:1fr; }
+          .l-features-grid, .l-steps, .testimonials-grid, .bento-grid { grid-template-columns:1fr; }
+          .l-feature--span, .bento-item:first-child { grid-column:span 1; }
           .l-step-line { display:none; }
           .l-preview-side { display:none; }
           .l-hero-metrics { gap:24px; }
           .l-metric-val { font-size:22px; }
           .l-footer { flex-direction:column; gap:16px; text-align:center; }
           .l-hero h1 { font-size:clamp(36px,10vw,56px); }
+          .float-badge { display:none; }
+          .social-proof { flex-wrap:wrap; }
         }
       `}</style>
 
@@ -534,6 +681,9 @@ export default function LandingPage() {
       <div className="load-screen">
         <img src="/logo.svg" alt="" className="load-logo" />
       </div>
+
+      {/* Scroll progress bar */}
+      <div className="scroll-progress" />
 
       {/* Cursor */}
       <div className="l-cursor" ref={cursorRef} />
@@ -556,6 +706,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="l-hero">
+        <div className="hero-grid-bg" />
         <div className="l-hero-orb o1" />
         <div className="l-hero-orb o2" />
         <div className="l-hero-orb o3" />
@@ -616,6 +767,18 @@ export default function LandingPage() {
               </div>
             </div>
           </Reveal>
+          <Reveal delay={400}>
+            <div className="social-proof">
+              <div className="avatar-stack">
+                <div className="avatar-stack-item" style={{background:'#3b82f6'}}>A</div>
+                <div className="avatar-stack-item" style={{background:'#8b5cf6'}}>M</div>
+                <div className="avatar-stack-item" style={{background:'#ec4899'}}>S</div>
+                <div className="avatar-stack-item" style={{background:'#f59e0b'}}>K</div>
+                <div className="avatar-stack-item" style={{background:'#10b981'}}>J</div>
+              </div>
+              <div className="social-proof-text">Trusted by <strong>1,200+</strong> server creators</div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -630,6 +793,9 @@ export default function LandingPage() {
             style={{ transform: `translateY(${scrollY * -0.05}px)` }}
           >
             <div className="l-preview-glow" />
+            <div className="float-badge b1"><MessageSquare size={12} /> 12 channels</div>
+            <div className="float-badge b2"><Shield size={12} /> 8 roles</div>
+            <div className="float-badge b3"><CheckCircle size={12} /> Auto-mod</div>
             <div className="l-preview">
               <div className="l-preview-bar">
                 <div className="l-dot r" />
@@ -710,18 +876,25 @@ export default function LandingPage() {
         </Reveal>
       </div>
 
-      {/* Logos */}
-      <div className="l-logos">
-        <Reveal>
-          <div className="l-logos-label">Powered by</div>
-          <div className="l-logos-row">
-            <div className="l-logo-item"><Bot size={18} /> OpenAI</div>
-            <div className="l-logo-item"><Brain size={18} /> Anthropic</div>
-            <div className="l-logo-item"><Zap size={18} /> Groq</div>
-            <div className="l-logo-item"><Rocket size={18} /> DeepSeek</div>
-            <div className="l-logo-item"><Shield size={18} /> Gemini</div>
-          </div>
-        </Reveal>
+      {/* Logos - Scrolling Marquee */}
+      <div className="marquee-section">
+        <div className="marquee-label">Powered by</div>
+        <div className="marquee-track">
+          {[...Array(2)].map((_, setIdx) => (
+            <React.Fragment key={setIdx}>
+              <div className="marquee-item"><Bot size={18} /> OpenAI</div>
+              <div className="marquee-item"><Brain size={18} /> Anthropic</div>
+              <div className="marquee-item"><Zap size={18} /> Groq</div>
+              <div className="marquee-item"><Rocket size={18} /> DeepSeek</div>
+              <div className="marquee-item"><Shield size={18} /> Gemini</div>
+              <div className="marquee-item"><Bot size={18} /> OpenAI</div>
+              <div className="marquee-item"><Brain size={18} /> Anthropic</div>
+              <div className="marquee-item"><Zap size={18} /> Groq</div>
+              <div className="marquee-item"><Rocket size={18} /> DeepSeek</div>
+              <div className="marquee-item"><Shield size={18} /> Gemini</div>
+            </React.Fragment>
+          ))}
+        </div>
       </div>
 
       {/* Features */}
@@ -731,9 +904,9 @@ export default function LandingPage() {
           <h2 className="l-heading">Everything you need</h2>
           <p className="l-desc">Tools to build, manage, and scale your Discord community.</p>
         </Reveal>
-        <div className="l-features-grid">
+        <div className="bento-grid">
           {[
-            { icon: <Bot size={20} />, title: 'AI Server Builder', desc: 'Natural language to complete server blueprint. Channels, roles, permissions — all generated.' },
+            { icon: <Bot size={20} />, title: 'AI Server Builder', desc: 'Natural language to complete server blueprint. Channels, roles, permissions — all generated.', span: true },
             { icon: <Zap size={20} />, title: 'One-Click Deploy', desc: 'Review the blueprint, approve it, and your server is live. No manual configuration.' },
             { icon: <LayoutTemplate size={20} />, title: 'Templates', desc: 'Pre-built server layouts for gaming, education, business, and communities.' },
             { icon: <Shield size={20} />, title: 'Auto Moderation', desc: 'Anti-raid, spam filters, verification, and role-based access set up automatically.' },
@@ -742,7 +915,7 @@ export default function LandingPage() {
           ].map((f, i) => (
             <Reveal key={i} delay={i * 80}>
               <div
-                className="l-feature"
+                className={`l-feature${f.span ? ' l-feature--span' : ''}`}
                 ref={el => featureRefs.current[i] = el}
                 onMouseMove={(e) => onFeatureMove(e, i)}
                 onMouseLeave={() => onFeatureLeave(i)}
@@ -781,10 +954,79 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="section-divider" />
+
+      {/* Testimonials */}
+      <section className="l-section">
+        <Reveal>
+          <div className="l-label">Testimonials</div>
+          <h2 className="l-heading">Loved by creators</h2>
+          <p className="l-desc">See what our users are saying about DiscordGPT.</p>
+        </Reveal>
+        <div className="testimonials-grid">
+          {[
+            { name: 'Alex Chen', role: 'Server Admin', initials: 'AC', color: '#3b82f6', text: 'Built a 50-channel gaming server in under 2 minutes. The AI nailed the role hierarchy and auto-mod setup perfectly.' },
+            { name: 'Sarah Kim', role: 'Community Manager', initials: 'SK', color: '#8b5cf6', text: 'The template system is incredible. I saved our org template and deployed it across 12 servers with consistent results every time.' },
+            { name: 'Marcus Johnson', role: 'Developer', initials: 'MJ', color: '#ec4899', text: 'Bot generation is a game changer. Got a working Discord.js bot with slash commands in one message. Saved me hours of boilerplate.' },
+          ].map((t, i) => (
+            <Reveal key={i} delay={i * 100}>
+              <div className="testimonial">
+                <div className="testimonial-stars">
+                  {[...Array(5)].map((_, j) => <Star key={j} size={14} fill="#f59e0b" color="#f59e0b" />)}
+                </div>
+                <div className="testimonial-text">"{t.text}"</div>
+                <div className="testimonial-author">
+                  <div className="testimonial-avatar" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}88)` }}>{t.initials}</div>
+                  <div>
+                    <div className="testimonial-name">{t.name}</div>
+                    <div className="testimonial-role">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="section-divider" />
+
+      {/* FAQ */}
+      <section className="l-section">
+        <Reveal>
+          <div className="l-label">FAQ</div>
+          <h2 className="l-heading">Frequently asked questions</h2>
+          <p className="l-desc">Everything you need to know about DiscordGPT.</p>
+        </Reveal>
+        <div className="faq-list">
+          {[
+            { q: 'How does the AI generate servers?', a: 'Our AI analyzes your natural language description and generates a complete Discord server blueprint including channels, roles, permissions, and settings. It uses advanced language models trained on thousands of server configurations.' },
+            { q: 'Can I customize the blueprint?', a: 'Absolutely. After the AI generates a blueprint, you can review and modify any aspect — channels, roles, permissions, emoji, and more. The blueprint is fully editable before deployment.' },
+            { q: 'Which AI providers do you support?', a: 'We support OpenAI (GPT-4o), Anthropic (Claude), Groq, DeepSeek, and Google Gemini. You can configure your own API keys and the system will intelligently route requests with automatic fallback.' },
+            { q: 'Is it free to use?', a: 'Yes! DiscordGPT is free to use. You get a daily message limit which resets at midnight UTC. Admins can adjust limits per user. We may introduce premium tiers in the future.' },
+            { q: 'How does server deployment work?', a: 'Once you approve a blueprint, the system uses the Discord Bot API to create your server with all channels, roles, and permissions pre-configured. The entire process takes under 60 seconds.' },
+          ].map((faq, i) => (
+            <Reveal key={i} delay={i * 60}>
+              <div className={`faq-item${faqOpen === i ? ' open' : ''}`}>
+                <button className="faq-question" onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
+                  {faq.q}
+                  <ChevronDown size={16} className="faq-chevron" />
+                </button>
+                <div className="faq-answer">{faq.a}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="section-divider" />
+
       {/* CTA */}
       <section className="l-cta">
         <Reveal>
-          <div className="l-cta-box">
+          <div className="l-cta-box cta-glow">
             <h2>Start building</h2>
             <p>Free to use. No credit card required.</p>
             <a href="/api/auth/discord" className="l-cta-btn">
