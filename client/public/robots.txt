@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /auth/
+Disallow: /chat
+Disallow: /c/
+Disallow: /settings
+Disallow: /admin/
+Disallow: /templates
+
+Sitemap: https://discordgpt.bond/sitemap.xml
