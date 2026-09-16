@@ -42,23 +42,16 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
     if (!trimmed) {
       setGenerating(true)
       try {
-        const token = localStorage.getItem('discordgpt_token')
-        const res = await fetch('/api/chat/generate-prompt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          }
-        })
+        const res = await fetch('/api/chat/generate-prompt', { method: 'POST' })
         const data = await res.json()
-        const prompt = data.prompt || 'Create a community server with welcome channels, general chat, and voice rooms'
-        setText(prompt)
-        setTimeout(() => {
+        const prompt = data.prompt
+        if (prompt && prompt.length > 5) {
           onCreate(prompt, personality)
-          setText('')
-        }, 150)
+        } else {
+          onCreate('Create a gaming community server with text channels for general chat, announcements, and LFG. Add voice channels for squad comms and a chill hangout. Include mod-only channels and role-based permissions.', personality)
+        }
       } catch {
-        onCreate('Create a community server with welcome channels, general chat, and voice rooms', personality)
+        onCreate('Create a gaming community server with text channels for general chat, announcements, and LFG. Add voice channels for squad comms and a chill hangout. Include mod-only channels and role-based permissions.', personality)
       } finally {
         setGenerating(false)
       }

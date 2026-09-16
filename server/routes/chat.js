@@ -151,7 +151,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-router.post('/generate-prompt', authMiddleware, async (req, res) => {
+router.post('/generate-prompt', async (req, res) => {
   try {
     const prompt = await generateRandomPrompt();
     res.json({ prompt });
