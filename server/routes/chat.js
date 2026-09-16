@@ -75,6 +75,16 @@ function parseBlueprintFromAI(aiResponse) {
   }
 }
 
+router.post('/generate-prompt', async (req, res) => {
+  try {
+    const prompt = await generateRandomPrompt();
+    res.json({ prompt });
+  } catch (error) {
+    console.error('Generate prompt error:', error);
+    res.json({ prompt: 'Create a community server with welcome channels, general chat, voice rooms, and role-based access' });
+  }
+});
+
 router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
@@ -148,16 +158,6 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Delete conversation error:', error);
     res.status(500).json({ error: 'Failed to delete conversation' });
-  }
-});
-
-router.post('/generate-prompt', async (req, res) => {
-  try {
-    const prompt = await generateRandomPrompt();
-    res.json({ prompt });
-  } catch (error) {
-    console.error('Generate prompt error:', error);
-    res.json({ prompt: 'Create a community server with welcome channels, general chat, voice rooms, and role-based access' });
   }
 });
 
