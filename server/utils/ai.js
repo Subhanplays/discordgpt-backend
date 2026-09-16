@@ -1132,16 +1132,36 @@ Rules:
     content: 'Generate a creative Discord server creation prompt. Make it unique, specific, and detailed.'
   };
 
+  const db = require('../database');
+  let provider;
   try {
-    const apiKey = process.env.AI_API_KEY;
-    if (!apiKey) {
-      return 'Create a community server with welcome channels, general chat, voice rooms, and role-based access for members';
-    }
-
-    const response = await callOpenAI(apiKey, 'gpt-4o-mini', 'https://api.openai.com/v1', [systemMessage, userMessage], 0.9);
-    const cleaned = response.replace(/^["']|["']$/g, '').trim();
-    if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
+    provider = await db.getActiveAiProvider();
   } catch (e) {}
+
+  if (provider && provider.api_key) {
+    try {
+      const response = await callProviderAPI(provider, [systemMessage, userMessage], false);
+      const cleaned = response.replace(/^["']|["']$/g, '').trim();
+      if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
+    } catch (e) {
+      console.error('generateRandomPrompt provider error:', e.message);
+    }
+  }
+
+  let allActive = [];
+  try {
+    allActive = await getAllActiveProviders();
+  } catch (e) {}
+
+  for (const p of allActive) {
+    if (provider && p.id === provider.id) continue;
+    if (!p.api_key) continue;
+    try {
+      const response = await callProviderAPI(p, [systemMessage, userMessage], false);
+      const cleaned = response.replace(/^["']|["']$/g, '').trim();
+      if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
+    } catch (e) {}
+  }
 
   return 'Create a community server with welcome channels, general chat, voice rooms, and role-based access for members';
 }
