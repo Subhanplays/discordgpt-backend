@@ -1,6 +1,6 @@
 const https = require('https');
 
-const BACKEND_URL = 'https://discordgpt-api.onrender.com/api/health';
+const BACKEND_URL = 'https://b.discordgpt.bond/api/health';
 const INTERVAL_MS = 50 * 1000; // 50 seconds
 
 function ping() {

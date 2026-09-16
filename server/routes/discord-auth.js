@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1547995368695009281';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-const REDIRECT_URI = 'https://discordgpt-api.onrender.com/api/auth/discord/callback';
+const REDIRECT_URI = 'https://b.discordgpt.bond/api/auth/discord/callback';
 const FRONTEND_REDIRECT = (process.env.CLIENT_URL || 'https://discordgpt.bond') + '/auth/callback';
 
 let migrationDone = false;

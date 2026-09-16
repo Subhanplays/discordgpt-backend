@@ -69,7 +69,7 @@ function AppRoutes() {
 
 export default function App() {
   React.useEffect(() => {
-    const ping = () => fetch('https://discordgpt-api.onrender.com/api/health').catch(() => {})
+    const ping = () => fetch('https://b.discordgpt.bond/api/health').catch(() => {})
     ping()
     const interval = setInterval(ping, 55000)
     return () => clearInterval(interval)
