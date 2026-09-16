@@ -116,7 +116,7 @@ export default function AdminPanel() {
         {success && <Banner type="success" msg={success} onClose={() => setSuccess('')} />}
         {loading ? <Loader /> : (
           <>
-            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} headers={headers} showSuccess={showSuccess} setError={setError} fetchData={fetchData} />}
+            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} headers={headers} showSuccess={showSuccess} setError={setError} fetchData={fetchData} handleCleanupEmpty={handleCleanupEmpty} />}
             {activeTab === 'users' && <UsersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'conversations' && <ConversationsTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'blueprints' && <BlueprintsTab data={data} />}
@@ -149,7 +149,7 @@ function Loader() {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: '#71717a', gap: 8 }}><Loader2 size={20} className="spinner" /> Loading...</div>
 }
 
-function DashboardTab({ data, api, headers, showSuccess, setError, fetchData }) {
+function DashboardTab({ data, api, headers, showSuccess, setError, fetchData, handleCleanupEmpty }) {
   const stats = data.stats
 
   const handleCleanupChats = async () => {
@@ -179,7 +179,10 @@ function DashboardTab({ data, api, headers, showSuccess, setError, fetchData }) 
           <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>Launch Cleanup</div>
           <div style={{ fontSize: 12, color: '#71717a', marginTop: 2 }}>Delete all conversations, messages, and logs. Keeps users and API keys.</div>
         </div>
-        <button style={{ ...btnDanger }} onClick={handleCleanupChats}><Trash2 size={14} /> Clean All Chats</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ ...btnGhost, color: '#f59e0b' }} onClick={handleCleanupEmpty}><Trash2 size={14} /> Clean Empty Chats</button>
+          <button style={{ ...btnDanger }} onClick={handleCleanupChats}><Trash2 size={14} /> Clean All Chats</button>
+        </div>
       </div>
     </>
   )

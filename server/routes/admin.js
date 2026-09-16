@@ -594,4 +594,16 @@ router.post('/cleanup-chats', async (req, res) => {
   }
 });
 
+router.post('/cleanup-empty-chats', async (req, res) => {
+  try {
+    const pool = db.getPool();
+    const r = await pool.query(`DELETE FROM conversations WHERE id NOT IN (SELECT DISTINCT conversation_id FROM messages)`);
+    await pool.query(`DELETE FROM messages WHERE conversation_id NOT IN (SELECT id FROM conversations)`);
+    res.json({ success: true, deleted: r.rowCount });
+  } catch (error) {
+    console.error('Cleanup empty chats error:', error);
+    res.status(500).json({ error: 'Failed to cleanup empty chats' });
+  }
+});
+
 module.exports = router;
