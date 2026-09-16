@@ -8,4 +8,4 @@ Disallow: /settings
 Disallow: /admin/
 Disallow: /templates
 
-Sitemap: https://discordgpt.bond/sitemap.xml
+Sitemap: https://www.discordgpt.bond/sitemap.xml
