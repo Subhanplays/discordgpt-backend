@@ -1115,22 +1115,16 @@ async function generateConversationTitle(userMessage) {
 }
 
 async function generateRandomPrompt() {
-  const systemMessage = {
-    role: 'system',
-    content: `You are a creative Discord server idea generator. Generate a single, detailed, and specific prompt for creating a Discord server. The prompt should describe a complete server concept with specific channels, roles, and features. Be creative and varied — think gaming communities, study groups, content creator hubs, developer communities, hobby groups, local communities, etc.
-
-Rules:
-- Return ONLY the prompt text, no quotes, no explanation
-- Make it specific and detailed (mention channel names, role types, features)
-- Keep it under 200 characters
-- Make it sound natural, like a user describing what they want
-- Each prompt should be unique and different from common templates`
-  };
-
-  const userMessage = {
-    role: 'user',
-    content: 'Generate a creative Discord server creation prompt. Make it unique, specific, and detailed.'
-  };
+  const messages = [
+    {
+      role: 'system',
+      content: 'You generate creative Discord server creation prompts. Return ONLY the prompt text, no quotes, no explanation. Under 200 characters. Make it specific with channel names, roles, and features.'
+    },
+    {
+      role: 'user',
+      content: 'Generate a creative, unique Discord server creation prompt. Be specific about channels, roles, and features.'
+    }
+  ];
 
   const db = require('../database');
   let provider;
@@ -1138,9 +1132,34 @@ Rules:
     provider = await db.getActiveAiProvider();
   } catch (e) {}
 
+  const tryProvider = async (p) => {
+    const apiKey = p.api_key;
+    const model = p.models?.[0] || getDefaultModel(p.provider);
+    const baseUrl = p.base_url || getBaseUrl(p.provider);
+    const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+    switch (p.provider) {
+      case 'openai':
+      case 'openrouter':
+        return await callOpenAI(apiKey, model, baseUrl, formattedMessages, 0.9);
+      case 'anthropic':
+        return await callAnthropic(apiKey, model, formattedMessages, 0.9);
+      case 'google':
+        return await callGoogle(apiKey, model, formattedMessages, 0.9);
+      case 'mistral':
+        return await callMistral(apiKey, model, formattedMessages, 0.9);
+      case 'groq':
+        return await callGroq(apiKey, model, formattedMessages, 0.9);
+      case 'custom':
+        return await callCustom(apiKey, model, baseUrl, formattedMessages, 0.9);
+      default:
+        return await callOpenAI(apiKey, model, 'https://api.openai.com/v1', formattedMessages, 0.9);
+    }
+  };
+
   if (provider && provider.api_key) {
     try {
-      const response = await callProviderAPI(provider, [systemMessage, userMessage], false);
+      const response = await tryProvider(provider);
       const cleaned = response.replace(/^["']|["']$/g, '').trim();
       if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
     } catch (e) {
@@ -1157,7 +1176,7 @@ Rules:
     if (provider && p.id === provider.id) continue;
     if (!p.api_key) continue;
     try {
-      const response = await callProviderAPI(p, [systemMessage, userMessage], false);
+      const response = await tryProvider(p);
       const cleaned = response.replace(/^["']|["']$/g, '').trim();
       if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
     } catch (e) {}
