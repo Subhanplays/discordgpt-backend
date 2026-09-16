@@ -69,20 +69,20 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
 
       <div className="sidebar-nav">
         <button className="sidebar-nav-item" onClick={handleNewChat}>
-          <MessageSquarePlus size={18} />
+          <MessageSquarePlus size={16} />
           <span>New Chat</span>
         </button>
         <button className={`sidebar-nav-item ${isActive('/templates') ? 'active' : ''}`} onClick={() => handleNav('/templates')}>
-          <MessageSquare size={18} />
+          <MessageSquare size={16} />
           <span>Templates</span>
         </button>
         <button className={`sidebar-nav-item ${isActive('/settings') ? 'active' : ''}`} onClick={() => handleNav('/settings')}>
-          <Settings size={18} />
+          <Settings size={16} />
           <span>Settings</span>
         </button>
         {isAdmin && (
           <button className={`sidebar-nav-item ${isActive('/admin') ? 'active' : ''}`} onClick={() => handleNav('/admin')}>
-            <Shield size={18} />
+            <Shield size={16} />
             <span>Admin</span>
           </button>
         )}
@@ -109,20 +109,20 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
             className={`sidebar-history-item ${(activeConversation?._id || activeConversation?.id) === (conv._id || conv.id) ? 'active' : ''}`}
             onClick={() => handleSelect(conv._id || conv.id)}
           >
-            {conv.is_pinned === 1 && <Pin size={12} className="pin-icon" />}
+            {conv.is_pinned === 1 && <Pin size={11} className="pin-icon" />}
             <span className="title">{conv.title || 'New Conversation'}</span>
             <div className="conversation-actions">
               <button className="pin-btn" onClick={e => handlePin(e, conv._id || conv.id)} aria-label={conv.is_pinned ? 'Unpin conversation' : 'Pin conversation'}>
-                <Pin size={14} className={conv.is_pinned ? 'pinned' : ''} />
+                <Pin size={13} className={conv.is_pinned ? 'pinned' : ''} />
               </button>
               <button className="delete-btn" onClick={e => handleDelete(e, conv._id || conv.id)} aria-label="Delete conversation">
-                <Trash2 size={14} />
+                <Trash2 size={13} />
               </button>
             </div>
           </div>
         ))}
         {conversations.length === 0 && (
-          <div style={{ padding: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '16px 12px', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
             No conversations yet
           </div>
         )}
@@ -135,11 +135,11 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
             <div className="sidebar-user-name">{user?.username || 'User'}</div>
             <div className="sidebar-user-status">{user?.role || 'Member'}</div>
           </div>
-          <button className="sidebar-logout" onClick={logout} aria-label="Log out">
-            <LogOut size={16} />
-          </button>
           <button className="sidebar-theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <button className="sidebar-logout" onClick={logout} aria-label="Log out">
+            <LogOut size={15} />
           </button>
         </div>
       </div>

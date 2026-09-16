@@ -15,7 +15,7 @@ export default function WelcomeScreen({ onPrompt }) {
         <p className="welcome-subtitle">Your AI-powered Discord assistant</p>
         <p className="welcome-description">
           Build, manage, and automate your Discord server with natural language.
-          Create bots, moderation rules, embeds, and more — no code required.
+          Create channels, roles, bots, and more — no code required.
         </p>
 
         {botConnected && selectedServer && (

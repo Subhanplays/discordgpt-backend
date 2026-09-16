@@ -101,17 +101,17 @@ export default function MessageBubble({ message, onRegenerate }) {
         {!isUser && (
           <div className="message-actions">
             <button onClick={handleCopy} className={copied ? 'active' : ''} title="Copy">
-              {copied ? <Check size={13} /> : <Copy size={13} />}
+              {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
             <button onClick={handleLike} className={liked ? 'active' : ''} title="Good response">
-              <ThumbsUp size={13} />
+              <ThumbsUp size={14} />
             </button>
             <button onClick={handleDislike} className={disliked ? 'active' : ''} title="Bad response">
-              <ThumbsDown size={13} />
+              <ThumbsDown size={14} />
             </button>
             {onRegenerate && (
               <button onClick={() => onRegenerate(message.id)} title="Regenerate response">
-                <RefreshCw size={13} />
+                <RefreshCw size={14} />
               </button>
             )}
           </div>

@@ -73,7 +73,7 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           title="Create server blueprint"
           aria-label="Create blueprint"
         >
-          <Sparkles size={16} />
+          <Sparkles size={15} />
         </button>
         <button
           className={`composer-send ${hasText && !isLimitReached ? 'active' : ''}`}
