@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Sparkles, ChevronRight, ChevronLeft, X, Settings, Server, LayoutTemplate, MessageSquare, Rocket, CheckCircle } from 'lucide-react'
+import { Sparkles, ChevronRight, ChevronLeft, X, Server, LayoutTemplate, MessageSquare, Rocket, CheckCircle } from 'lucide-react'
 
 const STEPS = [
   {
@@ -7,12 +7,6 @@ const STEPS = [
     title: 'Welcome to DiscordGPT!',
     description: 'Your AI-powered Discord server builder. Create, manage, and automate your Discord server with natural language.',
     color: '#3b82f6',
-  },
-  {
-    icon: <Settings size={28} />,
-    title: 'Connect your bot',
-    description: 'Head to Settings and add your Discord bot token. This links DiscordGPT to your server so it can manage channels, roles, and more.',
-    color: '#8b5cf6',
   },
   {
     icon: <Server size={28} />,

@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { Monitor, Bot, User, LogOut, Shield, Palette, Globe, Copy, Check, Loader2, QrCode, KeyRound, X } from 'lucide-react'
+import { Monitor, User, LogOut, Shield, Palette, Globe, Copy, Check, Loader2, QrCode, KeyRound, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
-import { useChat } from '../contexts/ChatContext'
 
 function DiscordFlags({ flags }) {
   const flagNames = {
@@ -30,7 +29,6 @@ function DiscordFlags({ flags }) {
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const { user, token, logout } = useAuth()
-  const { botConnected, botInfo, servers } = useChat()
   const [twoFAState, setTwoFAState] = useState(null)
   const [twoFACode, setTwoFACode] = useState('')
   const [twoFALoading, setTwoFALoading] = useState(false)
@@ -309,35 +307,6 @@ export default function SettingsPage() {
             Show Tutorial
           </button>
         </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-section-title"><Bot size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />Discord Bot</div>
-        {botConnected && botInfo ? (
-          <>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">DiscordGPT Bot</div>
-                <div className="settings-row-desc">{botInfo.username} (ID: {botInfo.id})</div>
-              </div>
-              <span className="badge badge-success">Connected</span>
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">Servers Available</div>
-                <div className="settings-row-desc">{servers.length} server(s) found</div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="settings-row">
-            <div>
-              <div className="settings-row-label">DiscordGPT Bot</div>
-              <div className="settings-row-desc">Bot is connecting...</div>
-            </div>
-            <span className="badge badge-default">Connecting</span>
-          </div>
-        )}
       </div>
 
       <div className="settings-section">
