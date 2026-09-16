@@ -130,7 +130,13 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
 
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <div className="sidebar-user-avatar">{initials}</div>
+          <div className="sidebar-user-avatar">
+            {user?.discord_avatar ? (
+              <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              initials
+            )}
+          </div>
           <div className="sidebar-user-info">
             <div className="sidebar-user-name">{user?.username || 'User'}</div>
             <div className="sidebar-user-status">{user?.role || 'Member'}</div>
