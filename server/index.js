@@ -44,6 +44,24 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+app.get('/api/stats/public', async (req, res) => {
+  try {
+    const pool = require('./database').getPool();
+    const [users, conversations, servers] = await Promise.all([
+      pool.query('SELECT COUNT(*) as count FROM users'),
+      pool.query('SELECT COUNT(*) as count FROM conversations'),
+      pool.query('SELECT COUNT(*) as count FROM server_configs')
+    ]);
+    res.json({
+      totalUsers: parseInt(users.rows[0].count),
+      totalConversations: parseInt(conversations.rows[0].count),
+      totalServers: parseInt(servers.rows[0].count)
+    });
+  } catch (error) {
+    res.json({ totalUsers: 0, totalConversations: 0, totalServers: 0 });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/discord', discordAuthRoutes);
 app.use('/api/conversations', chatRoutes);
