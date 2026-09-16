@@ -116,7 +116,7 @@ export default function AdminPanel() {
         {success && <Banner type="success" msg={success} onClose={() => setSuccess('')} />}
         {loading ? <Loader /> : (
           <>
-            {activeTab === 'dashboard' && <DashboardTab data={data} />}
+            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} showSuccess={showSuccess} setError={setError} fetchData={fetchData} />}
             {activeTab === 'users' && <UsersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'conversations' && <ConversationsTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'blueprints' && <BlueprintsTab data={data} />}
@@ -149,7 +149,7 @@ function Loader() {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: '#71717a', gap: 8 }}><Loader2 size={20} className="spinner" /> Loading...</div>
 }
 
-function DashboardTab({ data }) {
+function DashboardTab({ data, api, showSuccess, setError, fetchData }) {
   const stats = data.stats
 
   const handleCleanupChats = async () => {
