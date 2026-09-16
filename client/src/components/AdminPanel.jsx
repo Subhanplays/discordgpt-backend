@@ -151,10 +151,17 @@ function Loader() {
 
 function DashboardTab({ data }) {
   const stats = data.stats
+
+  const handleCleanupChats = async () => {
+    if (!confirm('Delete ALL conversations, messages, and logs? API keys and users will be kept.')) return
+    const res = await api('/api/admin/cleanup-chats', 'POST')
+    if (res) { showSuccess('All chat data cleared'); fetchData() } else { setError('Failed') }
+  }
+
   return (
     <>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: '#fff' }}>Dashboard</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 16 }}>
         {[{ l: 'Users', v: stats?.totalUsers || 0, c: '#3b82f6' }, { l: 'Bots', v: stats?.totalBots || 0, c: '#22c55e' }, { l: 'Generated', v: stats?.totalServers || 0, c: '#f59e0b' }, { l: 'Templates', v: stats?.totalTemplates || 0, c: '#ec4899' },
           { l: 'AI Providers', v: stats?.totalAiProviders || 0, c: '#06b6d4' }, { l: 'Requests', v: stats?.totalAiRequests || 0, c: '#ef4444' }, { l: 'Conversations', v: data.conversations?.length || 0, c: '#8b5cf6' }, { l: 'IP Bans', v: data.ipBans?.length || 0, c: '#f97316' }
         ].map((s, i) => (
@@ -163,6 +170,13 @@ function DashboardTab({ data }) {
             <div style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{s.v}</div>
           </div>
         ))}
+      </div>
+      <div style={{ ...card, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>Launch Cleanup</div>
+          <div style={{ fontSize: 12, color: '#71717a', marginTop: 2 }}>Delete all conversations, messages, and logs. Keeps users and API keys.</div>
+        </div>
+        <button style={{ ...btnDanger }} onClick={handleCleanupChats}><Trash2 size={14} /> Clean All Chats</button>
       </div>
     </>
   )
