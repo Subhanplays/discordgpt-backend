@@ -116,7 +116,7 @@ export default function AdminPanel() {
         {success && <Banner type="success" msg={success} onClose={() => setSuccess('')} />}
         {loading ? <Loader /> : (
           <>
-            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} showSuccess={showSuccess} setError={setError} fetchData={fetchData} />}
+            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} headers={headers} showSuccess={showSuccess} setError={setError} fetchData={fetchData} />}
             {activeTab === 'users' && <UsersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'conversations' && <ConversationsTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'blueprints' && <BlueprintsTab data={data} />}
@@ -149,13 +149,16 @@ function Loader() {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: '#71717a', gap: 8 }}><Loader2 size={20} className="spinner" /> Loading...</div>
 }
 
-function DashboardTab({ data, api, showSuccess, setError, fetchData }) {
+function DashboardTab({ data, api, headers, showSuccess, setError, fetchData }) {
   const stats = data.stats
 
   const handleCleanupChats = async () => {
     if (!confirm('Delete ALL conversations, messages, and logs? API keys and users will be kept.')) return
-    const res = await api('/api/admin/cleanup-chats', 'POST')
-    if (res) { showSuccess('All chat data cleared'); fetchData() } else { setError('Failed') }
+    try {
+      const res = await fetch('/api/admin/cleanup-chats', { method: 'POST', headers })
+      const data = await res.json()
+      if (res.ok) { showSuccess('All chat data cleared'); fetchData() } else { setError(data.error || 'Failed') }
+    } catch (e) { setError('Network error') }
   }
 
   return (
