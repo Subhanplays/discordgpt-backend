@@ -722,7 +722,7 @@ export default function LandingPage() {
           <Reveal delay={80}>
             <h1>
               Build Discord servers<br />
-              with <em>AI</em>
+              with <em>free AI</em>
             </h1>
           </Reveal>
           <Reveal delay={160}>
@@ -1002,7 +1002,7 @@ export default function LandingPage() {
         <Reveal delay={80}>
           <div style={{ fontSize: 15, color: colors.textSec, lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <p>
-              <strong style={{ color: colors.text }}>DiscordGPT is an AI-powered Discord server builder</strong> that transforms
+              <strong style={{ color: colors.text }}>DiscordGPT is a free AI-powered Discord server builder</strong> that transforms
               simple text descriptions into fully functional Discord servers. Whether you need a gaming community server,
               a study group, a content creator hub, a developer workspace, or a business communication channel, DiscordGPT
               generates the complete server structure — including channels, categories, roles, and permissions — in seconds.
@@ -1120,7 +1120,7 @@ export default function LandingPage() {
             { q: 'How does the AI generate servers?', a: 'Our AI analyzes your natural language description and generates a complete Discord server blueprint including channels, roles, permissions, and settings. It uses advanced language models trained on thousands of server configurations.' },
             { q: 'Can I customize the blueprint?', a: 'Absolutely. After the AI generates a blueprint, you can review and modify any aspect — channels, roles, permissions, emoji, and more. The blueprint is fully editable before deployment.' },
             { q: 'Which AI providers do you support?', a: 'We support OpenAI (GPT-4o), Anthropic (Claude), Groq, DeepSeek, and Google Gemini. You can configure your own API keys and the system will intelligently route requests with automatic fallback.' },
-            { q: 'Is it free to use?', a: 'Yes! DiscordGPT is free to use. You get a daily message limit which resets at midnight UTC. Admins can adjust limits per user. We may introduce premium tiers in the future.' },
+            { q: 'Is it free to use?', a: 'Yes! DiscordGPT is a completely free AI Discord server builder. You get 50 AI messages per day which resets at midnight UTC. No credit card required. Admins can adjust limits per user.' },
             { q: 'How does server deployment work?', a: 'Once you approve a blueprint, the system uses the Discord Bot API to create your server with all channels, roles, and permissions pre-configured. The entire process takes under 60 seconds.' },
             { q: 'What types of Discord servers can I create?', a: 'DiscordGPT can create any type of server — gaming communities, study groups, content creator hubs, developer teams, business workspaces, art communities, music servers, and more. The AI adapts to your specific needs.' },
             { q: 'Do I need coding knowledge to use DiscordGPT?', a: 'No coding required. Simply describe what you want in plain English and the AI handles everything. For advanced users, DiscordGPT can also generate custom Discord bot code with slash commands.' },
