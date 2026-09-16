@@ -1,26 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { ArrowUp, Paperclip, Mic, Globe, Sparkles } from 'lucide-react'
+import { ArrowUp, Paperclip, Mic, Globe, Sparkles, Loader2 } from 'lucide-react'
 import PersonalitySelector from './PersonalitySelector'
 
 const PERSONALITY_KEY = 'discordgpt_personality'
 
-const RANDOM_PROMPTS = [
-  'Create a gaming server with voice channels, a tournament bracket channel, and role-based access for different game teams',
-  'Build a study group server with subject-specific channels, a homework help bot, and a resource library',
-  'Set up a community server with welcome rules, off-topic channels, event announcements, and a suggestion box',
-  'Design a content creator server with fan zones, exclusive patron channels, and a stream schedule board',
-  'Make a startup team server with project boards, meeting rooms, file sharing, and department-specific channels',
-  'Create an art community server with portfolio showcases, critique channels, commission tracking, and gallery roles',
-  'Build a music production server with collab channels, sample libraries, feedback sections, and producer directories',
-  'Set up a fitness community with workout tracking, nutrition tips, challenge boards, and progress check-ins',
-  'Design a book club server with reading lists, discussion threads, author Q&A channels, and genre-based groups',
-  'Create a developer community with code review channels, project showcases, job board, and tech discussion rooms',
-  'Build a movie night server with watch party scheduling, review channels, genre discussions, and recommendation boards',
-  'Set up a language learning server with practice channels, tutoring sessions, resource sharing, and progress tracking',
-]
-
 export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const [text, setText] = useState('')
+  const [generating, setGenerating] = useState(false)
   const [personality, setPersonality] = useState(() => {
     return localStorage.getItem(PERSONALITY_KEY) || 'professional'
   })
@@ -49,17 +35,33 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
     }
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const trimmed = text.trim()
     if (disabled || isLimitReached) return
 
     if (!trimmed) {
-      const random = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)]
-      setText(random)
-      setTimeout(() => {
-        onCreate(random, personality)
-        setText('')
-      }, 100)
+      setGenerating(true)
+      try {
+        const token = localStorage.getItem('discordgpt_token')
+        const res = await fetch('/api/chat/generate-prompt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        })
+        const data = await res.json()
+        const prompt = data.prompt || 'Create a community server with welcome channels, general chat, and voice rooms'
+        setText(prompt)
+        setTimeout(() => {
+          onCreate(prompt, personality)
+          setText('')
+        }, 150)
+      } catch {
+        onCreate('Create a community server with welcome channels, general chat, and voice rooms', personality)
+      } finally {
+        setGenerating(false)
+      }
       return
     }
 
@@ -93,13 +95,13 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           disabled={disabled || isLimitReached}
         />
         <button
-          className={`composer-create active`}
+          className={`composer-create ${generating ? 'loading' : 'active'}`}
           onClick={handleCreate}
-          disabled={disabled || isLimitReached}
-          title={hasText ? 'Create server blueprint' : 'Generate random prompt & create'}
+          disabled={disabled || isLimitReached || generating}
+          title={generating ? 'Generating idea...' : hasText ? 'Create server blueprint' : 'AI generates a random server idea'}
           aria-label="Create blueprint"
         >
-          <Sparkles size={15} />
+          {generating ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
         </button>
         <button
           className={`composer-send ${hasText && !isLimitReached ? 'active' : ''}`}

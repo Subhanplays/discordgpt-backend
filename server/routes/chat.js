@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const db = require('../database');
-const { generateChatResponse, generateBlueprint, generateConversationTitle } = require('../utils/ai');
+const { generateChatResponse, generateBlueprint, generateConversationTitle, generateRandomPrompt } = require('../utils/ai');
 
 function parseBlueprintFromAI(aiResponse) {
   try {
@@ -148,6 +148,16 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Delete conversation error:', error);
     res.status(500).json({ error: 'Failed to delete conversation' });
+  }
+});
+
+router.post('/generate-prompt', authMiddleware, async (req, res) => {
+  try {
+    const prompt = await generateRandomPrompt();
+    res.json({ prompt });
+  } catch (error) {
+    console.error('Generate prompt error:', error);
+    res.json({ prompt: 'Create a community server with welcome channels, general chat, voice rooms, and role-based access' });
   }
 });
 

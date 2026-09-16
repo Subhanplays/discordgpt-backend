@@ -1114,10 +1114,43 @@ async function generateConversationTitle(userMessage) {
   return userMessage.length > 60 ? userMessage.substring(0, 60) + '...' : userMessage;
 }
 
+async function generateRandomPrompt() {
+  const systemMessage = {
+    role: 'system',
+    content: `You are a creative Discord server idea generator. Generate a single, detailed, and specific prompt for creating a Discord server. The prompt should describe a complete server concept with specific channels, roles, and features. Be creative and varied — think gaming communities, study groups, content creator hubs, developer communities, hobby groups, local communities, etc.
+
+Rules:
+- Return ONLY the prompt text, no quotes, no explanation
+- Make it specific and detailed (mention channel names, role types, features)
+- Keep it under 200 characters
+- Make it sound natural, like a user describing what they want
+- Each prompt should be unique and different from common templates`
+  };
+
+  const userMessage = {
+    role: 'user',
+    content: 'Generate a creative Discord server creation prompt. Make it unique, specific, and detailed.'
+  };
+
+  try {
+    const apiKey = process.env.AI_API_KEY;
+    if (!apiKey) {
+      return 'Create a community server with welcome channels, general chat, voice rooms, and role-based access for members';
+    }
+
+    const response = await callOpenAI(apiKey, 'gpt-4o-mini', 'https://api.openai.com/v1', [systemMessage, userMessage], 0.9);
+    const cleaned = response.replace(/^["']|["']$/g, '').trim();
+    if (cleaned.length > 10 && cleaned.length <= 300) return cleaned;
+  } catch (e) {}
+
+  return 'Create a community server with welcome channels, general chat, voice rooms, and role-based access for members';
+}
+
 module.exports = {
   generateBlueprint,
   generateChatResponse,
   generateConversationTitle,
+  generateRandomPrompt,
   extractServerName,
   extractThemes
 };
