@@ -11,7 +11,6 @@ import AdminPage from './pages/AdminPage'
 import LandingPage from './pages/LandingPage'
 import AuthCallback from './pages/AuthCallback'
 import SearchModal from './components/SearchModal'
-import Onboarding from './components/Onboarding'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
 function ProtectedRoute({ children }) {
@@ -64,7 +63,6 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <Onboarding />
     </>
   )
 }
