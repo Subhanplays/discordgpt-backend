@@ -116,7 +116,7 @@ export default function AdminPanel() {
         {success && <Banner type="success" msg={success} onClose={() => setSuccess('')} />}
         {loading ? <Loader /> : (
           <>
-            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} headers={headers} showSuccess={showSuccess} setError={setError} fetchData={fetchData} handleCleanupEmpty={handleCleanupEmpty} />}
+            {activeTab === 'dashboard' && <DashboardTab data={data} api={api} headers={headers} showSuccess={showSuccess} setError={setError} fetchData={fetchData} />}
             {activeTab === 'users' && <UsersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'conversations' && <ConversationsTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'blueprints' && <BlueprintsTab data={data} />}
@@ -149,7 +149,7 @@ function Loader() {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: '#71717a', gap: 8 }}><Loader2 size={20} className="spinner" /> Loading...</div>
 }
 
-function DashboardTab({ data, api, headers, showSuccess, setError, fetchData, handleCleanupEmpty }) {
+function DashboardTab({ data, api, headers, showSuccess, setError, fetchData }) {
   const stats = data.stats
 
   const handleCleanupChats = async () => {
@@ -158,6 +158,15 @@ function DashboardTab({ data, api, headers, showSuccess, setError, fetchData, ha
       const res = await fetch('/api/admin/cleanup-chats', { method: 'POST', headers })
       const data = await res.json()
       if (res.ok) { showSuccess('All chat data cleared'); fetchData() } else { setError(data.error || 'Failed') }
+    } catch (e) { setError('Network error') }
+  }
+
+  const handleCleanupEmpty = async () => {
+    if (!confirm('Delete all empty conversations (no messages)?')) return
+    try {
+      const res = await fetch('/api/admin/cleanup-empty-chats', { method: 'POST', headers })
+      const data = await res.json()
+      if (res.ok) { showSuccess(`${data.deleted || 0} empty chats removed`); fetchData() } else { setError(data.error || 'Failed') }
     } catch (e) { setError('Network error') }
   }
 
