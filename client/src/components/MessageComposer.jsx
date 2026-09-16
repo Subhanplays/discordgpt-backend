@@ -4,6 +4,21 @@ import PersonalitySelector from './PersonalitySelector'
 
 const PERSONALITY_KEY = 'discordgpt_personality'
 
+const RANDOM_PROMPTS = [
+  'Create a gaming server with voice channels, a tournament bracket channel, and role-based access for different game teams',
+  'Build a study group server with subject-specific channels, a homework help bot, and a resource library',
+  'Set up a community server with welcome rules, off-topic channels, event announcements, and a suggestion box',
+  'Design a content creator server with fan zones, exclusive patron channels, and a stream schedule board',
+  'Make a startup team server with project boards, meeting rooms, file sharing, and department-specific channels',
+  'Create an art community server with portfolio showcases, critique channels, commission tracking, and gallery roles',
+  'Build a music production server with collab channels, sample libraries, feedback sections, and producer directories',
+  'Set up a fitness community with workout tracking, nutrition tips, challenge boards, and progress check-ins',
+  'Design a book club server with reading lists, discussion threads, author Q&A channels, and genre-based groups',
+  'Create a developer community with code review channels, project showcases, job board, and tech discussion rooms',
+  'Build a movie night server with watch party scheduling, review channels, genre discussions, and recommendation boards',
+  'Set up a language learning server with practice channels, tutoring sessions, resource sharing, and progress tracking',
+]
+
 export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
   const [text, setText] = useState('')
   const [personality, setPersonality] = useState(() => {
@@ -36,7 +51,18 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
 
   const handleCreate = () => {
     const trimmed = text.trim()
-    if (!trimmed || disabled) return
+    if (disabled || isLimitReached) return
+
+    if (!trimmed) {
+      const random = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)]
+      setText(random)
+      setTimeout(() => {
+        onCreate(random, personality)
+        setText('')
+      }, 100)
+      return
+    }
+
     onCreate(trimmed, personality)
     setText('')
     if (textareaRef.current) {
@@ -67,10 +93,10 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           disabled={disabled || isLimitReached}
         />
         <button
-          className={`composer-create ${hasText && !isLimitReached ? 'active' : ''}`}
+          className={`composer-create active`}
           onClick={handleCreate}
-          disabled={!hasText || disabled || isLimitReached}
-          title="Create server blueprint"
+          disabled={disabled || isLimitReached}
+          title={hasText ? 'Create server blueprint' : 'Generate random prompt & create'}
           aria-label="Create blueprint"
         >
           <Sparkles size={15} />
