@@ -23,7 +23,7 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
   ).sort((a, b) => (b.is_pinned || 0) - (a.is_pinned || 0))
 
   const handleNewChat = useCallback(() => {
-    navigate('/')
+    navigate('/chat')
     onClose()
   }, [navigate, onClose])
 

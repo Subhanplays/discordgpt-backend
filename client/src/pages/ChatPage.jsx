@@ -33,6 +33,11 @@ export default function ChatPage() {
       if (!activeConversationRef.current || activeId !== conversationId) {
         loadConversation(conversationId)
       }
+    } else if (!conversationId) {
+      setActiveConversation(null)
+      setMessages([])
+      setBlueprint(null)
+      setCreationProgress(null)
     }
   }, [conversationId])
 
