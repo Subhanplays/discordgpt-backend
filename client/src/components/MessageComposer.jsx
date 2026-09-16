@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { ArrowUp, Paperclip, Mic, Globe, Sparkles, Loader2 } from 'lucide-react'
+import { ArrowUp, Paperclip, Mic, Globe } from 'lucide-react'
 import PersonalitySelector from './PersonalitySelector'
 
 const PERSONALITY_KEY = 'discordgpt_personality'
 
-export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
+export default function MessageComposer({ onSend, disabled, usage }) {
   const [text, setText] = useState('')
-  const [generating, setGenerating] = useState(false)
   const [personality, setPersonality] = useState(() => {
     return localStorage.getItem(PERSONALITY_KEY) || 'professional'
   })
@@ -35,36 +34,6 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
     }
   }
 
-  const handleCreate = async () => {
-    const trimmed = text.trim()
-    if (disabled || isLimitReached) return
-
-    if (!trimmed) {
-      setGenerating(true)
-      try {
-        const res = await fetch('/api/chat/generate-prompt', { method: 'POST' })
-        const data = await res.json()
-        const prompt = data.prompt
-        if (prompt && prompt.length > 5) {
-          onCreate(prompt, personality)
-        } else {
-          onCreate('Create a gaming community server with text channels for general chat, announcements, and LFG. Add voice channels for squad comms and a chill hangout. Include mod-only channels and role-based permissions.', personality)
-        }
-      } catch {
-        onCreate('Create a gaming community server with text channels for general chat, announcements, and LFG. Add voice channels for squad comms and a chill hangout. Include mod-only channels and role-based permissions.', personality)
-      } finally {
-        setGenerating(false)
-      }
-      return
-    }
-
-    onCreate(trimmed, personality)
-    setText('')
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-    }
-  }
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -87,15 +56,6 @@ export default function MessageComposer({ onSend, onCreate, disabled, usage }) {
           rows={1}
           disabled={disabled || isLimitReached}
         />
-        <button
-          className={`composer-create ${generating ? 'loading' : 'active'}`}
-          onClick={handleCreate}
-          disabled={disabled || isLimitReached || generating}
-          title={generating ? 'Generating idea...' : hasText ? 'Create server blueprint' : 'AI generates a random server idea'}
-          aria-label="Create blueprint"
-        >
-          {generating ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
-        </button>
         <button
           className={`composer-send ${hasText && !isLimitReached ? 'active' : ''}`}
           onClick={handleSend}

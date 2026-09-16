@@ -55,24 +55,6 @@ export default function ChatPage() {
     }
   }
 
-  const handleCreate = async (content, personality = 'professional') => {
-    sendingRef.current = true
-    try {
-      const msg = `Create a Discord server: ${content}`
-      if (!activeConversation) {
-        const conv = await createConversation(msg.slice(0, 80))
-        if (conv) {
-          navigate(`/c/${conv.id || conv._id}`)
-          await sendMessage(msg, conv.id || conv._id, true, personality)
-        }
-      } else {
-        await sendMessage(msg, activeConversation.id || activeConversation._id, true, personality)
-      }
-    } finally {
-      sendingRef.current = false
-    }
-  }
-
   const handleRegenerate = useCallback(async (messageId) => {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (!lastUserMsg || !activeConversation) return
@@ -104,7 +86,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {!creationProgress && <MessageComposer onSend={handleSend} onCreate={handleCreate} disabled={aiTyping} usage={usage} />}
+      {!creationProgress && <MessageComposer onSend={handleSend} disabled={aiTyping} usage={usage} />}
     </div>
   )
 }
