@@ -671,6 +671,7 @@ export default function LandingPage() {
           .l-hero-metrics { gap:24px; }
           .l-metric-val { font-size:22px; }
           .l-footer { flex-direction:column; gap:16px; text-align:center; }
+          .why-grid { grid-template-columns:1fr !important; }
           .l-hero h1 { font-size:clamp(36px,10vw,56px); }
           .float-badge { display:none; }
           .social-proof { flex-wrap:wrap; }
@@ -992,6 +993,121 @@ export default function LandingPage() {
       {/* Divider */}
       <div className="section-divider" />
 
+      {/* What is DiscordGPT - SEO text section */}
+      <section className="l-section" style={{ maxWidth: 800, margin: '0 auto' }}>
+        <Reveal>
+          <div className="l-label">About</div>
+          <h2 className="l-heading">What is DiscordGPT?</h2>
+        </Reveal>
+        <Reveal delay={80}>
+          <div style={{ fontSize: 15, color: colors.textSec, lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <p>
+              <strong style={{ color: colors.text }}>DiscordGPT is an AI-powered Discord server builder</strong> that transforms
+              simple text descriptions into fully functional Discord servers. Whether you need a gaming community server,
+              a study group, a content creator hub, a developer workspace, or a business communication channel, DiscordGPT
+              generates the complete server structure — including channels, categories, roles, and permissions — in seconds.
+            </p>
+            <p>
+              Unlike traditional Discord server templates that require manual customization, DiscordGPT uses advanced
+              AI language models to understand your specific needs and create a <strong style={{ color: colors.text }}>tailor-made server blueprint</strong>.
+              Simply describe what you want in natural language, like "Create a gaming server with voice channels, tournament
+              brackets, and role-based access," and the AI handles the rest.
+            </p>
+            <p>
+              DiscordGPT supports <strong style={{ color: colors.text }}>multiple AI providers</strong> including OpenAI GPT-4o,
+              Anthropic Claude, Groq, DeepSeek, and Google Gemini. With intelligent routing and automatic fallback chains,
+              your server generation requests always complete successfully. The platform also features a template system,
+              bot code generation, auto-moderation setup, and one-click deployment directly to Discord.
+            </p>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Use Cases */}
+      <section className="l-section">
+        <Reveal>
+          <div className="l-label">Use Cases</div>
+          <h2 className="l-heading">Build any Discord server</h2>
+          <p className="l-desc">From gaming communities to enterprise teams — DiscordGPT handles it all.</p>
+        </Reveal>
+        <div className="l-features-grid">
+          {[
+            { icon: <Bot size={20} />, title: 'Gaming Communities', desc: 'Create servers with LFG channels, voice lobbies, tournament brackets, clip sharing, and role-based access for gaming communities of any size.' },
+            { icon: <LayoutTemplate size={20} />, title: 'Study Groups', desc: 'Build study servers with subject-specific channels, resource sharing, study sessions, and role hierarchies for students and educators.' },
+            { icon: <Zap size={20} />, title: 'Content Creators', desc: 'Set up fan communities with announcement channels, media sharing, supporter roles, and exclusive content areas for creators.' },
+            { icon: <Brain size={20} />, title: 'Developer Teams', desc: 'Generate developer servers with code sharing, project channels, CI/CD notifications, and team role structures.' },
+            { icon: <Shield size={20} />, title: 'Business Teams', desc: 'Create professional workspaces with department channels, meeting rooms, resource libraries, and permission groups.' },
+            { icon: <Rocket size={20} />, title: 'Art Communities', desc: 'Build showcase servers with gallery channels, critique sessions, commission boards, and artist role tiers.' },
+          ].map((f, i) => (
+            <Reveal key={i} delay={i * 80}>
+              <div className="l-feature" ref={el => featureRefs.current[i + 6] = el}>
+                <div className="l-feature-icon">{f.icon}</div>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Why DiscordGPT */}
+      <section className="l-section" style={{ maxWidth: 900, margin: '0 auto' }}>
+        <Reveal>
+          <div className="l-label">Why DiscordGPT</div>
+          <h2 className="l-heading">Faster than manual setup</h2>
+          <p className="l-desc">What takes hours manually, DiscordGPT does in seconds.</p>
+        </Reveal>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <Reveal delay={80}>
+            <div style={{
+              padding: 28, borderRadius: 14, background: colors.cardBg,
+              border: `1px solid ${colors.border}`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#ef4444', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Without DiscordGPT
+              </div>
+              {[
+                'Manually create each channel one by one',
+                'Set up roles and permissions from scratch',
+                'Configure channel categories and ordering',
+                'Set up moderation rules manually',
+                'Copy-paste settings between servers',
+                'Takes 30-60 minutes per server',
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, fontSize: 14, color: colors.textSec }}>
+                  <span style={{ color: '#ef4444', marginTop: 2, flexShrink: 0 }}>✕</span> {item}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal delay={160}>
+            <div style={{
+              padding: 28, borderRadius: 14, background: colors.accentBg,
+              border: `1px solid ${isDark ? 'rgba(59,130,246,0.12)' : 'rgba(37,99,235,0.08)'}`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                With DiscordGPT
+              </div>
+              {[
+                'Describe your server in one sentence',
+                'AI generates all channels and roles automatically',
+                'Permissions and settings configured by AI',
+                'Auto-moderation included in the blueprint',
+                'Save and reuse templates across servers',
+                'Live in under 60 seconds',
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12, fontSize: 14, color: colors.textSec }}>
+                  <span style={{ color: '#22c55e', marginTop: 2, flexShrink: 0 }}>✓</span> {item}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="section-divider" />
+
       {/* FAQ */}
       <section className="l-section">
         <Reveal>
@@ -1006,6 +1122,9 @@ export default function LandingPage() {
             { q: 'Which AI providers do you support?', a: 'We support OpenAI (GPT-4o), Anthropic (Claude), Groq, DeepSeek, and Google Gemini. You can configure your own API keys and the system will intelligently route requests with automatic fallback.' },
             { q: 'Is it free to use?', a: 'Yes! DiscordGPT is free to use. You get a daily message limit which resets at midnight UTC. Admins can adjust limits per user. We may introduce premium tiers in the future.' },
             { q: 'How does server deployment work?', a: 'Once you approve a blueprint, the system uses the Discord Bot API to create your server with all channels, roles, and permissions pre-configured. The entire process takes under 60 seconds.' },
+            { q: 'What types of Discord servers can I create?', a: 'DiscordGPT can create any type of server — gaming communities, study groups, content creator hubs, developer teams, business workspaces, art communities, music servers, and more. The AI adapts to your specific needs.' },
+            { q: 'Do I need coding knowledge to use DiscordGPT?', a: 'No coding required. Simply describe what you want in plain English and the AI handles everything. For advanced users, DiscordGPT can also generate custom Discord bot code with slash commands.' },
+            { q: 'How is DiscordGPT different from Discord templates?', a: 'Discord templates are static layouts. DiscordGPT uses AI to create fully customized servers based on your specific description. It configures channels, roles, permissions, and settings tailored to your exact needs — not generic defaults.' },
           ].map((faq, i) => (
             <Reveal key={i} delay={i * 60}>
               <div className={`faq-item${faqOpen === i ? ' open' : ''}`}>
