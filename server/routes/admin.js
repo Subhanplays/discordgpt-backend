@@ -573,4 +573,25 @@ router.post('/reset-monthly-credits', async (req, res) => {
   }
 });
 
+router.post('/cleanup-chats', async (req, res) => {
+  try {
+    const pool = db.getPool();
+    const tables = ['messages', 'conversations', 'generation_logs', 'pending_blueprints', 'audit_logs', 'folders', 'blueprint_versions'];
+    const results = {};
+    for (const table of tables) {
+      try {
+        const r = await pool.query(`DELETE FROM ${table}`);
+        results[table] = r.rowCount;
+      } catch (e) {
+        results[table] = `skipped: ${e.message}`;
+      }
+    }
+    await pool.query('UPDATE users SET usage_count = 0, last_usage_reset = NOW()::text');
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({ error: 'Failed to cleanup' });
+  }
+});
+
 module.exports = router;
