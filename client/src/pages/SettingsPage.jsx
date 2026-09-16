@@ -300,6 +300,15 @@ export default function SettingsPage() {
           </div>
           <div className={`toggle-switch ${theme === 'light' ? 'active' : ''}`} onClick={toggleTheme} />
         </div>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">Welcome Tutorial</div>
+            <div className="settings-row-desc">Replay the getting started guide</div>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={() => { localStorage.removeItem('dgpt_onboarded'); window.location.reload() }}>
+            Show Tutorial
+          </button>
+        </div>
       </div>
 
       <div className="settings-section">
