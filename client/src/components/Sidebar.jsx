@@ -22,15 +22,10 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
     (c.title || '').toLowerCase().includes(search.toLowerCase())
   ).sort((a, b) => (b.is_pinned || 0) - (a.is_pinned || 0))
 
-  const handleNewChat = useCallback(async () => {
-    const conv = await createConversation('New Chat')
-    if (conv) {
-      navigate(`/c/${conv.id || conv._id}`)
-    } else {
-      navigate('/')
-    }
+  const handleNewChat = useCallback(() => {
+    navigate('/')
     onClose()
-  }, [createConversation, navigate, onClose])
+  }, [navigate, onClose])
 
   const handleSelect = useCallback((id) => {
     loadConversation(id)
