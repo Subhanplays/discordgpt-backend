@@ -58,7 +58,7 @@ export default function ServerSelect({ compact = false }) {
               >
                 <div className="server-icon">
                   {server.icon ? (
-                    <img src={`https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png`} alt="" />
+                     <img src={`https://cdn.discordapp.com/icons/${server.id}/${server.icon}.png`} alt={`${server.name} icon`} />
                   ) : (
                     server.name?.[0] || 'S'
                   )}

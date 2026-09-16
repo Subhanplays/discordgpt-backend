@@ -139,7 +139,7 @@ export default function SettingsPage() {
           <div style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: -30 }}>
             <div style={{ width: 60, height: 60, borderRadius: 'var(--radius-lg)', border: '3px solid var(--bg-surface)', overflow: 'hidden', flexShrink: 0, background: 'var(--text)' }}>
               {user?.discord_avatar ? (
-                <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={user.discord_avatar} alt={`${user?.username || 'User'} Discord avatar`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg)', fontWeight: 700, fontSize: 22 }}>
                   {user?.username?.[0]?.toUpperCase() || 'U'}

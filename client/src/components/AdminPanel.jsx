@@ -285,7 +285,7 @@ function UsersTab({ data, api, update, setError, showSuccess }) {
             {filtered.map(u => (
               <tr key={u.id} style={{ borderBottom: '1px solid #1e1e22' }} onMouseEnter={e => e.currentTarget.style.background = '#1a1a1e'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <td style={td}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {u.discord_avatar && <img src={u.discord_avatar} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />}
+                   {u.discord_avatar && <img src={u.discord_avatar} alt={`${u.username} avatar`} style={{ width: 28, height: 28, borderRadius: '50%' }} />}
                   <div><div style={{ color: '#fff', fontWeight: 500 }}>{u.username}</div><div style={{ fontSize: 12, color: '#71717a' }}>{u.email}</div></div>
                 </div></td>
                 <td style={td}><code style={{ fontSize: 11, background: '#0a0a0a', padding: '2px 6px', borderRadius: 4, color: '#a1a1aa', border: '1px solid #1e1e22' }}>{u.discord_id || '-'}</code></td>

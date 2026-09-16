@@ -29,7 +29,7 @@ export default function SettingsModal({ open, onClose }) {
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '16px 0' }}>
               <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-subtle)', flexShrink: 0 }}>
                 {user?.discord_avatar ? (
-                  <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   <img src={user.discord_avatar} alt={`${user?.username || 'User'} avatar`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 700, fontSize: 18 }}>
                     {user?.username?.[0]?.toUpperCase() || 'U'}

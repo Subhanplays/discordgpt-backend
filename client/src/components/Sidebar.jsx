@@ -58,7 +58,7 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
     <div className={`sidebar ${open ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <img src="/logo.svg" alt="" className="sidebar-logo" />
+           <img src="/logo.svg" alt="DiscordGPT" className="sidebar-logo" />
           <span className="sidebar-brand-text">DiscordGPT</span>
         </div>
         <button className="sidebar-close" onClick={onClose} aria-label="Close menu">
@@ -131,7 +131,7 @@ export default function Sidebar({ open, onClose, searchInputRef }) {
         <div className="sidebar-user">
           <div className="sidebar-user-avatar">
             {user?.discord_avatar ? (
-              <img src={user.discord_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              <img src={user.discord_avatar} alt={`${user?.username || 'User'} avatar`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
             ) : (
               initials
             )}
