@@ -219,6 +219,16 @@ async function initDatabase() {
       version_number INTEGER NOT NULL,
       created_at TEXT DEFAULT (now()::text)
     );
+
+    CREATE TABLE IF NOT EXISTS friend_tokens (
+      id TEXT PRIMARY KEY,
+      token TEXT UNIQUE NOT NULL,
+      username TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (now()::text)
+    );
   `);
 
   // Create default admin if none exists

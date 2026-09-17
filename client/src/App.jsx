@@ -10,6 +10,7 @@ import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import LandingPage from './pages/LandingPage'
 import AuthCallback from './pages/AuthCallback'
+import FriendLogin from './pages/FriendLogin'
 import SearchModal from './components/SearchModal'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 
@@ -52,6 +53,7 @@ function AppRoutes() {
     <>
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/aofmfeogaofgnengoinefaeionfef/aifneefosenfosn/login/friend" element={<FriendLogin />} />
         <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/chat" element={<ChatPage />} />

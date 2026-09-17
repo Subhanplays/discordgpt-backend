@@ -62,6 +62,68 @@ app.get('/api/stats/public', async (req, res) => {
   }
 });
 
+app.post('/api/auth/friend-login', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token required' });
+
+    const pool = require('./database').getPool();
+    const result = await pool.query(
+      'SELECT * FROM friend_tokens WHERE token = $1',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invalid or expired link' });
+    }
+
+    const ft = result.rows[0];
+
+    if (ft.used === 1) {
+      return res.status(410).json({ error: 'This link has already been used' });
+    }
+
+    if (new Date(ft.expires_at) < new Date()) {
+      return res.status(410).json({ error: 'This link has expired' });
+    }
+
+    await pool.query('UPDATE friend_tokens SET used = 1 WHERE id = $1', [ft.id]);
+
+    const { v4: uuidv4 } = require('uuid');
+    const crypto = require('crypto');
+
+    const userId = uuidv4();
+    const passwordHash = crypto.createHash('sha256').update(crypto.randomBytes(16).toString('hex')).digest('hex');
+    const email = `${ft.username.toLowerCase().replace(/[^a-z0-9]/g, '')}@friend.discordgpt.bond`;
+
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      const session = await require('./database').createSession(existing.rows[0].id, 86400000);
+      return res.json({
+        user: { id: existing.rows[0].id, username: ft.username, email, role: 'user' },
+        token: session.token,
+        expiresAt: session.expiresAt
+      });
+    }
+
+    await pool.query(
+      'INSERT INTO users (id, username, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)',
+      [userId, ft.username, email, passwordHash, 'user']
+    );
+
+    const session = await require('./database').createSession(userId, 86400000);
+
+    res.json({
+      user: { id: userId, username: ft.username, email, role: 'user' },
+      token: session.token,
+      expiresAt: session.expiresAt
+    });
+  } catch (error) {
+    console.error('Friend login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/discord', discordAuthRoutes);
 app.use('/api/conversations', chatRoutes);

@@ -606,4 +606,69 @@ router.post('/cleanup-empty-chats', async (req, res) => {
   }
 });
 
+const crypto = require('crypto');
+
+router.post('/friend-links', async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: 'Username is required' });
+
+    const pool = db.getPool();
+    const id = crypto.randomUUID();
+    const token = crypto.randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    await pool.query(
+      'INSERT INTO friend_tokens (id, token, username, created_by, expires_at) VALUES ($1, $2, $3, $4, $5)',
+      [id, token, username, req.user.id, expiresAt]
+    );
+
+    res.json({
+      id,
+      token,
+      username,
+      url: `https://www.discordgpt.bond/aofmfeogaofgnengoinefaeionfef/aifneefosenfosn/login/friend?token=${token}`,
+      expiresAt
+    });
+  } catch (error) {
+    console.error('Create friend link error:', error);
+    res.status(500).json({ error: 'Failed to create friend link' });
+  }
+});
+
+router.get('/friend-links', async (req, res) => {
+  try {
+    const pool = db.getPool();
+    const result = await pool.query(
+      'SELECT * FROM friend_tokens ORDER BY created_at DESC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get friend links error:', error);
+    res.status(500).json({ error: 'Failed to get friend links' });
+  }
+});
+
+router.delete('/friend-links/:id', async (req, res) => {
+  try {
+    const pool = db.getPool();
+    await pool.query('DELETE FROM friend_tokens WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete friend link error:', error);
+    res.status(500).json({ error: 'Failed to delete friend link' });
+  }
+});
+
+router.post('/friend-links/cleanup', async (req, res) => {
+  try {
+    const pool = db.getPool();
+    const r = await pool.query("DELETE FROM friend_tokens WHERE expires_at < NOW()::text OR used = 1");
+    res.json({ success: true, deleted: r.rowCount });
+  } catch (error) {
+    console.error('Cleanup friend links error:', error);
+    res.status(500).json({ error: 'Failed to cleanup friend links' });
+  }
+});
+
 module.exports = router;

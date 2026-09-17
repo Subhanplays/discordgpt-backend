@@ -7,7 +7,7 @@ import {
   Edit3, PowerOff, Save, X, Loader2, Server, Copy,
   Ban, ShieldOff, Globe, RotateCcw, UserCheck, Key,
   Search, MessageSquare, Download, Send, Eye, Copy as CopyIcon,
-  MessageCircle, Megaphone, Clock, LogOut
+  MessageCircle, Megaphone, Clock, LogOut, Link2
 } from 'lucide-react'
 
 const tabs = [
@@ -20,6 +20,7 @@ const tabs = [
   { id: 'bots', label: 'Bots', icon: Bot },
   { id: 'ai', label: 'AI Providers', icon: Sparkles },
   { id: 'templates', label: 'Templates', icon: FileText },
+  { id: 'friendlinks', label: 'Friend Links', icon: Link2 },
   { id: 'logs', label: 'Logs', icon: Activity },
   { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'ipbans', label: 'IP Bans', icon: Globe },
@@ -125,6 +126,7 @@ export default function AdminPanel() {
             {activeTab === 'bots' && <BotsTab data={data} />}
             {activeTab === 'ai' && <AiProvidersTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'templates' && <TemplatesTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
+            {activeTab === 'friendlinks' && <FriendLinksTab api={api} headers={headers} setError={setError} showSuccess={showSuccess} />}
             {activeTab === 'logs' && <LogsTab data={data} />}
             {activeTab === 'usage' && <UsageTab data={data} newLimit={newLimit} setNewLimit={setNewLimit} api={api} setError={setError} showSuccess={showSuccess} fetchData={fetchData} />}
             {activeTab === 'ipbans' && <IpBansTab data={data} api={api} update={update} setError={setError} showSuccess={showSuccess} />}
@@ -800,6 +802,148 @@ function SettingsTab({ api, setError, showSuccess }) {
           <div><div style={{ color: '#fff', fontWeight: 500 }}>Clear All Sessions</div><div style={{ fontSize: 13, color: '#71717a' }}>Force everyone to re-login</div></div>
           <button style={btnDanger} onClick={handleClearSessions}><Trash2 size={14} /> Clear Sessions</button>
         </div>
+      </div>
+    </>
+  )
+}
+
+function FriendLinksTab({ api, headers, setError, showSuccess }) {
+  const [links, setLinks] = useState([])
+  const [username, setUsername] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  const fetchLinks = useCallback(async () => {
+    try {
+      const res = await api.get('/api/admin/friend-links', { headers })
+      setLinks(res.data)
+    } catch (err) {
+      setError('Failed to load friend links')
+    }
+  }, [api, headers, setError])
+
+  useEffect(() => { fetchLinks() }, [fetchLinks])
+
+  const createLink = async () => {
+    if (!username.trim()) return setError('Enter a username')
+    setLoading(true)
+    try {
+      const res = await api.post('/api/admin/friend-links', { username: username.trim() }, { headers })
+      showSuccess(`Link created for ${res.data.username} — expires in 1 hour`)
+      setUsername('')
+      fetchLinks()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to create link')
+    }
+    setLoading(false)
+  }
+
+  const deleteLink = async (id) => {
+    try {
+      await api.delete(`/api/admin/friend-links/${id}`, { headers })
+      showSuccess('Link deleted')
+      fetchLinks()
+    } catch (err) {
+      setError('Failed to delete link')
+    }
+  }
+
+  const cleanupExpired = async () => {
+    try {
+      const res = await api.post('/api/admin/friend-links/cleanup', {}, { headers })
+      showSuccess(`Cleaned up ${res.data.deleted} expired/used links`)
+      fetchLinks()
+    } catch (err) {
+      setError('Failed to cleanup')
+    }
+  }
+
+  const copyLink = (url, id) => {
+    navigator.clipboard.writeText(url)
+    setCopied(id)
+    setTimeout(() => setCopied(''), 2000)
+  }
+
+  return (
+    <>
+      <div style={card}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#fff', margin: 0 }}>Friend Login Links</h3>
+            <p style={{ fontSize: 13, color: '#71717a', margin: '4px 0 0' }}>Generate temporary 1-hour login links for friends</p>
+          </div>
+          <button style={btnGhost} onClick={cleanupExpired}><Trash2 size={14} /> Clean Expired</button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            placeholder="Friend's username"
+            onKeyDown={e => e.key === 'Enter' && createLink()}
+            style={{ flex: 1, padding: '10px 14px', background: '#09090b', border: '1px solid #1e1e22', borderRadius: 8, color: '#fff', fontSize: 14, fontFamily: 'inherit' }}
+          />
+          <button style={btnPrimary} onClick={createLink} disabled={loading}>
+            {loading ? <Loader2 size={14} className="spin" /> : <><Plus size={14} /> Generate Link</>}
+          </button>
+        </div>
+
+        {links.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#71717a', fontSize: 14 }}>
+            No friend links yet. Generate one above.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={th}>Username</th>
+                  <th style={th}>Status</th>
+                  <th style={th}>Expires</th>
+                  <th style={th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {links.map(link => {
+                  const isExpired = new Date(link.expires_at) < new Date()
+                  const isUsed = link.used === 1
+                  const status = isUsed ? 'Used' : isExpired ? 'Expired' : 'Active'
+                  const statusColor = isUsed ? '#f59e0b' : isExpired ? '#ef4444' : '#22c55e'
+                  const url = `https://www.discordgpt.bond/aofmfeogaofgnengoinefaeionfef/aifneefosenfosn/login/friend?token=${link.token}`
+
+                  return (
+                    <tr key={link.id} style={{ borderTop: '1px solid #1e1e22' }}>
+                      <td style={td}>
+                        <div style={{ fontWeight: 500, color: '#fff' }}>{link.username}</div>
+                        <div style={{ fontSize: 12, color: '#71717a', fontFamily: 'monospace', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link.token}</div>
+                      </td>
+                      <td style={td}>
+                        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500, background: `${statusColor}15`, color: statusColor, border: `1px solid ${statusColor}25` }}>
+                          {status}
+                        </span>
+                      </td>
+                      <td style={{ ...td, fontSize: 13, color: '#71717a' }}>
+                        {new Date(link.expires_at).toLocaleString()}
+                      </td>
+                      <td style={td}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {!isUsed && !isExpired && (
+                            <button style={{ ...btnGhost, fontSize: 12, padding: '6px 10px' }} onClick={() => copyLink(url, link.id)}>
+                              {copied === link.id ? 'Copied!' : <><Copy size={12} /> Copy</>}
+                            </button>
+                          )}
+                          <button style={{ ...btnDanger, fontSize: 12, padding: '6px 10px' }} onClick={() => deleteLink(link.id)}>
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </>
   )
