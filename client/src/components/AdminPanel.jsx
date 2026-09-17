@@ -815,12 +815,12 @@ function FriendLinksTab({ api, headers, setError, showSuccess }) {
 
   const fetchLinks = useCallback(async () => {
     try {
-      const res = await api.get('/api/admin/friend-links', { headers })
-      setLinks(res.data)
+      const res = await api('/api/admin/friend-links', 'GET')
+      if (res) setLinks(Array.isArray(res) ? res : [])
     } catch (err) {
       setError('Failed to load friend links')
     }
-  }, [api, headers, setError])
+  }, [api, setError])
 
   useEffect(() => { fetchLinks() }, [fetchLinks])
 
@@ -828,19 +828,23 @@ function FriendLinksTab({ api, headers, setError, showSuccess }) {
     if (!username.trim()) return setError('Enter a username')
     setLoading(true)
     try {
-      const res = await api.post('/api/admin/friend-links', { username: username.trim() }, { headers })
-      showSuccess(`Link created for ${res.data.username} — expires in 1 hour`)
-      setUsername('')
-      fetchLinks()
+      const res = await api('/api/admin/friend-links', 'POST', { username: username.trim() })
+      if (res && res.url) {
+        showSuccess(`Link created for ${res.username} — expires in 1 hour`)
+        setUsername('')
+        fetchLinks()
+      } else {
+        setError('Failed to create link')
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create link')
+      setError('Failed to create link')
     }
     setLoading(false)
   }
 
   const deleteLink = async (id) => {
     try {
-      await api.delete(`/api/admin/friend-links/${id}`, { headers })
+      await api(`/api/admin/friend-links/${id}`, 'DELETE')
       showSuccess('Link deleted')
       fetchLinks()
     } catch (err) {
@@ -850,8 +854,8 @@ function FriendLinksTab({ api, headers, setError, showSuccess }) {
 
   const cleanupExpired = async () => {
     try {
-      const res = await api.post('/api/admin/friend-links/cleanup', {}, { headers })
-      showSuccess(`Cleaned up ${res.data.deleted} expired/used links`)
+      const res = await api('/api/admin/friend-links/cleanup', 'POST')
+      showSuccess(`Cleaned up ${res?.deleted || 0} expired/used links`)
       fetchLinks()
     } catch (err) {
       setError('Failed to cleanup')
